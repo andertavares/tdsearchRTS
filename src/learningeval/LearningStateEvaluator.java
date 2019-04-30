@@ -1,5 +1,13 @@
 package learningeval;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.util.Map;
+
 import ai.RandomBiasedAI;
 import ai.core.AI;
 import ai.evaluation.EvaluationFunction;
@@ -7,7 +15,12 @@ import ai.evaluation.SimpleSqrtEvaluationFunction3;
 import rts.GameState;
 import rts.units.UnitTypeTable;
 
-public class LearningStateEvaluator {
+/**
+ * Learns to evaluate game states.
+ * 
+ * @author artavares
+ */
+public class LearningStateEvaluator extends EvaluationFunction {
 	
 	/**
 	 * The learning rate for weight update
@@ -17,12 +30,12 @@ public class LearningStateEvaluator {
 	/**
 	 * Weight vector for state-value predictor
 	 */
-	private double stateWeights[];
+	private double[] stateWeights;
 	
 	/**
 	 * Weight vector for the error predictor
 	 */
-	private double errorWeights[];
+	private double[] errorWeights;
 	
 	/**
 	 * Number of states to look ahead when doing the rollout
@@ -33,6 +46,11 @@ public class LearningStateEvaluator {
 	 * AI that dictates the actions during the rollout
 	 */
 	private AI defaultPolicy; 
+	
+	/**
+	 * The state feature extractor
+	 */
+	private FeatureExtractor featureExtractor;
 	
 	/**
 	 * Simple evaluation function to be activated when rollout reaches the 
@@ -46,37 +64,43 @@ public class LearningStateEvaluator {
 		cutoffEval = new SimpleSqrtEvaluationFunction3();
 		defaultPolicy = new RandomBiasedAI(unitTypeTable);
 		
-		//stateWeights = new double[featureExtractor.featureCount()];
-		//errorWeights = new double[featureExtractor.featureCount()];
+		featureExtractor = new FeatureExtractor(unitTypeTable);
+		
+		stateWeights = new double[featureExtractor.getNumFeatures()];
+		errorWeights = new double[featureExtractor.getNumFeatures()];
+		
+		//weight initialization
+		for(int i = 0; i < stateWeights.length; i++) {
+			stateWeights[i] = (Math.random() * 2) - 1 ; //randomly initialized in [-1,1]
+		}
 	}
 	
 	/**
-    * 
-    * @param player index of the player
-    * @param gs state to evaluate
-    * @param uScriptPlayer the script assignment for the player's units
-    * @param aiEnemy AI to issue the first enemy actions
-    * @return a value between [-1, 1], indicating the normalized material advantage of the state. See {@link SimpleSqrtEvaluationFunction3#evaluate}
-    * @throws Exception
-    */
-   public double eval(int player, GameState gs) throws Exception {
-       GameState gs2 = gs.clone();
-       
-       //calculate predicted error
-       
-       /*if i'm confident enough:
-        	return stateRegression 
-        else:
-        	value = rollout(player, gs2);
-        	predictedStateValue = regression
-        	updateStateValue(phi(s), predictedSTateValue);
-        	updateError(phi(s), Math.pow(predictedStateValue - value, 2));
-        	return value;
-        */
-
-       return 0;
-   }
-
+	 * Saves weights to file
+	 * @param path
+	 * @throws IOException 
+	 */
+	public void save(String path) throws IOException {
+		FileOutputStream fos = new FileOutputStream(path);
+        ObjectOutputStream oos = new ObjectOutputStream(fos);
+        oos.writeObject(stateWeights);
+        oos.close();
+        fos.close();
+	}
+	
+	public void load(String path) throws IOException {
+		FileInputStream fis = new FileInputStream(path);
+        ObjectInputStream ois = new ObjectInputStream(fis);
+        try {
+        	stateWeights = (double[]) ois.readObject();
+		} catch (ClassNotFoundException e) {
+			System.err.println("Error while attempting to load weights.");
+			e.printStackTrace();
+		}
+        ois.close();
+        fis.close();
+	}
+	
 	private double rollout(int player, GameState gs2) throws Exception {
 		int depthLimit = gs2.getTime() + lookahead;
 		   boolean gameover;
@@ -92,6 +116,54 @@ public class LearningStateEvaluator {
 		   } while (!gameover && gs2.getTime() < depthLimit && !gs2.canExecuteAnyAction(player) );
 
 		   return cutoffEval.evaluate(player, 1 - player, gs2);
+	}
+	
+	/**
+	 * Performs an update on the weight vector via gradient descent 
+	 * 
+	 * @param weights
+	 * @param features
+	 * @param error
+	 * @param stepSize
+	 */
+	private static void updateWeights(double[] weights, double[] features, double error, double stepSize) {
+		for(int i = 0; i < weights.length; i++) {
+			weights[i] += stepSize * (error * features[i]);
+		}
+	}
+
+	@Override
+	public float evaluate(int maxplayer, int minplayer, GameState state) {
+		
+		//extract features from the point of view of the maxplayer
+		double[] features = featureExtractor.extractFeatures(state, maxplayer);
+	       
+		assert features.length == stateWeights.length;
+	       
+		//linear combination
+		double value = 0;
+		for(int i = 0; i < features.length; i++) {
+			value += features[i] * stateWeights[i];
+		}
+		return (float) value;
+	       
+	       //calculate predicted error
+	       
+	       /*if i'm confident enough:
+	        	return stateRegression 
+	        else:
+	        	value = rollout(player, gs2);
+	        	predictedStateValue = regression
+	        	updateStateValue(phi(s), predictedSTateValue);
+	        	updateError(phi(s), Math.pow(predictedStateValue - value, 2));
+	        	return value;
+	        */
+		//return 0;
+	}
+
+	@Override
+	public float upperBound(GameState gs) {
+		return 1;
 	}
 
 }
