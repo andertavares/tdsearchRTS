@@ -14,5 +14,5 @@ public interface ActivationFunction {
 	 * @param x
 	 * @return
 	 */
-	public double derivative(double x);
+	public double errorDerivative(double x);
 }

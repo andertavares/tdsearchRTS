@@ -8,6 +8,8 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.Map;
 
+import activation.ActivationFunction;
+import activation.LogisticLogLoss;
 import ai.RandomBiasedAI;
 import ai.core.AI;
 import ai.evaluation.EvaluationFunction;
@@ -53,6 +55,11 @@ public class LearningStateEvaluator extends EvaluationFunction {
 	private FeatureExtractor featureExtractor;
 	
 	/**
+	 * The activation function
+	 */
+	private ActivationFunction activation;
+	
+	/**
 	 * Simple evaluation function to be activated when rollout reaches the 
 	 * lookahead limit
 	 */
@@ -73,6 +80,9 @@ public class LearningStateEvaluator extends EvaluationFunction {
 		for(int i = 0; i < stateWeights.length; i++) {
 			stateWeights[i] = (Math.random() * 2) - 1 ; //randomly initialized in [-1,1]
 		}
+		
+		// uses logistic with log loss by default
+		activation = new LogisticLogLoss();
 	}
 	
 	/**
@@ -115,24 +125,35 @@ public class LearningStateEvaluator extends EvaluationFunction {
 		       // repeats until gameover, depthlimit or we reached a new decision point for the player
 		   } while (!gameover && gs2.getTime() < depthLimit && !gs2.canExecuteAnyAction(player) );
 
-		   return cutoffEval.evaluate(player, 1 - player, gs2);
+		   // evaluates at the cutoff using the material advantage function
+		   float value = cutoffEval.evaluate(player, 1 - player, gs2);
+		   
+		   return value;
 	}
 	
 	/**
 	 * Performs an update on the weight vector via gradient descent 
 	 * 
-	 * @param weights
-	 * @param features
-	 * @param error
-	 * @param stepSize
+	 * @param weights the weight vector
+	 * @param features the feature vector
+	 * @param predicted the predicted value for the given input in the feature vector
+	 * @param actual the true value for the given input in the feature vector
+	 * @param stepSize the learning rate
 	 */
-	private static void updateWeights(double[] weights, double[] features, double error, double stepSize) {
+	private static void updateWeights(double[] weights, double[] features, double predicted, double actual, double stepSize) {
+		double error = actual - predicted;
+		//if the error were predicted - actual, then the update rule would be weights -= ... instead of  +=
+		
 		for(int i = 0; i < weights.length; i++) {
-			weights[i] += stepSize * (error * features[i]);
+			weights[i] += stepSize * (error * features[i]);	
 		}
 	}
 
 	@Override
+	/**
+	 * Evaluates the received game state from the point of view of the max player.
+	 * Make sure you pass your player ID to max and the opponent's to min
+	 */
 	public float evaluate(int maxplayer, int minplayer, GameState state) {
 		
 		//extract features from the point of view of the maxplayer
@@ -163,7 +184,7 @@ public class LearningStateEvaluator extends EvaluationFunction {
 
 	@Override
 	public float upperBound(GameState gs) {
-		return 1;
+		return 1.0f;
 	}
 
 }

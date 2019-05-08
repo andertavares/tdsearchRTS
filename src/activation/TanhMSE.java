@@ -1,6 +1,11 @@
 package activation;
 
-public class Tanh implements ActivationFunction {
+/**
+ * Tanh activation with mean squared error function
+ * @author artavares
+ *
+ */
+public class TanhMSE implements ActivationFunction {
 
 	@Override
 	public double function(double x) {
@@ -8,7 +13,7 @@ public class Tanh implements ActivationFunction {
 	}
 
 	@Override
-	public double derivative(double x) {
+	public double errorDerivative(double x) {
 		// the derivative is 1 - tanh^2
 		double tanh = Math.tanh(x);
 		return 1 - tanh*tanh;
