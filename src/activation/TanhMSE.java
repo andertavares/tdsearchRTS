@@ -5,7 +5,7 @@ package activation;
  * @author artavares
  *
  */
-public class TanhMSE implements ActivationFunction {
+public class TanhMSE extends DefaultActivationFunction {
 
 	@Override
 	public double function(double x) {
