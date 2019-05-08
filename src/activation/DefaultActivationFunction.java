@@ -2,7 +2,8 @@ package activation;
 
 /**
  * Defines a default activation function, suitable for linear regression 
- * with mean squared error. Moreover, provides a dummy scaling for the reward  
+ * with mean squared error. Moreover, provides a dummy scaling for the 
+ * target (actual rather than predicted) value  
  * 
  * @author artavares
  *
@@ -32,11 +33,11 @@ public class DefaultActivationFunction {
 	}
 	
 	/**
-	 * Returns the rawReward itself (makes no scaling)
-	 * @param rawReward
+	 * Returns the raw value itself (makes no scaling)
+	 * @param rawValue
 	 * @return
 	 */
-	public double scaleReward(int rawReward) {
-		return rawReward;
+	public double scaleTargetValue(int rawValue) {
+		return rawValue;
 	}
 }

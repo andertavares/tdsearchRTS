@@ -8,7 +8,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.Map;
 
-import activation.ActivationFunction;
+import activation.DefaultActivationFunction;
 import activation.LogisticLogLoss;
 import ai.RandomBiasedAI;
 import ai.core.AI;
@@ -57,7 +57,7 @@ public class LearningStateEvaluator extends EvaluationFunction {
 	/**
 	 * The activation function
 	 */
-	private ActivationFunction activation;
+	private DefaultActivationFunction activation;
 	
 	/**
 	 * Simple evaluation function to be activated when rollout reaches the 
@@ -111,24 +111,59 @@ public class LearningStateEvaluator extends EvaluationFunction {
         fis.close();
 	}
 	
-	private double rollout(int player, GameState gs2) throws Exception {
-		int depthLimit = gs2.getTime() + lookahead;
-		   boolean gameover;
-		   do {
-		       // implements the previously issued actions
-		       gameover = gs2.cycle();
+	/**
+	 * Performs the rollout using RandomBiasedAI as the default policy for both players
+	 * @param player
+	 * @param state
+	 * @return
+	 * @throws Exception
+	 */
+	private double rollout(int player, GameState state) throws Exception {
+		return rollout(player, state, defaultPolicy, defaultPolicy);
+	}
+	
+	
+	/**
+	 * Performs a rollout using the specified policies for the player and enemy.
+	 * 
+	 * @param player the player ID (0 or 1)
+	 * @param state
+	 * @param playerPolicy
+	 * @param enemyPolicy
+	 * @return
+	 * @throws Exception
+	 */
+	public double rollout(int player, GameState state, AI playerPolicy, AI enemyPolicy) throws Exception {
+		int depthLimit = state.getTime() + lookahead;
+		
+		GameState reachedState = state.clone(); //preserves the received game state
+		
+		boolean gameover;
+		do {
+			// implements the previously issued actions
+			gameover = reachedState.cycle();
 
-		       // issue the actions for the reached game state with a random biased AI
-		       gs2.issueSafe(defaultPolicy.getAction(player, gs2));
-		       gs2.issueSafe(defaultPolicy.getAction(1 - player, gs2));
+			// issue the actions for the reached game state with a random biased AI
+			reachedState.issueSafe(playerPolicy.getAction(player, reachedState));
+			reachedState.issueSafe(enemyPolicy.getAction(1 - player, reachedState));
 
-		       // repeats until gameover, depthlimit or we reached a new decision point for the player
-		   } while (!gameover && gs2.getTime() < depthLimit && !gs2.canExecuteAnyAction(player) );
+			// repeats until gameover, depthlimit or we reached a new decision point for the player
+		} while (!gameover && reachedState.getTime() < depthLimit && !reachedState.canExecuteAnyAction(player));
 
-		   // evaluates at the cutoff using the material advantage function
-		   float value = cutoffEval.evaluate(player, 1 - player, gs2);
-		   
-		   return value;
+		// raw reward value: -1, 0, 1 for defeat, loss and win, respectively
+		int actualValue = 0; 
+		if (gameover) {
+			actualValue = reachedState.winner() == player ? 1 : -1; 
+		}
+		
+		// scales the actualValue according to fit the range of the activation function
+		double scaledValue = activation.scaleTargetValue(actualValue);
+		
+		
+		// evaluates at the cutoff using our evaluation function
+		float value = evaluate(player, 1 - player, reachedState); // cutoffEval.evaluate(player, 1 - player, gs2);
+
+		return value;
 	}
 	
 	/**
@@ -140,12 +175,12 @@ public class LearningStateEvaluator extends EvaluationFunction {
 	 * @param actual the true value for the given input in the feature vector
 	 * @param stepSize the learning rate
 	 */
-	private static void updateWeights(double[] weights, double[] features, double predicted, double actual, double stepSize) {
+	private void updateWeights(double[] weights, double[] features, double predicted, double actual, double stepSize) {
 		double error = actual - predicted;
 		//if the error were predicted - actual, then the update rule would be weights -= ... instead of  +=
 		
 		for(int i = 0; i < weights.length; i++) {
-			weights[i] += stepSize * (error * features[i]);	
+			weights[i] += stepSize * error * activation.errorDerivative(predicted) *  features[i];	
 		}
 	}
 
@@ -166,7 +201,7 @@ public class LearningStateEvaluator extends EvaluationFunction {
 		for(int i = 0; i < features.length; i++) {
 			value += features[i] * stateWeights[i];
 		}
-		return (float) value;
+		return (float) activation.function(value);
 	       
 	       //calculate predicted error
 	       
