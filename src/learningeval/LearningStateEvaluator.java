@@ -56,18 +56,23 @@ public class LearningStateEvaluator extends EvaluationFunction {
 	 */
 	private DefaultActivationFunction activation;
 	
-	
+	/**
+	 * Flag to activate or deactivate training. 
+	 * When active, performs a rollout and learns the value of the reached state.
+	 * If inactive, rollouts are not performed and the predicted value for the given state is returned instead. 
+	 */
+	private boolean isTraining;
 	
 	/**
-	 * Simple evaluation function to be activated when rollout reaches the 
-	 * lookahead limit
+	 * Creates the LearningStateEvaluator 
+	 * @param alpha the learning rate
+	 * @param lookahead how much frames to look ahead when doing rollouts
+	 * @param unitTypeTable the game 'rules' regarding its units
 	 */
-	EvaluationFunction cutoffEval;
-	
 	public LearningStateEvaluator(double alpha, int lookahead, UnitTypeTable unitTypeTable) {
 		this.alpha = alpha;
 		this.lookahead = lookahead;
-		cutoffEval = new SimpleSqrtEvaluationFunction3();
+		isTraining = true;
 		randomBiasedPolicy = new RandomBiasedAI(unitTypeTable);
 		
 		featureExtractor = new FeatureExtractor(unitTypeTable);
@@ -110,7 +115,33 @@ public class LearningStateEvaluator extends EvaluationFunction {
 	}
 	
 	/**
-	 * Performs the rollout using RandomBiasedAI as the default policy for both players
+	 * During training, when rollout called, an actual rollout is performed.
+	 * The value of the reached state is used to update the predictor and then returned.
+	 */
+	public void activateTraining() {
+		this.isTraining = true;
+	}
+	
+	
+	/**
+	 * During test, when rollout is called, an acutal rollout is NOT performed.
+	 * The predicted value of the given state is returned instead. 
+	 * 
+	 * The idea is to save time by not rolling out, such that more 
+	 * states can be evaluated by the user.
+	 */
+	public void activateTest() {
+		this.isTraining = false;
+	}
+	
+	/**
+	 * If training is activated:
+	 * Performs the rollout using RandomBiasedAI as the default policy for both players,
+	 * uses the actual value of the reached state to update the predictor and returns it.
+	 * 
+	 * If training is deactivated:
+	 * Returns the predicted value of the received state.
+	 * 
 	 * @param player the current player (the predicted value is w.r.t. his point of view)
 	 * @param state the state to evaluate
 	 * @return
@@ -122,7 +153,12 @@ public class LearningStateEvaluator extends EvaluationFunction {
 	
 	
 	/**
-	 * Performs a rollout using the specified policies for the player and enemy.
+	 * If training is activated:
+	 * Performs a rollout using the specified policies for the player and enemy,
+	 * uses the actual value of the reached state to update the predictor and returns it.
+	 * 
+	 * If training is deactivated:
+	 * Returns the predicted value of the received state.
 	 * 
 	 * @param player the player ID (0 or 1)
 	 * @param state
@@ -133,6 +169,11 @@ public class LearningStateEvaluator extends EvaluationFunction {
 	 */
 	public double rollout(int player, GameState state, AI playerPolicy, AI enemyPolicy) throws Exception {
 		//reminder: if I want an RL method to learn in self-play, I just need to plug them into player & enemy policy
+		
+		// if we're not training, don't rollout: return the predicted value for the given state instead
+		if (!isTraining) {
+			return evaluate(player, 1 - player, state);
+		}
 		
 		int depthLimit = state.getTime() + lookahead;
 		
