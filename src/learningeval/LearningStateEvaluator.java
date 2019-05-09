@@ -32,12 +32,8 @@ public class LearningStateEvaluator extends EvaluationFunction {
 	/**
 	 * Weight vector for state-value predictor
 	 */
-	private double[] stateWeights;
+	private double[] weights;
 	
-	/**
-	 * Weight vector for the error predictor
-	 */
-	private double[] errorWeights;
 	
 	/**
 	 * Number of states to look ahead when doing the rollout
@@ -45,9 +41,10 @@ public class LearningStateEvaluator extends EvaluationFunction {
 	private int lookahead;
 	
 	/**
-	 * AI that dictates the actions during the rollout
+	 * An instance of {@link RandomBiasedAI} that dictates the actions during the rollout
+	 * if no other is specified
 	 */
-	private AI defaultPolicy; 
+	private RandomBiasedAI randomBiasedPolicy; 
 	
 	/**
 	 * The state feature extractor
@@ -59,6 +56,8 @@ public class LearningStateEvaluator extends EvaluationFunction {
 	 */
 	private DefaultActivationFunction activation;
 	
+	
+	
 	/**
 	 * Simple evaluation function to be activated when rollout reaches the 
 	 * lookahead limit
@@ -69,16 +68,15 @@ public class LearningStateEvaluator extends EvaluationFunction {
 		this.alpha = alpha;
 		this.lookahead = lookahead;
 		cutoffEval = new SimpleSqrtEvaluationFunction3();
-		defaultPolicy = new RandomBiasedAI(unitTypeTable);
+		randomBiasedPolicy = new RandomBiasedAI(unitTypeTable);
 		
 		featureExtractor = new FeatureExtractor(unitTypeTable);
 		
-		stateWeights = new double[featureExtractor.getNumFeatures()];
-		errorWeights = new double[featureExtractor.getNumFeatures()];
+		weights = new double[featureExtractor.getNumFeatures()];
 		
 		//weight initialization
-		for(int i = 0; i < stateWeights.length; i++) {
-			stateWeights[i] = (Math.random() * 2) - 1 ; //randomly initialized in [-1,1]
+		for(int i = 0; i < weights.length; i++) {
+			weights[i] = (Math.random() * 2) - 1 ; //randomly initialized in [-1,1]
 		}
 		
 		// uses logistic with log loss by default
@@ -93,7 +91,7 @@ public class LearningStateEvaluator extends EvaluationFunction {
 	public void save(String path) throws IOException {
 		FileOutputStream fos = new FileOutputStream(path);
         ObjectOutputStream oos = new ObjectOutputStream(fos);
-        oos.writeObject(stateWeights);
+        oos.writeObject(weights);
         oos.close();
         fos.close();
 	}
@@ -102,7 +100,7 @@ public class LearningStateEvaluator extends EvaluationFunction {
 		FileInputStream fis = new FileInputStream(path);
         ObjectInputStream ois = new ObjectInputStream(fis);
         try {
-        	stateWeights = (double[]) ois.readObject();
+        	weights = (double[]) ois.readObject();
 		} catch (ClassNotFoundException e) {
 			System.err.println("Error while attempting to load weights.");
 			e.printStackTrace();
@@ -113,13 +111,13 @@ public class LearningStateEvaluator extends EvaluationFunction {
 	
 	/**
 	 * Performs the rollout using RandomBiasedAI as the default policy for both players
-	 * @param player
-	 * @param state
+	 * @param player the current player (the predicted value is w.r.t. his point of view)
+	 * @param state the state to evaluate
 	 * @return
 	 * @throws Exception
 	 */
 	private double rollout(int player, GameState state) throws Exception {
-		return rollout(player, state, defaultPolicy, defaultPolicy);
+		return rollout(player, state, randomBiasedPolicy, randomBiasedPolicy);
 	}
 	
 	
@@ -134,6 +132,8 @@ public class LearningStateEvaluator extends EvaluationFunction {
 	 * @throws Exception
 	 */
 	public double rollout(int player, GameState state, AI playerPolicy, AI enemyPolicy) throws Exception {
+		//reminder: if I want an RL method to learn in self-play, I just need to plug them into player & enemy policy
+		
 		int depthLimit = state.getTime() + lookahead;
 		
 		GameState reachedState = state.clone(); //preserves the received game state
@@ -156,17 +156,46 @@ public class LearningStateEvaluator extends EvaluationFunction {
 			actualValue = reachedState.winner() == player ? 1 : -1; 
 		}
 		
-		// scales the actualValue according to fit the range of the activation function
-		double scaledValue = activation.scaleTargetValue(actualValue);
+		// scales the actualValue to fit the range of the activation function
+		double scaledActualValue = activation.scaleTargetValue(actualValue);
 		
+		// predicted value for the reached state
+		float predictedValue = evaluate(player, 1 - player, reachedState); // cutoffEval.evaluate(player, 1 - player, gs2);
 		
-		// evaluates at the cutoff using our evaluation function
-		float value = evaluate(player, 1 - player, reachedState); // cutoffEval.evaluate(player, 1 - player, gs2);
+		// update our predictor
+		updateWeights(state, player, predictedValue, scaledActualValue);
 
-		return value;
+		return scaledActualValue;
 	}
 	
 	/**
+	 * Performs an update on the weight vector via stochastic gradient descent.
+	 * The weights are updated such that the next prediction will be closer to 
+	 * the actual value for the given GameState and player 
+	 * 
+	 * @param state
+	 * @param player
+	 * @param predicted
+	 * @param actual
+	 */
+	private void updateWeights(GameState state, int player, double predicted, double actual) {
+		double[] features = featureExtractor.extractFeatures(state, player);
+		
+		// the prediction without the activation function (used in the derivative of the error function)
+		double rawPrediction = linearCombination(features, weights);
+
+		//if the error were predicted - actual, then the update rule would be weights -= ... instead of  +=		
+		double error = actual - predicted;
+		double errorDerivative = activation.errorDerivative(rawPrediction);
+		
+		// finally, the update for each weight
+		for(int i = 0; i < weights.length; i++) {
+			weights[i] += alpha * error * errorDerivative *  features[i];	
+		}
+		
+	}
+	
+	/*
 	 * Performs an update on the weight vector via gradient descent 
 	 * 
 	 * @param weights the weight vector
@@ -174,15 +203,16 @@ public class LearningStateEvaluator extends EvaluationFunction {
 	 * @param predicted the predicted value for the given input in the feature vector
 	 * @param actual the true value for the given input in the feature vector
 	 * @param stepSize the learning rate
-	 */
+	 *
 	private void updateWeights(double[] weights, double[] features, double predicted, double actual, double stepSize) {
 		double error = actual - predicted;
 		//if the error were predicted - actual, then the update rule would be weights -= ... instead of  +=
 		
+		
 		for(int i = 0; i < weights.length; i++) {
 			weights[i] += stepSize * error * activation.errorDerivative(predicted) *  features[i];	
 		}
-	}
+	}*/
 
 	@Override
 	/**
@@ -194,13 +224,7 @@ public class LearningStateEvaluator extends EvaluationFunction {
 		//extract features from the point of view of the maxplayer
 		double[] features = featureExtractor.extractFeatures(state, maxplayer);
 	       
-		assert features.length == stateWeights.length;
-	       
-		//linear combination
-		double value = 0;
-		for(int i = 0; i < features.length; i++) {
-			value += features[i] * stateWeights[i];
-		}
+		double value = linearCombination(features, weights);
 		return (float) activation.function(value);
 	       
 	       //calculate predicted error
@@ -216,6 +240,23 @@ public class LearningStateEvaluator extends EvaluationFunction {
 	        */
 		//return 0;
 	}
+
+	/**
+	 * Linear combination between two vectors (i.e. sum(f[i] * w[i]) for i = 0, ..., length of the vectors
+	 * @param features
+	 * @param weights
+	 * @return
+	 */
+	private double linearCombination(double[] features, double[] weights) {
+		assert features.length == weights.length;
+		
+		double value = 0;
+		for(int i = 0; i < features.length; i++) {
+			value += features[i] * weights[i];
+		}
+		return value;
+	}
+	
 
 	@Override
 	public float upperBound(GameState gs) {
