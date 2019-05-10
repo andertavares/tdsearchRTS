@@ -179,6 +179,13 @@ public class Runner {
 		
 		// writes the trace
 		if (traceOutput != null){
+			// creates missing parent directories if needed
+			File f = new File(traceOutput);
+    		if (f.getParentFile() != null) {
+    			  f.getParentFile().mkdirs();
+			}
+    		
+    		// writes the trace for real
 			XMLWriter xml = new XMLWriter(new FileWriter(traceOutput));
 	        replay.toxml(xml);
 	        xml.flush();

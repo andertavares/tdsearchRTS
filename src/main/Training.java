@@ -38,7 +38,7 @@ public class Training {
     	
 		// test matches
 		learningEval.activateTest();
-		Runner.repeatedHeadlessMatches(10, "results/pgs-test.csv", pgsTrainer, pgsDefault, settings, null);
+		Runner.repeatedHeadlessMatches(10, "results/pgs-test.csv", pgsTrainer, pgsDefault, settings, "trace/pgs-test.xml");
 	}
 
 }
