@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- WARNING: Eclipse auto-generated file.
+              Any modifications will be overwritten.
+              To include a user specific buildfile here, simply create one in the same
+              directory with the processing instruction <?eclipse.ant.import?>
+              as the first entry and export the buildfile again. --><project basedir="." default="build" name="learningeval">
+    <property environment="env"/>
+    <property name="microrts-anderson.location" value="../microrts-anderson"/>
+    <property name="debuglevel" value="source,lines,vars"/>
+    <property name="target" value="10"/>
+    <property name="source" value="10"/>
+    <path id="JUnit 5.libraryclasspath">
+        <pathelement location="../../.p2/pool/plugins/org.junit.jupiter.api_5.4.0.v20190212-2109.jar"/>
+        <pathelement location="../../.p2/pool/plugins/org.junit.jupiter.engine_5.4.0.v20190212-2109.jar"/>
+        <pathelement location="../../.p2/pool/plugins/org.junit.jupiter.migrationsupport_5.4.0.v20190212-2109.jar"/>
+        <pathelement location="../../.p2/pool/plugins/org.junit.jupiter.params_5.4.0.v20190212-2109.jar"/>
+        <pathelement location="../../.p2/pool/plugins/org.junit.platform.commons_1.4.0.v20190212-2109.jar"/>
+        <pathelement location="../../.p2/pool/plugins/org.junit.platform.engine_1.4.0.v20190212-2109.jar"/>
+        <pathelement location="../../.p2/pool/plugins/org.junit.platform.launcher_1.4.0.v20190212-2109.jar"/>
+        <pathelement location="../../.p2/pool/plugins/org.junit.platform.runner_1.4.0.v20190212-2109.jar"/>
+        <pathelement location="../../.p2/pool/plugins/org.junit.platform.suite.api_1.4.0.v20190212-2109.jar"/>
+        <pathelement location="../../.p2/pool/plugins/org.junit.vintage.engine_5.4.0.v20190212-2109.jar"/>
+        <pathelement location="../../.p2/pool/plugins/org.opentest4j_1.1.1.v20190212-2109.jar"/>
+        <pathelement location="../../.p2/pool/plugins/org.apiguardian_1.0.0.v20190212-2109.jar"/>
+        <pathelement location="../../.p2/pool/plugins/org.junit_4.12.0.v201504281640/junit.jar"/>
+        <pathelement location="../../.p2/pool/plugins/org.hamcrest.core_1.3.0.v20180420-1519.jar"/>
+    </path>
+    <path id="microrts-anderson.classpath">
+        <pathelement location="${microrts-anderson.location}/bin"/>
+        <pathelement location="${microrts-anderson.location}/lib/jdom.jar"/>
+        <pathelement location="${microrts-anderson.location}/lib/minimal-json-0.9.4.jar"/>
+        <pathelement location="${microrts-anderson.location}/lib/weka.jar"/>
+        <path refid="JUnit 5.libraryclasspath"/>
+    </path>
+    <path id="learningeval.classpath">
+        <pathelement location="bin"/>
+        <pathelement location="lib/jdom.jar"/>
+        <path refid="microrts-anderson.classpath"/>
+    </path>
+    <path id="run.Training.classpath">
+        <path refid="learningeval.classpath"/>
+        <pathelement location="lib/jdom.jar"/>
+        <path refid="microrts-anderson.classpath"/>
+        <pathelement location="${microrts-anderson.location}/lib/jdom.jar"/>
+        <pathelement location="${microrts-anderson.location}/lib/minimal-json-0.9.4.jar"/>
+        <pathelement location="${microrts-anderson.location}/lib/weka.jar"/>
+        <path refid="JUnit 5.libraryclasspath"/>
+    </path>
+    <target name="init">
+        <mkdir dir="bin"/>
+        <copy includeemptydirs="false" todir="bin">
+            <fileset dir="src">
+                <exclude name="**/*.launch"/>
+                <exclude name="**/*.java"/>
+            </fileset>
+        </copy>
+    </target>
+    <target name="clean">
+        <delete dir="bin"/>
+    </target>
+    <target depends="clean" name="cleanall">
+        <ant antfile="build.xml" dir="${microrts-anderson.location}" inheritAll="false" target="clean"/>
+    </target>
+    <target depends="build-subprojects,build-project" name="build"/>
+    <target name="build-subprojects">
+        <ant antfile="build.xml" dir="${microrts-anderson.location}" inheritAll="false" target="build-project">
+            <propertyset>
+                <propertyref name="build.compiler"/>
+            </propertyset>
+        </ant>
+    </target>
+    <target depends="init" name="build-project">
+        <echo message="${ant.project.name}: ${ant.file}"/>
+        <javac debug="true" debuglevel="${debuglevel}" destdir="bin" includeantruntime="false" source="${source}" target="${target}">
+            <src path="src"/>
+            <classpath refid="learningeval.classpath"/>
+        </javac>
+    </target>
+    <target description="Build all projects which reference this project. Useful to propagate changes." name="build-refprojects"/>
+    <target description="copy Eclipse compiler jars to ant lib directory" name="init-eclipse-compiler">
+        <copy todir="${ant.library.dir}">
+            <fileset dir="${ECLIPSE_HOME}/plugins" includes="org.eclipse.jdt.core_*.jar"/>
+        </copy>
+        <unzip dest="${ant.library.dir}">
+            <patternset includes="jdtCompilerAdapter.jar"/>
+            <fileset dir="${ECLIPSE_HOME}/plugins" includes="org.eclipse.jdt.core_*.jar"/>
+        </unzip>
+    </target>
+    <target description="compile project with Eclipse compiler" name="build-eclipse-compiler">
+        <property name="build.compiler" value="org.eclipse.jdt.core.JDTCompilerAdapter"/>
+        <antcall target="build"/>
+    </target>
+    <target name="Training">
+        <java classname="main.Training" failonerror="true" fork="yes">
+            <classpath refid="run.Training.classpath"/>
+        </java>
+    </target>
+</project>
