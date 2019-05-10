@@ -146,7 +146,7 @@ public class Runner {
         	// places the fog of war if the state is partially observable
         	if (config.isPartiallyObservable()) {
         		player1State = new PartiallyObservableGameState(state, 0);
-        		player2State = new PartiallyObservableGameState(state, 0);
+        		player2State = new PartiallyObservableGameState(state, 1);
         	}
         	
         	// retrieves the players' actions
