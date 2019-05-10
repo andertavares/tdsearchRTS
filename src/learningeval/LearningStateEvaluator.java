@@ -200,10 +200,10 @@ public class LearningStateEvaluator extends EvaluationFunction {
 		// scales the actualValue to fit the range of the activation function
 		double scaledActualValue = activation.scaleTargetValue(actualValue);
 		
-		// predicted value for the reached state
-		float predictedValue = evaluate(player, 1 - player, reachedState); // cutoffEval.evaluate(player, 1 - player, gs2);
+		// predicted value for the received (initial) state
+		float predictedValue = evaluate(player, 1 - player, state); // cutoffEval.evaluate(player, 1 - player, gs2);
 		
-		// update our predictor
+		// update our predictor towards the n-step return
 		updateWeights(state, player, predictedValue, scaledActualValue);
 
 		return scaledActualValue;

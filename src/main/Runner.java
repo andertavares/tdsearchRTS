@@ -21,6 +21,7 @@ import rts.Trace;
 import rts.TraceEntry;
 import rts.units.UnitTypeTable;
 import util.XMLWriter;
+import utils.FileNameUtil;
 
 /**
  * A class to run microRTS games to train and test MetaBot
@@ -108,14 +109,17 @@ public class Runner {
 	 * @param ai1
 	 * @param ai2
 	 * @param config
-	 * @param types
 	 * @param traceOutput
 	 * @return
 	 * @throws Exception
 	 */
-	public static int headlessMatch(AI ai1, AI ai2, GameSettings config, UnitTypeTable types, String traceOutput) throws Exception{
-        PhysicalGameState pgs;
-        Logger logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
+	public static int headlessMatch(AI ai1, AI ai2, GameSettings config, String traceOutput) throws Exception{
+		Logger logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
+		
+		UnitTypeTable types = new UnitTypeTable(config.getUTTVersion(), config.getConflictPolicy());
+		
+		PhysicalGameState pgs;
+        
 
 		try {
 			pgs = PhysicalGameState.load(config.getMapLocation(), types);
@@ -183,6 +187,58 @@ public class Runner {
 		return state.winner();
     }
 
+	/**
+	 * Runs the specified number of matches, without the GUI, saving the summary to the specified file.
+	 * Saves the trace of each match sequentially according to the tracePrefix is not null
+	 * @param numMatches
+	 * @param summaryOutput
+	 * @param ai1
+	 * @param ai2
+	 * @param config
+	 * @param traceOutput
+	 * @throws Exception
+	 */
+	public static void repeatedHeadlessMatches(int numMatches, String summaryOutput, AI ai1, AI ai2, GameSettings config, String tracePrefix) throws Exception{
+		Logger logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
+		
+		for(int i = 0; i < numMatches; i++){
+        	
+        	//determines the trace output file. It is either null or the one calculated from the specified prefix
+    		String traceOutput = null;
+    				
+    		if(tracePrefix != null){
+    			// finds the file name
+        		traceOutput = FileNameUtil.nextAvailableFileName(
+    				tracePrefix, "trace"
+    			);
+    		}
+        	
+        	Date begin = new Date(System.currentTimeMillis());
+        	int result = headlessMatch(ai1, ai2, config, traceOutput);
+        	Date end = new Date(System.currentTimeMillis());
+        	
+        	System.out.print(String.format("\rMatch %8d finished with result %3d.", i+1, result));
+        	//logger.info(String.format("Match %8d finished.", i+1));
+        	
+        	long duration = end.getTime() - begin.getTime();
+        	
+        	if (summaryOutput != null){
+        		try{
+        			outputSummary(summaryOutput, result, duration, begin, end);
+        		}
+        		catch(IOException ioe){
+        			logger.log(Level.SEVERE, "Error while trying to write summary to '" + summaryOutput + "'", ioe);
+        		}
+        	}
+        	
+        	
+        	ai1.reset();
+        	ai2.reset();
+        }
+        System.out.println(); //adds a trailing \n to the match count written in the loop.
+        logger.info("Executed " + numMatches + " matches.");
+	}
+	
     
     public static void outputSummary(String path, int result, long duration, Date start, Date finish) throws IOException{
     	File f = new File(path);
