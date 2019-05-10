@@ -247,6 +247,10 @@ public class Runner {
 		logger.fine("Attempting to write the output summary to " + path);
 		
     	if(!f.exists()){ // creates a new file and writes the header
+    		// creates missing parent directories as well
+    		if (f.getParentFile() != null) {
+    			  f.getParentFile().mkdirs();
+			}
     		logger.fine("File didn't exist, creating and writing header");
     		writer = new FileWriter(f, false); //must be after the test, because it creates the file upon instantiation
     		writer.write("#result,duration(ms),initial_time,final_time\n");
