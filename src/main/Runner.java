@@ -3,15 +3,13 @@ package main;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.util.Arrays;
 import java.util.Date;
-import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import ai.core.AI;
+import gui.PhysicalGameStateJFrame;
+import gui.PhysicalGameStatePanel;
 import rts.GameSettings;
 import rts.GameState;
 import rts.PartiallyObservableGameState;
@@ -118,19 +116,26 @@ public class Runner {
 		
 		UnitTypeTable types = new UnitTypeTable(config.getUTTVersion(), config.getConflictPolicy());
 		
+		// the AIs were created with a different unit type table. Reset them with this one
+		ai1.reset(types);
+		ai2.reset(types);
+		
 		PhysicalGameState pgs;
         
-
 		try {
 			pgs = PhysicalGameState.load(config.getMapLocation(), types);
 		} catch (Exception e) {
 			logger.log(Level.SEVERE, "Error while loading map from file: " + config.getMapLocation(), e);
-			//e.printStackTrace();
 			logger.severe("Aborting match execution...");
 			return MATCH_ERROR;
 		}
-
+		
 		GameState state = new GameState(pgs, types);
+		
+		// creates the visualizer, if needed
+		PhysicalGameStateJFrame w = null;
+		boolean visualize = true;
+		if (visualize) w = PhysicalGameStatePanel.newVisualizer(state, 600, 600, config.isPartiallyObservable());
 		
 		// creates the trace logger
 		Trace replay = new Trace(types);
@@ -170,7 +175,21 @@ public class Runner {
 
 			// runs one cycle of the game
 			gameover = state.cycle();
-		} 
+			
+			// updates GUI if needed
+			if (visualize) {
+                w.setStateCloning(state);
+                w.repaint();
+                try {
+                    Thread.sleep(1);    // give time to the window to repaint
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+		} //end of the match
+        
+        if (visualize) w.dispose(); //clears visualizer if necessary
+        
 		ai1.gameOver(state.winner());
 		ai2.gameOver(state.winner());
 		

@@ -1,10 +1,8 @@
 package main;
 
-import java.util.Date;
-
 import ai.abstraction.pathfinding.AStarPathFinding;
 import ai.core.AI;
-import ai.evaluation.SimpleSqrtEvaluationFunction3;
+import ai.mcts.naivemcts.NaiveMCTS;
 import ai.portfolio.portfoliogreedysearch.PGSAI;
 import learningeval.LearningStateEvaluator;
 import rts.GameSettings;
@@ -21,8 +19,10 @@ public class Training {
 		
 		
 		// creates two instances of PGS: one with our learningEval and other with SimpleSqrt3 (default)
-		AI pgsTrainer = new PGSAI(100, -1, 1, 1, 1, learningEval, types, new AStarPathFinding()); 
-		AI pgsDefault = new PGSAI(100, -1, 100, 1, 1, new SimpleSqrtEvaluationFunction3(), types, new AStarPathFinding());
+		AI player = new PGSAI(100, -1, 1, 1, 1, learningEval, types, new AStarPathFinding()); 
+		//AI opponent = new PGSAI(100, -1, 100, 1, 1, new SimpleSqrtEvaluationFunction3(), types, new AStarPathFinding());
+		AI opponent = new NaiveMCTS(types);
+		//AI pgsDefault = new LightRush(types);
 		
 		// loads the two forms of configuration object
 		GameSettings settings = new GameSettings(
@@ -34,11 +34,11 @@ public class Training {
 		
 		// training matches
 		learningEval.activateTraining();
-		Runner.repeatedHeadlessMatches(100, "results/pgs-train.csv", pgsTrainer, pgsDefault, settings, null);
+		Runner.repeatedHeadlessMatches(100, "results/pgs-train.csv", player, opponent, settings, null);
     	
 		// test matches
 		learningEval.activateTest();
-		Runner.repeatedHeadlessMatches(10, "results/pgs-test.csv", pgsTrainer, pgsDefault, settings, "trace/pgs-test.xml");
+		Runner.repeatedHeadlessMatches(10, "results/pgs-test.csv", player, opponent, settings, "trace/pgs-test.xml");
 	}
 
 }
