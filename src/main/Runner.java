@@ -134,7 +134,7 @@ public class Runner {
 		
 		// creates the visualizer, if needed
 		PhysicalGameStateJFrame w = null;
-		boolean visualize = true;
+		boolean visualize = false;
 		if (visualize) w = PhysicalGameStatePanel.newVisualizer(state, 600, 600, config.isPartiallyObservable());
 		
 		// creates the trace logger

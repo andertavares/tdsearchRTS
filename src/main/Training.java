@@ -1,7 +1,9 @@
 package main;
 
+import ai.RandomBiasedAI;
 import ai.abstraction.pathfinding.AStarPathFinding;
 import ai.core.AI;
+import ai.evaluation.SimpleSqrtEvaluationFunction3;
 import ai.mcts.naivemcts.NaiveMCTS;
 import ai.portfolio.portfoliogreedysearch.PGSAI;
 import learningeval.LearningStateEvaluator;
@@ -18,8 +20,12 @@ public class Training {
 		LearningStateEvaluator learningEval = new LearningStateEvaluator(0.1, 99, types);
 		
 		
-		// creates two instances of PGS: one with our learningEval and other with SimpleSqrt3 (default)
-		AI player = new PGSAI(100, -1, 1, 1, 1, learningEval, types, new AStarPathFinding()); 
+		// creates one AI to train the regression and an opponent
+		//AI player = new PGSAI(100, -1, 1, 1, 1, learningEval, types, new AStarPathFinding()); 
+		AI player = new NaiveMCTS( //third parameter is lookahead - set to one
+			100,-1,1,10,0.3f, 0.0f, 0.4f,new RandomBiasedAI(),
+			learningEval, true
+        );
 		//AI opponent = new PGSAI(100, -1, 100, 1, 1, new SimpleSqrtEvaluationFunction3(), types, new AStarPathFinding());
 		AI opponent = new NaiveMCTS(types);
 		//AI pgsDefault = new LightRush(types);
