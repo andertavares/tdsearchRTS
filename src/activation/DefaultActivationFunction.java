@@ -37,7 +37,7 @@ public class DefaultActivationFunction {
 	 * @param rawValue
 	 * @return
 	 */
-	public double scaleTargetValue(int rawValue) {
+	public double scaleTargetValue(double rawValue) {
 		return rawValue;
 	}
 }

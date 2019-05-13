@@ -24,7 +24,7 @@ public class LogisticLogLoss extends DefaultActivationFunction {
 	/**
 	 * Assumes the target value is in [-1, 1] and scales it to [0, 1] (minmax scaling)
 	 */
-	public double scaleTargetValue(int rawValue) {
+	public double scaleTargetValue(double rawValue) {
 		if(rawValue < -1 || rawValue > 1) {
 			throw new IllegalArgumentException("Raw value must be in range [-1,1]");
 		}

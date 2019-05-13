@@ -192,21 +192,27 @@ public class LearningStateEvaluator extends EvaluationFunction {
 		} while (!gameover && reachedState.getTime() < depthLimit && !reachedState.canExecuteAnyAction(player));
 
 		// raw reward value: -1, 0, 1 for defeat, loss and win, respectively
-		int actualValue = 0; 
-		if (gameover) {
-			actualValue = reachedState.winner() == player ? 1 : -1; 
-		}
+		int reward = 0;
 		
-		// scales the actualValue to fit the range of the activation function
-		double scaledActualValue = activation.scaleTargetValue(actualValue);
+		if (gameover) {
+			reward = reachedState.winner() == player ? 1 : -1; 
+		}
 		
 		// predicted value for the received (initial) state
 		float predictedValue = evaluate(player, 1 - player, state); // cutoffEval.evaluate(player, 1 - player, gs2);
 		
+		
+		// bootstrapped n-step return: TD target is the reward + gamma^n * v(s') -- with gamma equals 1 (undiscounted)
+		// on gameover, the value of the terminal state (v(s')) is zero.
+		double tdTarget = gameover ? reward : reward + evaluate(player, 1 - player, reachedState);
+		
+		// scales the actualValue to fit the range of the activation function
+		double scaledTarget = activation.scaleTargetValue(tdTarget);
+		
 		// update our predictor towards the n-step return
-		updateWeights(state, player, predictedValue, scaledActualValue);
+		updateWeights(state, player, predictedValue, scaledTarget);
 
-		return scaledActualValue;
+		return scaledTarget;
 	}
 	
 	/**
@@ -217,16 +223,16 @@ public class LearningStateEvaluator extends EvaluationFunction {
 	 * @param state
 	 * @param player
 	 * @param predicted
-	 * @param actual
+	 * @param target
 	 */
-	private void updateWeights(GameState state, int player, double predicted, double actual) {
+	private void updateWeights(GameState state, int player, double predicted, double target) {
 		double[] features = featureExtractor.extractFeatures(state, player);
 		
 		// the prediction without the activation function (used in the derivative of the error function)
 		double rawPrediction = linearCombination(features, weights);
 
 		//if the error were predicted - actual, then the update rule would be weights -= ... instead of  +=		
-		double error = actual - predicted;
+		double error = target - predicted;
 		double errorDerivative = activation.errorDerivative(rawPrediction);
 		
 		// finally, the update for each weight
