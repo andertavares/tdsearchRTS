@@ -1,6 +1,5 @@
 package tdsearch;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -12,7 +11,6 @@ import java.util.logging.Logger;
 
 import activation.DefaultActivationFunction;
 import activation.LogisticLogLoss;
-import ai.RandomBiasedAI;
 import ai.abstraction.HeavyDefense;
 import ai.abstraction.HeavyRush;
 import ai.abstraction.LightDefense;
@@ -153,8 +151,8 @@ public class TDSearch extends AI {
 			// the vector of eligibility traces is initialized to zero (thanks, java)
 			double[] eligibility = new double[weights.length];
 			
-			PlayerAction action = epsilonGreedy(gs, player);
 			GameState state = gs.clone();
+			PlayerAction action = epsilonGreedy(state, player);
 			
 			while (!state.gameover() && duration < planningBudget) { // go until game over or time is out
 				
@@ -163,6 +161,7 @@ public class TDSearch extends AI {
 				
 				// issue the action to obtain the next state, issues a self-play move for the opponent
 				GameState nextState = state.clone();
+				logger.info("Issuing action " + action);
 				nextState.issueSafe(action);
 				nextState.issueSafe(epsilonGreedy(gs, 1 - player));
 				nextState.cycle();
@@ -180,6 +179,7 @@ public class TDSearch extends AI {
 				}
 				
 				state = nextState; 
+				action = epsilonGreedy(state, player);
 				
 				// updates duration 
 				end = new Date(System.currentTimeMillis());
@@ -200,11 +200,13 @@ public class TDSearch extends AI {
 	 * @throws Exception
 	 */
 	private PlayerAction greedyAction(int player, GameState gs)  {
+		logger.info("Greedy action");
 		PlayerAction bestAction = null; double bestActionValue = Double.NEGATIVE_INFINITY;
 		
 		// begin: argmax
 		for(AI abstraction : abstractions.values()) {
 			PlayerAction candidate;
+			
 			try {
 				candidate = abstraction.getAction(player, gs);
 			} catch (Exception e) {
@@ -215,10 +217,16 @@ public class TDSearch extends AI {
 			GameState nextState = gs.clone();
 			
 			nextState.issueSafe(candidate);
-			nextState.issueSafe(epsilonGreedy(gs, 1 - player));
+			
+			// creates a dummy action for the opponent
+			PlayerAction dummy = new PlayerAction();
+			dummy.fillWithNones(gs, 1-player, 1);
+			nextState.issueSafe(dummy);
 			nextState.cycle();
 			
 			double candidateValue = linearCombination(featureExtractor.extractFeatures(nextState, player), weights);
+			
+			//logger.info(String.format("candidateValue: %f, bestActionValue: %f", candidateValue, bestActionValue));
 			
 			if (candidateValue > bestActionValue) {
 				bestActionValue = candidateValue;
@@ -273,6 +281,8 @@ public class TDSearch extends AI {
 	private PlayerAction epsilonGreedy(GameState gs, int player) {
 
 		if(random.nextFloat() < epsilon){ // random choice with probability epsilon
+			logger.fine("epsilon action");
+			
         	//trick to randomly select from HashMap adapted from: https://stackoverflow.com/a/9919827/1251716
         	List<String> keys = new ArrayList<String>(abstractions.keySet());
         	String choiceName = keys.get(random.nextInt(keys.size()));

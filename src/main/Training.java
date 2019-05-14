@@ -10,6 +10,7 @@ import learningeval.LearningStateEvaluator;
 import rts.GameSettings;
 import rts.GameSettings.LaunchMode;
 import rts.units.UnitTypeTable;
+import tdsearch.TDSearch;
 
 public class Training {
 	
@@ -20,14 +21,9 @@ public class Training {
 		LearningStateEvaluator learningEval = new LearningStateEvaluator(0.1, 99, types);
 		
 		
-		// creates one AI to train the regression and an opponent
-		AI player = new PGSAI(100, -1, 1, 1, 1, learningEval, types, new AStarPathFinding()); 
-		/*AI player = new NaiveMCTS( //third parameter is lookahead - set to one
-			100,-1,1,10,0.3f, 0.0f, 0.4f,new RandomBiasedAI(),
-			learningEval, true
-        );*/
+		AI player = new TDSearch(types); 
 		//AI opponent = new PGSAI(100, -1, 100, 1, 1, new SimpleSqrtEvaluationFunction3(), types, new AStarPathFinding());
-		AI opponent = new NaiveMCTS(types);
+		AI opponent = new TDSearch(types);
 		//AI pgsDefault = new LightRush(types);
 		
 		// loads the two forms of configuration object

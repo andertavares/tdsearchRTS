@@ -39,6 +39,12 @@ public class FeatureExtractor {
 	 * @param maxResources the maximum number of possible resources a player will possess in the specific game
 	 */
 	public FeatureExtractor(UnitTypeTable unitTypeTable, int maxTime, int maxMapLength, int maxUnits, int maxResources) {
+		
+		this.maxTime = maxTime;
+		this.maxMapSize = maxMapLength;
+		this.maxUnits = maxUnits;
+		this.maxResources = maxResources;
+		
 		/**
 		 * 1 bias, 2 map dimensions, 2 resources, 1 time, 12 unit counts 
 		 */
@@ -99,10 +105,10 @@ public class FeatureExtractor {
 			if (u.getType().isResource) continue; //map resources are not interesting
 			
 			//gets the base index from unit type, adds 0 if the unit is ally and 1 if it is enemy
-			int index = baseIndexes.get(u.getType()) + u.getPlayer() == player ? 0 : 1;
+			int index = baseIndexes.get(u.getType()) + (u.getPlayer() == player ? 0 : 1);
 			
-			// caps the maximum number of units to aid normalization
-			features[index] = Math.min(index, maxUnits);
+			// increments the unit count, capping the maximum number of units to aid normalization
+			features[index] = Math.min(features[index] + 1, maxUnits);
 		}
 		
 		// BEGIN: normalize features
