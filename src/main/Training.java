@@ -21,11 +21,11 @@ public class Training {
 		
 		
 		// creates one AI to train the regression and an opponent
-		//AI player = new PGSAI(100, -1, 1, 1, 1, learningEval, types, new AStarPathFinding()); 
-		AI player = new NaiveMCTS( //third parameter is lookahead - set to one
+		AI player = new PGSAI(100, -1, 1, 1, 1, learningEval, types, new AStarPathFinding()); 
+		/*AI player = new NaiveMCTS( //third parameter is lookahead - set to one
 			100,-1,1,10,0.3f, 0.0f, 0.4f,new RandomBiasedAI(),
 			learningEval, true
-        );
+        );*/
 		//AI opponent = new PGSAI(100, -1, 100, 1, 1, new SimpleSqrtEvaluationFunction3(), types, new AStarPathFinding());
 		AI opponent = new NaiveMCTS(types);
 		//AI pgsDefault = new LightRush(types);

@@ -192,11 +192,7 @@ public class LearningStateEvaluator extends EvaluationFunction {
 		} while (!gameover && reachedState.getTime() < depthLimit && !reachedState.canExecuteAnyAction(player));
 
 		// raw reward value: -1, 0, 1 for defeat, loss and win, respectively
-		int reward = 0;
-		
-		if (gameover) {
-			reward = reachedState.winner() == player ? 1 : -1; 
-		}
+		int reward = calculateReward(player, reachedState);
 		
 		// predicted value for the received (initial) state
 		float predictedValue = evaluate(player, 1 - player, state); // cutoffEval.evaluate(player, 1 - player, gs2);
@@ -213,6 +209,21 @@ public class LearningStateEvaluator extends EvaluationFunction {
 		updateWeights(state, player, predictedValue, scaledTarget);
 
 		return scaledTarget;
+	}
+
+	/**
+	 * The reward is 1 if the player won and 0 if it has lost
+	 * @param player
+	 * @param reachedState
+	 * @return
+	 */
+	private int calculateReward(int player, GameState reachedState) {
+		int reward = 0;
+		
+		if (reachedState.gameover()) {
+			reward = reachedState.winner() == player ? 1 : -1; 
+		}
+		return reward;
 	}
 	
 	/**
