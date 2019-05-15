@@ -1,12 +1,17 @@
 package tdsearch;
 
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Random;
 
 import org.apache.logging.log4j.LogManager;
@@ -24,6 +29,7 @@ import ai.abstraction.WorkerDefense;
 import ai.abstraction.WorkerRush;
 import ai.core.AI;
 import ai.core.ParameterSpecification;
+import config.ConfigManager;
 import learningeval.FeatureExtractor;
 import rts.GameState;
 import rts.PlayerAction;
@@ -35,27 +41,27 @@ public class TDSearch extends AI {
 	/**
 	 * The learning rate for weight update
 	 */
-	private double alpha;
+	protected double alpha;
 	
 	/**
      * Probability of exploration
      */
-    private double epsilon;
+	protected double epsilon;
 	
 	/**
 	 * The eligibility trace for weight update
 	 */
-	private double lambda;
+    protected double lambda;
 	
 	/**
 	 * The discount factor of future rewards
 	 */
-	private double gamma;
+	protected double gamma;
 	
 	/**
 	 * Time budget to return an action
 	 */
-	private int timeBudget;
+	protected int timeBudget;
 	
 	/**
 	 * Weight vector for state-value predictor
@@ -65,49 +71,98 @@ public class TDSearch extends AI {
 	/**
 	 * The random number generator
 	 */
-	private Random random;
+	protected Random random;
 	
 	/**
 	 * The state feature extractor
 	 */
-	private FeatureExtractor featureExtractor;
+	protected FeatureExtractor featureExtractor;
 	
 	/**
 	 * This maps the AI name to its instance.
      * Each AI filters out the possible actions to consider at each state.
      * Thus they're called the action abstractions.
      */
-    private Map<String,AI> abstractions;
+    protected Map<String,AI> abstractions;
 	
 	/**
 	 * The activation function
 	 */
 	private DefaultActivationFunction activation;
 
-	private Logger logger;
+	protected Logger logger;
 	
 	/**
 	 * Initializes TDSearch with default parameters, except for the UnitTypeTable
 	 * @param types
 	 */
 	public TDSearch(UnitTypeTable types) {
-		this(types, 100, 0.01, 1, 0.1);
-		//this(types, 50, 0.01, 1, 0.1); //for testing purposes
+		this(types, 100, 0.01, 0.1, 1, 0.1, 0);
 	}
+	
+	/**
+     * Returns a TDSearch with parameters specified in a file
+     * @param types
+     * @param configPath
+     */
+    public static TDSearch fromConfigFile(UnitTypeTable types, String configPath){
+    	
+    	Logger logger = LogManager.getLogger();
+    	Properties config = null;
+    	
+        // loads the configuration
+		try {
+			config = ConfigManager.loadConfig(configPath);
+		} catch (IOException e) {
+			logger.error("Error while loading configuration from '" + configPath+ "'. Using defaults.", e);
+		}
+        
+		int timeBudget = Integer.parseInt(config.getProperty("search.timebudget", "100"));
+		
+		int randomSeed = Integer.parseInt(config.getProperty("random.seed", "0"));
+        
+        double epsilon = Double.parseDouble(config.getProperty("td.epsilon.initial", "0.1"));
+        //epsilonDecayRate = Double.parseDouble(config.getProperty("td.epsilon.decay", "1.0"));
+        
+        double alpha = Double.parseDouble(config.getProperty("td.alpha.initial", "0.01"));
+        //alphaDecayRate = Double.parseDouble(config.getProperty("td.alpha.decay", "1.0"));
+        
+        double gamma = Double.parseDouble(config.getProperty("td.gamma", "1.0"));
+        
+        double lambda = Double.parseDouble(config.getProperty("td.lambda", "0.0"));
+        
+        TDSearch newInstance = new TDSearch(types, timeBudget, alpha, epsilon, gamma, lambda, randomSeed);
+        
+        if (config.containsKey("td.input.weights")){
+        	try {
+				newInstance.loadWeights(config.getProperty("td.input.weights"));
+			} catch (IOException e) {
+				logger.error("Error while loading weights from " + config.getProperty("td.input.weights"), e);
+				logger.error("Weights initialized randomly.");
+				e.printStackTrace();
+			}
+        }
+        
+        return newInstance;
+    }
+    
 	
 	/**
 	 * Initializes TDSearch with the given parameters 
 	 * @param types the rules defining unit types
 	 * @param alpha learning rate
+	 * @param epsilon exploration probability
 	 * @param gamma the discount factor for future rewards
 	 * @param lambda eligibility trace
+	 * @param randomSeed 
 	 */
-	public TDSearch(UnitTypeTable types, int timeBudget, double alpha, double gamma, double lambda) {
+	public TDSearch(UnitTypeTable types, int timeBudget, double alpha, double epsilon, double gamma, double lambda, int randomSeed) {
 		this.timeBudget = timeBudget;
 		this.alpha = alpha;
+		this.epsilon = epsilon;
 		this.gamma = gamma;
 		this.lambda = lambda;
-		random = new Random();
+		random = new Random(randomSeed);
 		
 		featureExtractor = new FeatureExtractor(types);
 		
@@ -115,7 +170,7 @@ public class TDSearch extends AI {
 		
 		//weight initialization
 		for(int i = 0; i < weights.length; i++) {
-			weights[i] = (Math.random() * 2) - 1 ; //randomly initialized in [-1,1]
+			weights[i] = (random.nextDouble() * 2) - 1 ; //randomly initialized in [-1,1]
 		}
 		
 		// uses logistic with log loss by default
@@ -143,6 +198,37 @@ public class TDSearch extends AI {
 	public void reset() {
 		// does nothing
 	}
+	
+	/**
+	 * Saves weights to a binary file
+	 * @param path
+	 * @throws IOException 
+	 */
+	public void saveWeights(String path) throws IOException {
+		FileOutputStream fos = new FileOutputStream(path);
+        ObjectOutputStream oos = new ObjectOutputStream(fos);
+        oos.writeObject(weights);
+        oos.close();
+        fos.close();
+	}
+	
+	/**
+	 * Load weights from a binary file
+	 * @param path
+	 * @throws IOException
+	 */
+	public void loadWeights(String path) throws IOException {
+		FileInputStream fis = new FileInputStream(path);
+        ObjectInputStream ois = new ObjectInputStream(fis);
+        try {
+        	weights = (double[]) ois.readObject();
+		} catch (ClassNotFoundException e) {
+			System.err.println("Error while attempting to load weights.");
+			e.printStackTrace();
+		}
+        ois.close();
+        fis.close();
+	}
 
 	@Override
 	public PlayerAction getAction(int player, GameState gs) throws Exception {
@@ -168,7 +254,7 @@ public class TDSearch extends AI {
 				GameState nextState = state.clone();
 				logger.debug("Issuing action " + action);
 				nextState.issueSafe(action);
-				nextState.issueSafe(epsilonGreedy(gs, 1 - player));
+				nextState.issueSafe(epsilonGreedy(state, 1 - player));
 				nextState.cycle();
 				
 				double tdError = tdTarget(nextState, player) - linearCombination(features,  weights);
@@ -218,6 +304,13 @@ public class TDSearch extends AI {
 				candidate = new PlayerAction();
 				candidate.fillWithNones(gs, player, 1);
 			}
+			if(!candidate.integrityCheck()) {
+				logger.error("Integrity check for an action failed!");
+				logger.error("Current abstraction: " + abstraction + ", current state " + gs);
+				logger.error("Dumping state to inconsistentAction.xml");
+				gs.toxml("inconsistentAction.xml");
+			}
+			
 			GameState nextState = gs.clone();
 			
 			nextState.issueSafe(candidate);
@@ -231,14 +324,8 @@ public class TDSearch extends AI {
 			double candidateValue = linearCombination(featureExtractor.extractFeatures(nextState, player), weights);
 			
 			if (Double.isNaN(candidateValue)) {
-				logger.error("Error: candidateValue is NaN for state: " + nextState + ". Dumping it to errorState.xml.");
-				try {
-					XMLWriter dumper = new XMLWriter(new FileWriter("errorState.xml"));
-					nextState.toxml(dumper);
-					dumper.close();
-				} catch (IOException e) {
-					logger.error("Error while dumping state", e);
-				}
+				logger.error("Error: candidateValue is NaN for state: " + nextState + ". Dumping it to nanCandidate.xml.");
+				nextState.toxml("nanCandidate.xml");
 				logger.error("Dumping the weight vector: " + weights);
 			}
 			
@@ -287,7 +374,7 @@ public class TDSearch extends AI {
 	 * @param weights
 	 * @return
 	 */
-	private double linearCombination(double[] features, double[] weights) {
+	protected double linearCombination(double[] features, double[] weights) {
 		assert features.length == weights.length;
 		
 		double value = 0;
@@ -299,7 +386,7 @@ public class TDSearch extends AI {
 
 	private PlayerAction epsilonGreedy(GameState gs, int player) {
 
-		if(random.nextFloat() < epsilon){ // random choice with probability epsilon
+		if(random.nextDouble() < epsilon){ // random choice with probability epsilon
 			logger.debug("epsilon action");
 			
         	//trick to randomly select from HashMap adapted from: https://stackoverflow.com/a/9919827/1251716
