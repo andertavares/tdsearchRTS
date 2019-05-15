@@ -42,10 +42,14 @@ public class SarsaSearch extends TDSearch {
 			int randomSeed) {
 		super(types, timeBudget, alpha, epsilon, gamma, lambda, randomSeed);
 		
-		// initialize weights
+		// initialize weights and eligibility
 		weights = new HashMap<>();
+		eligibility = new HashMap<String, double[]>();
     	
     	for(String aiName : abstractions.keySet()){
+    		
+    		eligibility.put(aiName, new double[featureExtractor.getNumFeatures()]);
+    		
 	    	double[] abstractionWeights = new double[featureExtractor.getNumFeatures()];
 	    	
 	    	for (int i = 0; i < abstractionWeights.length; i++){
@@ -53,6 +57,7 @@ public class SarsaSearch extends TDSearch {
 	    		abstractionWeights[i] = (random.nextDouble() * 2) - 1 ; //randomly initialized in [-1,1]
 	    	}
 	    	weights.put(aiName, abstractionWeights);
+	    	
     	}
 	}
 	

@@ -10,6 +10,7 @@ import learningeval.LearningStateEvaluator;
 import rts.GameSettings;
 import rts.GameSettings.LaunchMode;
 import rts.units.UnitTypeTable;
+import tdsearch.SarsaSearch;
 import tdsearch.TDSearch;
 
 public class Training {
@@ -21,12 +22,13 @@ public class Training {
 		LearningStateEvaluator learningEval = new LearningStateEvaluator(0.1, 99, types);
 		
 		
-		AI player = new TDSearch(types); 
+		//AI player = new TDSearch(types); 
+		AI player = new SarsaSearch(types, 100, 0.01, 0.1, 1, 0.1, 0);
 		//AI opponent = new PGSAI(100, -1, 100, 1, 1, new SimpleSqrtEvaluationFunction3(), types, new AStarPathFinding());
-		AI opponent = new TDSearch(types);
+		AI opponent = new SarsaSearch(types, 100, 0.01, 0.1, 1, 0.1, 0);
 		//AI pgsDefault = new LightRush(types);
 		
-		// loads the two forms of configuration object
+		// programatically creates the setting
 		GameSettings settings = new GameSettings(
 			LaunchMode.STANDALONE, null, 0, 2, 
 			"maps/8x8/basesWorkers8x8.xml", 3000, false, 
