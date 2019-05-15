@@ -268,7 +268,7 @@ public class SarsaSearch extends TDSearch {
 
 		PlayerAction action = null;
 		try {
-			action = abstraction.getAction(player, state);
+			action = abstraction.clone().getAction(player, state);
 		} catch (Exception e) {
 			logger.error("Abstraction '" + abstraction + "' failed to return an action. Filling w/ nones.", e);
 			action.fillWithNones(state, player, 1);
