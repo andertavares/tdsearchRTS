@@ -2,7 +2,6 @@ package tdsearch;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -34,7 +33,6 @@ import learningeval.FeatureExtractor;
 import rts.GameState;
 import rts.PlayerAction;
 import rts.units.UnitTypeTable;
-import util.XMLWriter;
 
 public class TDSearch extends AI {
 	
@@ -85,11 +83,6 @@ public class TDSearch extends AI {
      */
     protected Map<String,AI> abstractions;
 	
-	/**
-	 * The activation function
-	 */
-	private DefaultActivationFunction activation;
-
 	protected Logger logger;
 	
 	/**
@@ -174,7 +167,7 @@ public class TDSearch extends AI {
 		}
 		
 		// uses logistic with log loss by default
-		activation = new LogisticLogLoss();
+		//activation = new LogisticLogLoss();
 		
     	logger = LogManager.getRootLogger();
     	
