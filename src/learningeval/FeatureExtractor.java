@@ -122,7 +122,7 @@ public class FeatureExtractor {
 		
 		// from initial unit index to 2*the number of types (inclusive) are normalized at MAX_UNITS
 		// 2*number of types is used because the count is done for each player
-		for(int i = initialUnitIndex; i <= 2*numberTypes; i++) {
+		for(int i = initialUnitIndex; i < numFeatures; i++) {
 			features[i] /= maxUnits;
 		}
 		// END: normalize features
