@@ -1,13 +1,16 @@
 package tdsearch;
 
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import activation.DefaultActivationFunction;
 import activation.LogisticLogLoss;
@@ -25,6 +28,7 @@ import learningeval.FeatureExtractor;
 import rts.GameState;
 import rts.PlayerAction;
 import rts.units.UnitTypeTable;
+import util.XMLWriter;
 
 public class TDSearch extends AI {
 	
@@ -88,6 +92,7 @@ public class TDSearch extends AI {
 	 */
 	public TDSearch(UnitTypeTable types) {
 		this(types, 100, 0.01, 1, 0.1);
+		//this(types, 50, 0.01, 1, 0.1); //for testing purposes
 	}
 	
 	/**
@@ -116,7 +121,7 @@ public class TDSearch extends AI {
 		// uses logistic with log loss by default
 		activation = new LogisticLogLoss();
 		
-    	logger = Logger.getLogger(this.getClass().getName());
+    	logger = LogManager.getRootLogger();
     	
         //loads the portfolio according to the file specification
         abstractions = new HashMap<>();
@@ -161,7 +166,7 @@ public class TDSearch extends AI {
 				
 				// issue the action to obtain the next state, issues a self-play move for the opponent
 				GameState nextState = state.clone();
-				logger.info("Issuing action " + action);
+				logger.debug("Issuing action " + action);
 				nextState.issueSafe(action);
 				nextState.issueSafe(epsilonGreedy(gs, 1 - player));
 				nextState.cycle();
@@ -200,7 +205,6 @@ public class TDSearch extends AI {
 	 * @throws Exception
 	 */
 	private PlayerAction greedyAction(int player, GameState gs)  {
-		logger.info("Greedy action");
 		PlayerAction bestAction = null; double bestActionValue = Double.NEGATIVE_INFINITY;
 		
 		// begin: argmax
@@ -210,7 +214,7 @@ public class TDSearch extends AI {
 			try {
 				candidate = abstraction.getAction(player, gs);
 			} catch (Exception e) {
-				logger.log(Level.SEVERE, "Error while getting action from " + abstraction.getClass().getName(), e);
+				logger.error("Error while getting action from " + abstraction.getClass().getName(), e);
 				candidate = new PlayerAction();
 				candidate.fillWithNones(gs, player, 1);
 			}
@@ -219,12 +223,24 @@ public class TDSearch extends AI {
 			nextState.issueSafe(candidate);
 			
 			// creates a dummy action for the opponent
-			PlayerAction dummy = new PlayerAction();
+			/*PlayerAction dummy = new PlayerAction();
 			dummy.fillWithNones(gs, 1-player, 1);
-			nextState.issueSafe(dummy);
+			nextState.issueSafe(dummy);*/
 			nextState.cycle();
 			
 			double candidateValue = linearCombination(featureExtractor.extractFeatures(nextState, player), weights);
+			
+			if (Double.isNaN(candidateValue)) {
+				logger.error("Error: candidateValue is NaN for state: " + nextState + ". Dumping it to errorState.xml.");
+				try {
+					XMLWriter dumper = new XMLWriter(new FileWriter("errorState.xml"));
+					nextState.toxml(dumper);
+					dumper.close();
+				} catch (IOException e) {
+					logger.error("Error while dumping state", e);
+				}
+				logger.error("Dumping the weight vector: " + weights);
+			}
 			
 			//logger.info(String.format("candidateValue: %f, bestActionValue: %f", candidateValue, bestActionValue));
 			
@@ -233,6 +249,9 @@ public class TDSearch extends AI {
 				bestAction = candidate;
 			}
 		} // end: argmax
+		if (bestAction == null) {
+			logger.error("Error: bestAction is null! abstractions.values(): "+ abstractions.values());
+		}
 		return bestAction;
 	}
 	
@@ -281,20 +300,20 @@ public class TDSearch extends AI {
 	private PlayerAction epsilonGreedy(GameState gs, int player) {
 
 		if(random.nextFloat() < epsilon){ // random choice with probability epsilon
-			logger.fine("epsilon action");
+			logger.debug("epsilon action");
 			
         	//trick to randomly select from HashMap adapted from: https://stackoverflow.com/a/9919827/1251716
         	List<String> keys = new ArrayList<String>(abstractions.keySet());
         	String choiceName = keys.get(random.nextInt(keys.size()));
         	
         	if(choiceName==null){
-        		logger.severe("ERROR while retrieving epsilon action!");
+        		logger.error("ERROR while retrieving epsilon action!");
     		}
         	
         	try {
 				return abstractions.get(choiceName).getAction(player, gs);
 			} catch (Exception e) {
-				logger.log(Level.SEVERE, "Error while returning epsilon action!", e);
+				logger.error("Error while returning epsilon action!", e);
 				PlayerAction dummy = new PlayerAction();
 				dummy.fillWithNones(gs, player, 1);
 				return dummy;
