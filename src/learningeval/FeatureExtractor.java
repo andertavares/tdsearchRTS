@@ -120,6 +120,9 @@ public class FeatureExtractor {
 		features[3] /= maxResources;
 		features[4] /= maxResources;
 		
+		// 5 is normalized at maxTime
+		features[5] /= maxTime;
+		
 		// from initial unit index to 2*the number of types (inclusive) are normalized at MAX_UNITS
 		// 2*number of types is used because the count is done for each player
 		for(int i = initialUnitIndex; i < numFeatures; i++) {
