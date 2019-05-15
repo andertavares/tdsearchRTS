@@ -59,11 +59,7 @@ class TestFeatureExtractor {
 		PhysicalGameState map = PhysicalGameState.load("maps/8x8/basesWorkers8x8.xml", types);
 		
 		// loads errorState.xml 
-		SAXBuilder builder = new SAXBuilder();
-		File xmlFile = new File("src/test/errorState.xml");
-		Document document = (Document) builder.build(xmlFile);
-		GameState state = GameState.fromXML(document.getRootElement(), types);
-		
+		GameState state = GameState.fromXML("src/test/errorState.xml", types);
 		
 		FeatureExtractor extractor = new FeatureExtractor(types, 3000, 64, 64, 50);
 		
