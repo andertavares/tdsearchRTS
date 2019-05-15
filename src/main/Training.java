@@ -1,6 +1,7 @@
 package main;
 
 import ai.RandomBiasedAI;
+import ai.abstraction.WorkerRush;
 import ai.abstraction.pathfinding.AStarPathFinding;
 import ai.core.AI;
 import ai.evaluation.SimpleSqrtEvaluationFunction3;
@@ -18,9 +19,7 @@ public class Training {
 	public static void main(String[] args) throws Exception {
 		UnitTypeTable types = new UnitTypeTable(UnitTypeTable.VERSION_ORIGINAL_FINETUNED);
 		
-		//train with PGS -- original lookahead is 100, we'll divide 1 to PGS  and 99 to the learning eval
-		LearningStateEvaluator learningEval = new LearningStateEvaluator(0.1, 99, types);
-		
+		//LearningStateEvaluator learningEval = new LearningStateEvaluator(0.1, 99, types);
 		
 		//AI player = new TDSearch(types); 
 		AI player = new SarsaSearch(types, 100, 0.01, 0.1, 1, 0.1, 0);
@@ -37,11 +36,11 @@ public class Training {
 		);
 		
 		// training matches
-		learningEval.activateTraining();
+		//learningEval.activateTraining();
 		Runner.repeatedHeadlessMatches(100, "results/pgs-train.csv", player, opponent, settings, null);
     	
 		// test matches
-		learningEval.activateTest();
+		//learningEval.activateTest();
 		Runner.repeatedHeadlessMatches(10, "results/pgs-test.csv", player, opponent, settings, "trace/pgs-test.xml");
 	}
 

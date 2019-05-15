@@ -64,7 +64,7 @@ public class SarsaSearch extends TDSearch {
 
 	@Override
 	public PlayerAction getAction(int player, GameState gs) throws Exception {
-
+		
 		Date begin = new Date(System.currentTimeMillis());
 		Date end;
 		int planningBudget = (int) (.8 * timeBudget); // 80% of budget to planning
@@ -85,7 +85,7 @@ public class SarsaSearch extends TDSearch {
 				// issue the action to obtain the next state, issues a self-play move for the
 				// opponent
 				GameState nextState = state.clone();
-				logger.debug("Selected abstraction " + aName);
+				logger.trace("Selected abstraction " + aName);
 				String opponentAName = epsilonGreedyAbstraction(state, 1 - player);
 				
 				// must retrieve both actions and only then issue them
@@ -111,7 +111,14 @@ public class SarsaSearch extends TDSearch {
 		} // end while (timeAvailable)
 
 		String selectedAbstractionName = greedyAbstraction(gs, player);
+		
+		end = new Date(System.currentTimeMillis());
+		logger.debug(String.format(
+			"getAction for frame #%d took %dms",
+			gs.getTime(), end.getTime() - begin.getTime()
+		));
 		return abstractionToAction(selectedAbstractionName, gs, player);
+		
 	}
 
 	/**
@@ -259,7 +266,7 @@ public class SarsaSearch extends TDSearch {
 	 * @return
 	 */
 	private PlayerAction abstractionToAction(String name, GameState state, int player) {
-		logger.debug(
+		logger.trace(
 			String.format("Translating action of %s for player %d at time %d", 
 				name, player, state.getTime()
 			));
@@ -370,5 +377,37 @@ public class SarsaSearch extends TDSearch {
 		ois.close();
 		fis.close();
 	}
+	
+	@Override
+    public void preGameAnalysis(GameState gs, long milliseconds) throws Exception {
+		// does nothing for now
+    }
+
+	@Override
+    public void preGameAnalysis(GameState gs, long milliseconds, String readWriteFolder) throws Exception {
+		// does nothing for now
+    }
+	
+	/**
+     * Resets the portfolio with the new unit type table
+     */
+    public void reset(UnitTypeTable utt) {
+    	for(AI ai : abstractions.values()){
+    		ai.reset(utt);
+    	}
+    	
+    	reset();
+    	
+    }
+    
+    /**
+     * Is called at the beginning of every game. Resets all AIs in the portfolio
+     * and my internal variables. It does not reset the weight vector
+     */
+    public void reset() {
+    	for(AI ai : abstractions.values()){
+    		ai.reset();
+    	}
+    }
 
 }
