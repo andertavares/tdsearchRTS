@@ -246,6 +246,7 @@ public class SarsaSearch extends TDSearch {
      * @return
      */
     private PlayerAction abstractionToAction(String name, GameState state, int player){
+    	logger.debug(String.format("Translating action for player %d at time %d", player, state.getTime()));
     	
         AI abstraction =  abstractions.get(name);
         
@@ -256,6 +257,13 @@ public class SarsaSearch extends TDSearch {
 			logger.error("Abstraction '" + abstraction +"' failed to return an action. Filling w/ nones.", e);
 			action.fillWithNones(state, player, 1);
 		}
+        
+        if (!action.integrityCheck()) {
+        	logger.error(String.format(
+        		"Illegal action attempted by %s at time %d for player %d",
+        		name, state.getTime(), player
+    		));
+        }
         
         return action;
     }
