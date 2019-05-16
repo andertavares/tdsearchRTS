@@ -25,13 +25,13 @@ import tdsearch.TDSearch;
 public class Main {
 	
 	public static void main(String[] args) throws Exception {
+		Logger logger = LogManager.getRootLogger();
+		
 		Options options = new Options();
 
         options.addOption(new Option("i", "input", true, "Input config path"));
         options.addOption(new Option("o", "output", true, "Output dir"));
-
-        options.addOption(new Option("s0", "p0-seed", true, "Random seed for player 0"));
-        options.addOption(new Option("s1", "p1-seed", true, "Random seed for player 1"));
+        options.addOption(new Option("r", "repetitions", true, "Number of repetitions"));
 
         CommandLineParser parser = new DefaultParser();
         HelpFormatter formatter = new HelpFormatter();
@@ -46,11 +46,42 @@ public class Main {
             System.exit(1);
         }
 
-        String configFile = cmd.getOptionValue("input", "config/example.properties");
-        String outputPrefix = cmd.getOptionValue("output", "results/example/");
-		int p0Seed = Integer.parseInt(cmd.getOptionValue("p0-seed", "0"));
-		int p1Seed = Integer.parseInt(cmd.getOptionValue("p1-seed", "1"));
-		run(configFile, outputPrefix, p0Seed, p1Seed);
+        String configFile = cmd.getOptionValue("input", "config/selfplay-example.properties");
+        String outputPrefix = cmd.getOptionValue("output", "results/selfplay-example/");
+        
+        Properties config = ConfigManager.loadConfig(configFile);
+		int repetitions = cmd.hasOption("repetitions") ? 
+				Integer.parseInt(cmd.getOptionValue("repetitions")) : 
+				Integer.parseInt(config.getProperty("repetitions", "1"));
+		
+		for (int rep = 0; rep < repetitions; rep++) {
+			// determines the output dir according to the current rep
+			String outDir = outputPrefix + "rep" + rep;
+			
+			// checks if that repetition has been played
+			File repDir = new File(outDir);
+			if(repDir.exists()) {
+				File repFinished = new File(outDir + "/finished");
+				if(repFinished.exists()) {
+					logger.info("Repetition {} already finished, skipping...", rep);
+					continue;
+				}
+				else {
+					logger.info("Repetition {} started, but not finished. Overwriting and continuing from there.", rep);
+					repDir.delete();
+				}
+			}
+			
+			// finally runs one repetition
+			// player 0's random seed increases whereas player 1's decreases with the repetitions  
+			run(configFile, outDir, rep, repetitions-rep);
+			
+			// writes a flag file named 'finished' to indicate this repetition ended
+			File repFinished = new File(outDir + "/finished");
+			if (!repFinished.createNewFile()) {
+				logger.error("Unable to create file to indicate that repetition {} has finished!", rep);
+			};
+		}
 	}
 	
 	public static void run(String configPath, String outputPrefix, int randomSeedP0, int randomSeedP1) throws Exception {
@@ -82,11 +113,11 @@ public class Main {
 		
 		// creates the training opponent
 		AI trainingOpponent = null;
-		if("selfplay".equals(config.getProperty("training_opponent"))) {
+		if("selfplay".equals(config.getProperty("train_opponent"))) {
 			trainingOpponent = new SarsaSearch(dummyTypes, timeBudget, alpha, epsilon, gamma, lambda, randomSeedP1);
 		}
 		else {
-			trainingOpponent = loadAI(config.getProperty("training_opponent"), dummyTypes);
+			trainingOpponent = loadAI(config.getProperty("train_opponent"), dummyTypes);
 		}
 		
 		// updates the config with the overwritten parameters
