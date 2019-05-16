@@ -2,15 +2,19 @@ package main;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.lang.reflect.Constructor;
 import java.util.Properties;
 
-import org.apache.commons.cli.*;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import ai.abstraction.WorkerRush;
 import ai.core.AI;
 import config.ConfigManager;
 import rts.GameSettings;
@@ -18,7 +22,7 @@ import rts.units.UnitTypeTable;
 import tdsearch.SarsaSearch;
 import tdsearch.TDSearch;
 
-public class Training {
+public class Main {
 	
 	public static void main(String[] args) throws Exception {
 		Options options = new Options();
@@ -43,10 +47,10 @@ public class Training {
         }
 
         String configFile = cmd.getOptionValue("input", "config/example.properties");
-        String outputFilePath = cmd.getOptionValue("output", "results/example/");
+        String outputPrefix = cmd.getOptionValue("output", "results/example/");
 		int p0Seed = Integer.parseInt(cmd.getOptionValue("p0-seed", "0"));
 		int p1Seed = Integer.parseInt(cmd.getOptionValue("p1-seed", "1"));
-		selfPlay(configFile, outputFilePath, p0Seed, p1Seed);
+		selfPlay(configFile, outputPrefix, p0Seed, p1Seed);
 	}
 	
 	public static void selfPlay(String configPath, String outputPrefix, int randomSeedP0, int randomSeedP1) throws Exception {
