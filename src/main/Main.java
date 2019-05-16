@@ -63,7 +63,7 @@ public class Main {
 				
 		for (int rep = initialRep; rep <= finalRep; rep++) {
 			// determines the output dir according to the current rep
-			String outDir = outputPrefix + "rep" + rep;
+			String outDir = outputPrefix + "/rep" + rep;
 			
 			// checks if that repetition has been played
 			File repDir = new File(outDir);
