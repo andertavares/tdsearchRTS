@@ -106,12 +106,13 @@ public class Runner {
 	 * Saves the trace to re-play the match if traceOutput is not null
 	 * @param ai1
 	 * @param ai2
+	 * @param visualize
 	 * @param config
 	 * @param traceOutput
 	 * @return
 	 * @throws Exception
 	 */
-	public static int headlessMatch(AI ai1, AI ai2, GameSettings config, String traceOutput) throws Exception{
+	public static int match(AI ai1, AI ai2, boolean visualize, GameSettings config, String traceOutput) throws Exception{
 		Logger logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
 		
 		UnitTypeTable types = new UnitTypeTable(config.getUTTVersion(), config.getConflictPolicy());
@@ -134,7 +135,6 @@ public class Runner {
 		
 		// creates the visualizer, if needed
 		PhysicalGameStateJFrame w = null;
-		boolean visualize = false;
 		if (visualize) w = PhysicalGameStatePanel.newVisualizer(state, 600, 600, config.isPartiallyObservable());
 		
 		// creates the trace logger
@@ -220,11 +220,12 @@ public class Runner {
 	 * @param summaryOutput
 	 * @param ai1
 	 * @param ai2
+	 * @param visualize
 	 * @param config
 	 * @param traceOutput
 	 * @throws Exception
 	 */
-	public static void repeatedHeadlessMatches(int numMatches, String summaryOutput, AI ai1, AI ai2, GameSettings config, String tracePrefix) throws Exception{
+	public static void repeatedMatches(int numMatches, String summaryOutput, AI ai1, AI ai2, boolean visualize, GameSettings config, String tracePrefix) throws Exception{
 		Logger logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
 		
 		for(int i = 0; i < numMatches; i++){
@@ -240,7 +241,7 @@ public class Runner {
     		}
         	
         	Date begin = new Date(System.currentTimeMillis());
-        	int result = headlessMatch(ai1, ai2, config, traceOutput);
+        	int result = match(ai1, ai2, visualize, config, traceOutput);
         	Date end = new Date(System.currentTimeMillis());
         	
         	System.out.print(String.format("\rMatch %8d finished with result %3d.", i+1, result));
@@ -291,45 +292,6 @@ public class Runner {
     	writer.close();
 	}
     
-	/* *
-	 * Loads an {@link AI} according to its name, using the provided UnitTypeTable.
-	 * If the AI is {@link MetaBot}, loads it with the configuration file specified in 
-	 * entry 'metabot.config' of the received {@link Properties} 
-	 * @param aiName
-	 * @param utt
-	 * @param playerNumber
-	 * @return
-	 * @throws NoSuchMethodException
-	 * @throws SecurityException
-	 * @throws ClassNotFoundException
-	 * @throws InstantiationException
-	 * @throws IllegalAccessException
-	 * @throws IllegalArgumentException
-	 * @throws InvocationTargetException
-	 *
-	public static AI loadAI(String aiName, UnitTypeTable utt, int playerNumber, Properties config) throws NoSuchMethodException, SecurityException, ClassNotFoundException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException{
-		AI ai;
-		
-		Logger logger = LogManager.getRootLogger();
-		logger.info("Loading {}", aiName);
-		
-		// (custom) loads MetaBot with its configuration file
-		if(aiName.equalsIgnoreCase("metabot.MetaBot")) {
-			
-			String configKey = String.format("player%d.config", playerNumber);
-			if(config.containsKey(configKey)){
-				ai = new MetaBot(utt, config.getProperty(configKey));
-			}
-			else {
-				ai = new MetaBot(utt);
-			}
-			
-		}
-		else { // (default) loads the AI according to its name
-			Constructor<?> cons1 = Class.forName(aiName).getConstructor(UnitTypeTable.class);
-			ai = (AI)cons1.newInstance(utt);
-		}
-		return ai;
-	}*/
+	
 }
 

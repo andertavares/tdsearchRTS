@@ -3,16 +3,20 @@ package main;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
+import java.lang.reflect.Constructor;
 import java.util.Properties;
-import java.util.logging.Logger;
 
 import org.apache.commons.cli.*;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
+import ai.abstraction.WorkerRush;
 import ai.core.AI;
 import config.ConfigManager;
 import rts.GameSettings;
 import rts.units.UnitTypeTable;
 import tdsearch.SarsaSearch;
+import tdsearch.TDSearch;
 
 public class Training {
 	
@@ -70,18 +74,18 @@ public class Training {
      	GameSettings settings = GameSettings.loadFromConfig(config);
      		
         // creates a UnitTypeTable that should be overwritten by the one in config
-        UnitTypeTable dummy = new UnitTypeTable(settings.getUTTVersion(), settings.getConflictPolicy());
+        UnitTypeTable dummyTypes = new UnitTypeTable(settings.getUTTVersion(), settings.getConflictPolicy());
         
-		AI player = new SarsaSearch(dummy, timeBudget, alpha, epsilon, gamma, lambda, randomSeedP0);
-		AI opponent = new SarsaSearch(dummy, timeBudget, alpha, epsilon, gamma, lambda, randomSeedP1);
+		TDSearch player = new SarsaSearch(dummyTypes, timeBudget, alpha, epsilon, gamma, lambda, randomSeedP0);
+		TDSearch trainingOpponent = new SarsaSearch(dummyTypes, timeBudget, alpha, epsilon, gamma, lambda, randomSeedP1);
 		
 		// updates the config with the overwritten parameters
 		config.setProperty("random.seed.p0", Integer.toString(randomSeedP0));
 		config.setProperty("random.seed.p1", Integer.toString(randomSeedP1));
 		config.setProperty("AI1", player.getClass().getName());
-		config.setProperty("AI2", opponent.getClass().getName());
+		config.setProperty("AI2", trainingOpponent.getClass().getName());
 		
-		Logger logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
+		Logger logger = LogManager.getRootLogger();
 		
 		logger.info("This experiment's config (to be copied to "+ outputPrefix + "/settings.properties): ");
 		logger.info(config.toString());
@@ -98,12 +102,38 @@ public class Training {
 		
 		// training matches
 		logger.info("Starting training...");
-		Runner.repeatedHeadlessMatches(trainMatches, outputPrefix + "/train.csv", player, opponent, settings, null);
+		boolean visualizeTraining = Boolean.parseBoolean(config.getProperty("visualize_training", "false"));
+		Runner.repeatedMatches(trainMatches, outputPrefix + "/train.csv", player, trainingOpponent, visualizeTraining, settings, null);
+		logger.info("Training finished. Saving weights to " + outputPrefix + "/weights_0.bin and weights_1.bin");
+		player.saveWeights(outputPrefix + "/weights_0.bin");
+		trainingOpponent.saveWeights(outputPrefix + "/weights_1.bin");
+		
     	
 		// test matches
 		logger.info("Starting test...");
-		Runner.repeatedHeadlessMatches(testMatches, outputPrefix + "/test.csv", player, opponent, settings, outputPrefix + "/test-trace");
+		boolean visualizeTest = Boolean.parseBoolean(config.getProperty("visualize_test", "false"));
+		AI testOpponent = loadAI(config.getProperty("test_opponent"), dummyTypes);
+		player.prepareForTest();
+		Runner.repeatedMatches(testMatches, outputPrefix + "/test.csv", player, testOpponent, visualizeTest, settings, outputPrefix + "/test-trace");
 		logger.info("Test finished.");
+	}
+	
+	/**
+	 * Loads an {@link AI} according to its name, using the provided UnitTypeTable.
+	 * @param aiName
+	 * @param types
+	 * @return
+	 * @throws Exception if unable to instantiate the AI instance
+	 */
+	public static AI loadAI(String aiName, UnitTypeTable types) throws Exception {
+		AI ai;
+		
+		Logger logger = LogManager.getRootLogger();
+		logger.info("Loading {}", aiName);
+		
+		Constructor<?> cons1 = Class.forName(aiName).getConstructor(UnitTypeTable.class);
+		ai = (AI)cons1.newInstance(types);
+		return ai;
 	}
 
 }
