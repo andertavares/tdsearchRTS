@@ -130,8 +130,6 @@ public class Main {
 		// updates the config with the overwritten parameters
 		config.setProperty("random.seed.p0", Integer.toString(randomSeedP0));
 		config.setProperty("random.seed.p1", Integer.toString(randomSeedP1));
-		config.setProperty("AI1", player.getClass().getName());
-		config.setProperty("AI2", trainingOpponent.getClass().getName());
 		
 		Logger logger = LogManager.getRootLogger();
 		
