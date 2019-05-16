@@ -50,10 +50,10 @@ public class Main {
         String outputPrefix = cmd.getOptionValue("output", "results/example/");
 		int p0Seed = Integer.parseInt(cmd.getOptionValue("p0-seed", "0"));
 		int p1Seed = Integer.parseInt(cmd.getOptionValue("p1-seed", "1"));
-		selfPlay(configFile, outputPrefix, p0Seed, p1Seed);
+		run(configFile, outputPrefix, p0Seed, p1Seed);
 	}
 	
-	public static void selfPlay(String configPath, String outputPrefix, int randomSeedP0, int randomSeedP1) throws Exception {
+	public static void run(String configPath, String outputPrefix, int randomSeedP0, int randomSeedP1) throws Exception {
 		
 		Properties config = ConfigManager.loadConfig(configPath);
 		
@@ -62,9 +62,6 @@ public class Main {
 		
 		int timeBudget = Integer.parseInt(config.getProperty("search.timebudget"));
 		
-		//int randomSeedP0 = Integer.parseInt(config.getProperty("random.seed.p0", "0"));
-		//int randomSeedP1 = Integer.parseInt(config.getProperty("random.seed.p1", "1"));
-        
         double epsilon = Double.parseDouble(config.getProperty("td.epsilon.initial"));
         //epsilonDecayRate = Double.parseDouble(config.getProperty("td.epsilon.decay", "1.0"));
         
@@ -80,8 +77,17 @@ public class Main {
         // creates a UnitTypeTable that should be overwritten by the one in config
         UnitTypeTable dummyTypes = new UnitTypeTable(settings.getUTTVersion(), settings.getConflictPolicy());
         
+        // creates the player instance
 		TDSearch player = new SarsaSearch(dummyTypes, timeBudget, alpha, epsilon, gamma, lambda, randomSeedP0);
-		TDSearch trainingOpponent = new SarsaSearch(dummyTypes, timeBudget, alpha, epsilon, gamma, lambda, randomSeedP1);
+		
+		// creates the training opponent
+		AI trainingOpponent = null;
+		if("selfplay".equals(config.getProperty("training_opponent"))) {
+			trainingOpponent = new SarsaSearch(dummyTypes, timeBudget, alpha, epsilon, gamma, lambda, randomSeedP1);
+		}
+		else {
+			trainingOpponent = loadAI(config.getProperty("training_opponent"), dummyTypes);
+		}
 		
 		// updates the config with the overwritten parameters
 		config.setProperty("random.seed.p0", Integer.toString(randomSeedP0));
@@ -108,9 +114,14 @@ public class Main {
 		logger.info("Starting training...");
 		boolean visualizeTraining = Boolean.parseBoolean(config.getProperty("visualize_training", "false"));
 		Runner.repeatedMatches(trainMatches, outputPrefix + "/train.csv", player, trainingOpponent, visualizeTraining, settings, null);
-		logger.info("Training finished. Saving weights to " + outputPrefix + "/weights_0.bin and weights_1.bin");
+		logger.info("Training finished. Saving weights to " + outputPrefix + "/weights_0.bin (and weights_1.bin if selfplay).");
+		// save player weights
 		player.saveWeights(outputPrefix + "/weights_0.bin");
-		trainingOpponent.saveWeights(outputPrefix + "/weights_1.bin");
+		
+		//save opponent weights if selfplay
+		if (trainingOpponent instanceof TDSearch) {
+			((TDSearch) trainingOpponent).saveWeights(outputPrefix + "/weights_1.bin");
+		}
 		
     	
 		// test matches
