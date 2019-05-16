@@ -192,6 +192,15 @@ public class TDSearch extends AI {
 		// does nothing
 	}
 	
+	
+	/**
+	 * Prepares for test matches: disables exploration and learning
+	 */
+	public void prepareForTest() {
+		alpha = 0;
+		epsilon = 0;
+	}
+	
 	/**
 	 * Saves weights to a binary file
 	 * @param path
