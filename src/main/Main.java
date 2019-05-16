@@ -29,9 +29,10 @@ public class Main {
 		
 		Options options = new Options();
 
-        options.addOption(new Option("i", "input", true, "Input config path"));
+        options.addOption(new Option("c", "config-input", true, "Input config path"));
         options.addOption(new Option("o", "output", true, "Output dir"));
-        options.addOption(new Option("r", "repetitions", true, "Number of repetitions"));
+        options.addOption(new Option("f", "final_rep", true, "Number of the final repetition (useful to parallelize executions). Assumes 0 if omitted"));
+        options.addOption(new Option("i", "initial_rep", true, "Number of the initial repetition (useful to parallelize executions). Assumes 0 if omitted"));
 
         CommandLineParser parser = new DefaultParser();
         HelpFormatter formatter = new HelpFormatter();
@@ -46,15 +47,21 @@ public class Main {
             System.exit(1);
         }
 
-        String configFile = cmd.getOptionValue("input", "config/selfplay-example.properties");
+        String configFile = cmd.getOptionValue("config-input", "config/selfplay-example.properties");
         String outputPrefix = cmd.getOptionValue("output", "results/selfplay-example/");
         
         Properties config = ConfigManager.loadConfig(configFile);
-		int repetitions = cmd.hasOption("repetitions") ? 
-				Integer.parseInt(cmd.getOptionValue("repetitions")) : 
-				Integer.parseInt(config.getProperty("repetitions", "1"));
 		
-		for (int rep = 0; rep < repetitions; rep++) {
+		// if initial and final rep were specified via command line, ignore the ones in file		
+		int initialRep = cmd.hasOption("initial_rep") ? 
+				Integer.parseInt(cmd.getOptionValue("initial_rep")) : 
+				Integer.parseInt(config.getProperty("initial_rep", "0"));
+				
+		int finalRep = cmd.hasOption("final_rep") ? 
+				Integer.parseInt(cmd.getOptionValue("final_rep")) : 
+				Integer.parseInt(config.getProperty("final_rep", "0"));
+				
+		for (int rep = initialRep; rep <= finalRep; rep++) {
 			// determines the output dir according to the current rep
 			String outDir = outputPrefix + "rep" + rep;
 			
@@ -74,7 +81,7 @@ public class Main {
 			
 			// finally runs one repetition
 			// player 0's random seed increases whereas player 1's decreases with the repetitions  
-			run(configFile, outDir, rep, repetitions-rep);
+			run(configFile, outDir, rep, finalRep - rep + 1);
 			
 			// writes a flag file named 'finished' to indicate this repetition ended
 			File repFinished = new File(outDir + "/finished");
