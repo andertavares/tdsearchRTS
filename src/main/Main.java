@@ -60,8 +60,9 @@ public class Main {
 		int finalRep = cmd.hasOption("final_rep") ? 
 				Integer.parseInt(cmd.getOptionValue("final_rep")) : 
 				Integer.parseInt(config.getProperty("final_rep", "0"));
-				
-		for (int rep = initialRep; rep <= finalRep; rep++) {
+		
+		// repCount counts the actual number of repetitions
+		for (int rep = initialRep, repCount = 0; rep <= finalRep; rep++, repCount++) {
 			// determines the output dir according to the current rep
 			String outDir = outputPrefix + "/rep" + rep;
 			
@@ -81,7 +82,7 @@ public class Main {
 			
 			// finally runs one repetition
 			// player 0's random seed increases whereas player 1's decreases with the repetitions  
-			run(configFile, outDir, rep, finalRep - rep + 1);
+			run(configFile, outDir, rep, finalRep - repCount + 1);
 			
 			// writes a flag file named 'finished' to indicate this repetition ended
 			File repFinished = new File(outDir + "/finished");
