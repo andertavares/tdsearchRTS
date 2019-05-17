@@ -5,10 +5,9 @@
               directory with the processing instruction <?eclipse.ant.import?>
               as the first entry and export the buildfile again. --><project basedir="." default="build" name="learningeval">
     <property environment="env"/>
-    <property name="junit.output.dir" value="junit"/>
     <property name="debuglevel" value="source,lines,vars"/>
-    <property name="target" value="10"/>
-    <property name="source" value="10"/>
+    <property name="target" value="11"/>
+    <property name="source" value="11"/>
     <path id="JUnit 5.libraryclasspath">
         <pathelement location="../../.p2/pool/plugins/org.junit.jupiter.api_5.4.0.v20190212-2109.jar"/>
         <pathelement location="../../.p2/pool/plugins/org.junit.jupiter.engine_5.4.0.v20190212-2109.jar"/>
@@ -28,35 +27,15 @@
     <path id="learningeval.classpath">
         <pathelement location="bin"/>
         <pathelement location="lib/jdom.jar"/>
-        <pathelement location="lib/log4j-core-2.11.2.jar"/>
+        <pathelement location="lib/log4j-api-2.11.2.jar"/>
         <pathelement location="lib/commons-cli-1.4.jar"/>
         <pathelement location="lib/microrts.jar"/>
         <path refid="JUnit 5.libraryclasspath"/>
-        <pathelement location="lib/log4j-api-2.11.2.jar"/>
-    </path>
-    <path id="run.TestFeatureExtractor.classpath">
-        <path refid="learningeval.classpath"/>
-        <pathelement location="lib/jdom.jar"/>
-        <pathelement location="lib/log4j-core-2.11.2.jar"/>
-        <pathelement location="lib/commons-cli-1.4.jar"/>
-        <pathelement location="lib/microrts.jar"/>
-        <path refid="JUnit 5.libraryclasspath"/>
-        <pathelement location="lib/log4j-api-2.11.2.jar"/>
-    </path>
-    <path id="run.Main.classpath">
-        <path refid="learningeval.classpath"/>
-        <pathelement location="lib/jdom.jar"/>
-        <pathelement location="lib/log4j-core-2.11.2.jar"/>
-        <pathelement location="lib/commons-cli-1.4.jar"/>
-        <pathelement location="lib/microrts.jar"/>
-        <path refid="JUnit 5.libraryclasspath"/>
-        <pathelement location="lib/log4j-api-2.11.2.jar"/>
     </path>
     <target name="init">
         <mkdir dir="bin"/>
         <copy includeemptydirs="false" todir="bin">
             <fileset dir="src">
-                <exclude name="**/*.launch"/>
                 <exclude name="**/*.java"/>
             </fileset>
         </copy>
@@ -87,27 +66,5 @@
     <target description="compile project with Eclipse compiler" name="build-eclipse-compiler">
         <property name="build.compiler" value="org.eclipse.jdt.core.JDTCompilerAdapter"/>
         <antcall target="build"/>
-    </target>
-    <target name="TestFeatureExtractor">
-        <mkdir dir="${junit.output.dir}"/>
-        <junit fork="yes" printsummary="withOutAndErr">
-            <formatter type="xml"/>
-            <test name="test.TestFeatureExtractor" todir="${junit.output.dir}"/>
-            <jvmarg line="-ea"/>
-            <classpath refid="run.TestFeatureExtractor.classpath"/>
-        </junit>
-    </target>
-    <target name="Main">
-        <java classname="main.Main" failonerror="true" fork="yes">
-            <classpath refid="run.Main.classpath"/>
-        </java>
-    </target>
-    <target name="junitreport">
-        <junitreport todir="${junit.output.dir}">
-            <fileset dir="${junit.output.dir}">
-                <include name="TEST-*.xml"/>
-            </fileset>
-            <report format="frames" todir="${junit.output.dir}"/>
-        </junitreport>
     </target>
 </project>

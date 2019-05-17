@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# compiles project
+ant
+
+# configures classpath and runs
 classpath=.:bin:lib/*
 
 echo "Launching experiment..."
