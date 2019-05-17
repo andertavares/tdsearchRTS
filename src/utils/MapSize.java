@@ -1,7 +1,5 @@
 package utils;
 
-import java.util.logging.Level;
-
 import rts.PhysicalGameState;
 import rts.units.UnitTypeTable;
 
