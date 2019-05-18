@@ -79,9 +79,6 @@ public class SarsaSearch extends TDSearch {
 
 			while (!state.gameover() && duration < planningBudget) { // go until game over or time is out
 
-				// the features of this state
-				// double[] features = featureExtractor.extractFeatures(state, player);
-
 				// issue the action to obtain the next state, issues a self-play move for the
 				// opponent
 				GameState nextState = state.clone();
@@ -99,6 +96,7 @@ public class SarsaSearch extends TDSearch {
 				// nextAName is a short for next abstraction name
 				String nextAName = epsilonGreedyAbstraction(nextState, player);
 
+				// updates the value function from this experience tuple
 				sarsaLearning(state, player, aName, nextState, nextAName);
 
 				state = nextState;
@@ -126,9 +124,9 @@ public class SarsaSearch extends TDSearch {
 	 * is the state, a is the actionName, r is the reward (calculated internally),
 	 * s' is the next state, a' is the nextActionName
 	 * 
-	 * 1) Calculates the TD error: delta = r + Q(s',a') - Q(s,a) 2) Updates the
-	 * weight vector: w = w + alpha * delta * e (e is the eligibility) 3) Updates
-	 * the eligibility: e = lambda * gamma * e + features
+	 * 1) Calculates the TD error: delta = r + Q(s',a') - Q(s,a) 
+	 * 2) Updates the weight vector: w = w + alpha * delta * e (e is the eligibility vector) 
+	 * 3) Updates the eligibility vector: e = lambda * gamma * e + features
 	 * 
 	 * @param state
 	 * @param player
@@ -168,11 +166,12 @@ public class SarsaSearch extends TDSearch {
 
 	/**
 	 * The temporal-difference target is, by definition, r + gamma * q(s', a'),
-	 * where s' is the reached state and a' is the action to be performed there
+	 * where s' is the reached state and a' is the action to be performed there.
+	 * 
 	 * Here, we adopt no intermediate rewards. If the game is over and the player
 	 * won, r is 1 and q(s', a') is 0. If the game is over and the player lost or
 	 * draw, r is 0 and q(s', a') is 0. If the game is not over, r is 0 and q(s',
-	 * a') is the predicted value given by the function approximator
+	 * a') is the predicted value given by the function approximator.
 	 * 
 	 * TODO at gameover, it might be interesting to break ties with in-game score
 	 * rather than give zero reward
@@ -192,7 +191,7 @@ public class SarsaSearch extends TDSearch {
 			reward = 0;
 			nextQ = qValue(nextState, player, nextActionName);
 		}
-		return reward + gamma * nextQ;
+		return reward + this.gamma * nextQ;
 	}
 
 	/**
