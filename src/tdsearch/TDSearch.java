@@ -361,7 +361,7 @@ public class TDSearch extends AI {
 		
 		if (reachedState.gameover()) { 
 			reachedStateValue = 0;
-			reward = reachedState.winner() != player ? 1 : 0;
+			reward = reachedState.winner() == player ? 1 : 0;
 		}
 		else {
 			reward = 0;

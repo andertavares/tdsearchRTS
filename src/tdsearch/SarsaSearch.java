@@ -186,7 +186,7 @@ public class SarsaSearch extends TDSearch {
 
 		if (nextState.gameover()) {
 			nextQ = 0;
-			reward = nextState.winner() != player ? 1 : 0;
+			reward = nextState.winner() == player ? 1 : 0;
 		} else {
 			reward = 0;
 			nextQ = qValue(nextState, player, nextActionName);
