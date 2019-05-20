@@ -1,5 +1,3 @@
-#/usr/bin/python3
-
 import pandas as pd
 import numpy as np
 import argparse
@@ -46,11 +44,15 @@ if __name__ == '__main__':
                     'against an opponent in a given map.'
                     'In an experiment, the score is #victories + 0.5 * #draws.'
                     'The script looks in directories with the pattern:'
-                    'basedir/selfplay-[map]/rep[%d]/test-vs-[opponent].csv, where %d is in [initial_rep, final_rep]'
+                    'basedir/selfplay-[map]/rep[%d]/test-vs-[opponent].csv, where %d is in [initial_rep, final_rep].'
+                    'Usage example: '
+                    'python3 analysis/average_score.py -b results -o LightRush -i 0 -f 9 -m basesWorkers8x8'
+                    'For multiple opponents:'
+                    'for o in {"HeavyRush","RangedRush","WorkerRush","LightRush"}; do echo $o; python3 analysis/average_score.py -b results -o $o -i 0 -f 9 -m basesWorkers8x8; done'
     )
 
     parser.add_argument(
-        'basedir', help='base directory where all results are stored.'
+        '-b', '--basedir', help='base directory where all results are stored.'
     )
 
     parser.add_argument(
@@ -75,5 +77,5 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    average_score(args.basedir, args.initial_rep, args.final_rep, args.map, args.opponent)
+    print(average_score(args.basedir, args.initial_rep, args.final_rep, args.map, args.opponent))
 
