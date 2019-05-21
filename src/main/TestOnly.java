@@ -30,8 +30,9 @@ public class TestOnly {
         options.addOption(new Option("c", "config-input", true, "Input config path"));
         options.addOption(new Option("t", "test_opponent", true, "Name of the AI to test against"));
         options.addOption(new Option("d", "working-dir", true, "Directory to load weights in and save results"));
-        options.addOption(new Option("f", "final_rep", true, "Number of the final repetition (useful to parallelize executions). Assumes 0 if omitted"));
         options.addOption(new Option("i", "initial_rep", true, "Number of the initial repetition (useful to parallelize executions). Assumes 0 if omitted"));
+        options.addOption(new Option("f", "final_rep", true, "Number of the final repetition (useful to parallelize executions). Assumes 0 if omitted"));
+        options.addOption(new Option("r", "save-replay", false, "If omitted, does not generate replay (trace) files."));
         
 
         CommandLineParser parser = new DefaultParser();
@@ -65,6 +66,8 @@ public class TestOnly {
 				cmd.getOptionValue("test_opponent") : 
 				config.getProperty("test_opponent", "ai.abstraction.WorkerRush");
 				
+		boolean writeReplay = cmd.hasOption("save_replay");
+				
 		for (int rep = initialRep; rep <= finalRep; rep++) {
 			// determines the output dir according to the current rep
 			String currentDir = workingDir + "/rep" + rep;
@@ -78,7 +81,7 @@ public class TestOnly {
 			
 			// finally runs one repetition
 			// player 0's random seed increases whereas player 1's decreases with the repetitions  
-			runTestMatches(configFile, testPartnerName, currentDir, rep, finalRep - rep + 1);
+			runTestMatches(configFile, testPartnerName, currentDir, rep, finalRep - rep + 1, writeReplay);
 			
 		}
 	}
@@ -92,9 +95,10 @@ public class TestOnly {
 	 * @param workingDir
 	 * @param randomSeedP0
 	 * @param randomSeedP1
+	 * @param writeReplay write the replay (traces) for each match?
 	 * @throws Exception
 	 */
-	public static void runTestMatches(String configPath, String testPartnerName, String workingDir, int randomSeedP0, int randomSeedP1) throws Exception {
+	public static void runTestMatches(String configPath, String testPartnerName, String workingDir, int randomSeedP0, int randomSeedP1, boolean writeReplay) throws Exception {
 		
 		Properties config = ConfigManager.loadConfig(configPath);
 		
@@ -133,9 +137,13 @@ public class TestOnly {
 		logger.info("Starting test...");
 		boolean visualizeTest = Boolean.parseBoolean(config.getProperty("visualize_test", "false"));
 		AI testOpponent = Main.loadAI(testPartnerName, dummyTypes);
+		
+		// if write replay (trace) is activated, sets the prefix to write files
+		String tracePrefix = writeReplay ? workingDir + "/test-trace-vs-" + testOpponent.getClass().getSimpleName() : null;
+		
 		Runner.repeatedMatches(
 			testMatches, workingDir + "/test-vs-" + testOpponent.getClass().getSimpleName() + ".csv", 
-			player, testOpponent, visualizeTest, settings, workingDir + "/test-trace-vs-" + testOpponent.getClass().getSimpleName()
+			player, testOpponent, visualizeTest, settings, tracePrefix
 		);
 		logger.info("Test finished.");
 	}

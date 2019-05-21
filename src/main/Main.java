@@ -160,13 +160,12 @@ public class Main {
 			((TDSearch) trainingOpponent).saveWeights(outputPrefix + "/weights_1.bin");
 		}
 		
-    	
 		// test matches
 		logger.info("Starting test...");
 		boolean visualizeTest = Boolean.parseBoolean(config.getProperty("visualize_test", "false"));
 		AI testOpponent = loadAI(config.getProperty("test_opponent"), dummyTypes);
 		player.prepareForTest();
-		Runner.repeatedMatches(testMatches, outputPrefix + "/test.csv", player, testOpponent, visualizeTest, settings, outputPrefix + "/test-trace");
+		Runner.repeatedMatches(testMatches, outputPrefix + "/test.csv", player, testOpponent, visualizeTest, settings, null);
 		logger.info("Test finished.");
 	}
 	
