@@ -66,7 +66,7 @@ public class TestOnly {
 				cmd.getOptionValue("test_opponent") : 
 				config.getProperty("test_opponent", "ai.abstraction.WorkerRush");
 				
-		boolean writeReplay = cmd.hasOption("save_replay");
+		boolean writeReplay = cmd.hasOption("save-replay");
 				
 		for (int rep = initialRep; rep <= finalRep; rep++) {
 			// determines the output dir according to the current rep
