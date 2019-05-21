@@ -10,7 +10,10 @@
 # example: test against LightRush from 10 previously trained repetitions  
 
 # ./test-only.sh -c config/selfplay-basesWorkers8x8.properties -t ai.abstraction.LightRush -d results/selfplay-basesWorkers8x8/ -i 0 -f 9
- 
+
+# example 2: test against the 4 baseline scripts:
+# for i in {"WorkerRush","LightRush","RangedRush","HeavyRush"}; do ./test-only.sh -c config/selfplay-basesWorkers8x8.properties -t "ai.abstraction.$i" -d results/selfplay-basesWorkers8x8/ -i 0 -f 4; done
+
 classpath=.:bin:lib/*
 
 echo "Launching test matches..."
