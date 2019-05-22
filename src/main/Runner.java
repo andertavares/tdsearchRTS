@@ -35,6 +35,7 @@ public class Runner {
 	/**
 	 * Runs a match between two AIs with the specified settings, without the GUI.
 	 * Saves the trace to re-play the match if traceOutput is not null
+	 * @param types
 	 * @param ai1
 	 * @param ai2
 	 * @param visualize
@@ -43,14 +44,16 @@ public class Runner {
 	 * @return
 	 * @throws Exception
 	 */
-	public static int match(AI ai1, AI ai2, boolean visualize, GameSettings config, String traceOutput) throws Exception{
+	public static int match(UnitTypeTable types, AI ai1, AI ai2, boolean visualize, GameSettings config, String traceOutput) throws Exception{
 		Logger logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
 		
-		UnitTypeTable types = new UnitTypeTable(config.getUTTVersion(), config.getConflictPolicy());
+		//UnitTypeTable types = new UnitTypeTable(config.getUTTVersion(), config.getConflictPolicy());
 		
-		// the AIs were created with a different unit type table. Reset them with this one
+		// makes sure the AIs are reset
 		ai1.reset(types);
 		ai2.reset(types);
+		ai1.reset();
+		ai2.reset();
 		
 		PhysicalGameState pgs;
         
@@ -147,6 +150,7 @@ public class Runner {
 	/**
 	 * Runs the specified number of matches, without the GUI, saving the summary to the specified file.
 	 * Saves the trace of each match sequentially according to the tracePrefix is not null
+	 * @param types
 	 * @param numMatches
 	 * @param summaryOutput
 	 * @param ai1
@@ -156,7 +160,7 @@ public class Runner {
 	 * @param traceOutput
 	 * @throws Exception
 	 */
-	public static void repeatedMatches(int numMatches, String summaryOutput, AI ai1, AI ai2, boolean visualize, GameSettings config, String tracePrefix) throws Exception{
+	public static void repeatedMatches(UnitTypeTable types, int numMatches, String summaryOutput, AI ai1, AI ai2, boolean visualize, GameSettings config, String tracePrefix) throws Exception{
 		Logger logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
 		
 		for(int i = 0; i < numMatches; i++){
@@ -172,7 +176,7 @@ public class Runner {
     		}
         	
         	Date begin = new Date(System.currentTimeMillis());
-        	int result = match(ai1, ai2, visualize, config, traceOutput);
+        	int result = match(types, ai1, ai2, visualize, config, traceOutput);
         	Date end = new Date(System.currentTimeMillis());
         	
         	System.out.print(String.format("\rMatch %8d finished with result %3d.", i+1, result));

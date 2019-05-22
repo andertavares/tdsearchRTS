@@ -114,18 +114,18 @@ public class Main {
      	GameSettings settings = GameSettings.loadFromConfig(config);
      		
         // creates a UnitTypeTable that should be overwritten by the one in config
-        UnitTypeTable dummyTypes = new UnitTypeTable(settings.getUTTVersion(), settings.getConflictPolicy());
+        UnitTypeTable types = new UnitTypeTable(settings.getUTTVersion(), settings.getConflictPolicy());
         
         // creates the player instance
-		TDSearch player = new SarsaSearch(dummyTypes, timeBudget, alpha, epsilon, gamma, lambda, randomSeedP0);
+		TDSearch player = new SarsaSearch(types, timeBudget, alpha, epsilon, gamma, lambda, randomSeedP0);
 		
 		// creates the training opponent
 		AI trainingOpponent = null;
 		if("selfplay".equals(config.getProperty("train_opponent"))) {
-			trainingOpponent = new SarsaSearch(dummyTypes, timeBudget, alpha, epsilon, gamma, lambda, randomSeedP1);
+			trainingOpponent = new SarsaSearch(types, timeBudget, alpha, epsilon, gamma, lambda, randomSeedP1);
 		}
 		else {
-			trainingOpponent = loadAI(config.getProperty("train_opponent"), dummyTypes);
+			trainingOpponent = loadAI(config.getProperty("train_opponent"), types);
 		}
 		
 		// updates the config with the overwritten parameters
@@ -150,7 +150,7 @@ public class Main {
 		// training matches
 		logger.info("Starting training...");
 		boolean visualizeTraining = Boolean.parseBoolean(config.getProperty("visualize_training", "false"));
-		Runner.repeatedMatches(trainMatches, outputPrefix + "/train.csv", player, trainingOpponent, visualizeTraining, settings, null);
+		Runner.repeatedMatches(types, trainMatches, outputPrefix + "/train.csv", player, trainingOpponent, visualizeTraining, settings, null);
 		logger.info("Training finished. Saving weights to " + outputPrefix + "/weights_0.bin (and weights_1.bin if selfplay).");
 		// save player weights
 		player.saveWeights(outputPrefix + "/weights_0.bin");
@@ -163,9 +163,9 @@ public class Main {
 		// test matches
 		logger.info("Starting test...");
 		boolean visualizeTest = Boolean.parseBoolean(config.getProperty("visualize_test", "false"));
-		AI testOpponent = loadAI(config.getProperty("test_opponent"), dummyTypes);
+		AI testOpponent = loadAI(config.getProperty("test_opponent"), types);
 		player.prepareForTest();
-		Runner.repeatedMatches(testMatches, outputPrefix + "/test.csv", player, testOpponent, visualizeTest, settings, null);
+		Runner.repeatedMatches(types, testMatches, outputPrefix + "/test.csv", player, testOpponent, visualizeTest, settings, null);
 		logger.info("Test finished.");
 	}
 	
