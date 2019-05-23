@@ -33,6 +33,7 @@ public class Train {
         options.addOption(new Option("o", "output", true, "Output dir"));
         options.addOption(new Option("f", "final_rep", true, "Number of the final repetition (useful to parallelize executions). Assumes 0 if omitted"));
         options.addOption(new Option("i", "initial_rep", true, "Number of the initial repetition (useful to parallelize executions). Assumes 0 if omitted"));
+        options.addOption(new Option("t", "train_opponent", true, "Full name of the AI to train against (overrides the one specified in file)."));
 
         CommandLineParser parser = new DefaultParser();
         HelpFormatter formatter = new HelpFormatter();
@@ -60,6 +61,11 @@ public class Train {
 		int finalRep = cmd.hasOption("final_rep") ? 
 				Integer.parseInt(cmd.getOptionValue("final_rep")) : 
 				Integer.parseInt(config.getProperty("final_rep", "0"));
+			
+		// overrides training partner if speficied via command line
+		if(cmd.hasOption("train_opponent")) {
+			config.setProperty("train_opponent", cmd.getOptionValue("train_opponent"));
+		}
 		
 		// repCount counts the actual number of repetitions
 		for (int rep = initialRep, repCount = 0; rep <= finalRep; rep++, repCount++) {
