@@ -6,8 +6,8 @@
               as the first entry and export the buildfile again. --><project basedir="." default="build" name="learningeval">
     <property environment="env"/>
     <property name="debuglevel" value="source,lines,vars"/>
-    <property name="target" value="11"/>
-    <property name="source" value="11"/>
+    <property name="target" value="10"/>
+    <property name="source" value="10"/>
     <path id="JUnit 5.libraryclasspath">
         <pathelement location="../../.p2/pool/plugins/org.junit.jupiter.api_5.4.0.v20190212-2109.jar"/>
         <pathelement location="../../.p2/pool/plugins/org.junit.jupiter.engine_5.4.0.v20190212-2109.jar"/>
