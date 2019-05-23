@@ -87,7 +87,7 @@ public class TestOnly {
 	}
 		
 	/**
-	 * This is basically a copy-and-paste from {@link Main.run} adapted to test matches
+	 * This is basically a copy-and-paste from {@link Train.run} adapted to test matches
 	 * TODO make the code more modular
 	 * 
 	 * @param configPath
@@ -136,7 +136,7 @@ public class TestOnly {
 		// test matches
 		logger.info("Starting test...");
 		boolean visualizeTest = Boolean.parseBoolean(config.getProperty("visualize_test", "false"));
-		AI testOpponent = Main.loadAI(testPartnerName, dummyTypes);
+		AI testOpponent = Train.loadAI(testPartnerName, dummyTypes);
 		
 		// if write replay (trace) is activated, sets the prefix to write files
 		String tracePrefix = writeReplay ? workingDir + "/test-trace-vs-" + testOpponent.getClass().getSimpleName() : null;
