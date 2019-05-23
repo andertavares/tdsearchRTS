@@ -1,7 +1,6 @@
 package main;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.util.Properties;
 
 import org.apache.commons.cli.CommandLine;
@@ -117,10 +116,10 @@ public class Test {
      	GameSettings settings = GameSettings.loadFromConfig(config);
      		
         // creates a UnitTypeTable that should be overwritten by the one in config
-        UnitTypeTable dummyTypes = new UnitTypeTable(settings.getUTTVersion(), settings.getConflictPolicy());
+        UnitTypeTable types = new UnitTypeTable(settings.getUTTVersion(), settings.getConflictPolicy());
         
         // creates the player instance and loads weights
-		TDSearch player = new SarsaSearch(dummyTypes, timeBudget, alpha, epsilon, gamma, lambda, randomSeedP0);
+		TDSearch player = new SarsaSearch(types, timeBudget, alpha, epsilon, gamma, lambda, randomSeedP0);
 		player.loadWeights(workingDir + "/weights_0.bin");
 		
 		// updates the config with the overwritten parameters
@@ -137,13 +136,13 @@ public class Test {
 		// test matches
 		logger.info("Starting test...");
 		boolean visualizeTest = Boolean.parseBoolean(config.getProperty("visualize_test", "false"));
-		AI testOpponent = AILoader.loadAI(testPartnerName, dummyTypes);
+		AI testOpponent = AILoader.loadAI(testPartnerName, types);
 		
 		// if write replay (trace) is activated, sets the prefix to write files
 		String tracePrefix = writeReplay ? workingDir + "/test-trace-vs-" + testOpponent.getClass().getSimpleName() : null;
 		
 		Runner.repeatedMatches(
-			testMatches, workingDir + "/test-vs-" + testOpponent.getClass().getSimpleName() + ".csv", 
+			types, testMatches, workingDir + "/test-vs-" + testOpponent.getClass().getSimpleName() + ".csv", 
 			player, testOpponent, visualizeTest, settings, tracePrefix
 		);
 		logger.info("Test finished.");
