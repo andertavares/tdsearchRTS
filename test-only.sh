@@ -18,6 +18,6 @@ classpath=.:bin:lib/*
 
 echo "Launching test matches..."
 
-java -classpath $classpath -Djava.library.path=lib/ main.TestOnly "$@" 
+java -classpath $classpath -Djava.library.path=lib/ main.Test "$@" 
 
 echo "Done."

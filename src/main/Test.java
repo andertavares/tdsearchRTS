@@ -1,6 +1,7 @@
 package main;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.util.Properties;
 
 import org.apache.commons.cli.CommandLine;
@@ -19,8 +20,9 @@ import rts.GameSettings;
 import rts.units.UnitTypeTable;
 import tdsearch.SarsaSearch;
 import tdsearch.TDSearch;
+import utils.AILoader;
 
-public class TestOnly {
+public class Test {
 	public static void main(String[] args) throws Exception {
 		Logger logger = LogManager.getRootLogger();
 		
@@ -86,7 +88,7 @@ public class TestOnly {
 	}
 		
 	/**
-	 * This is basically a copy-and-paste from {@link Main.run} adapted to test matches
+	 * This is basically a copy-and-paste from {@link Train.run} adapted to test matches
 	 * TODO make the code more modular
 	 * 
 	 * @param configPath
@@ -114,11 +116,11 @@ public class TestOnly {
         // loads microRTS game settings
      	GameSettings settings = GameSettings.loadFromConfig(config);
      		
-        // creates a UnitTypeTable the unit type table
-        UnitTypeTable types = new UnitTypeTable(settings.getUTTVersion(), settings.getConflictPolicy());
+        // creates a UnitTypeTable that should be overwritten by the one in config
+        UnitTypeTable dummyTypes = new UnitTypeTable(settings.getUTTVersion(), settings.getConflictPolicy());
         
         // creates the player instance and loads weights
-		TDSearch player = new SarsaSearch(types, timeBudget, alpha, epsilon, gamma, lambda, randomSeedP0);
+		TDSearch player = new SarsaSearch(dummyTypes, timeBudget, alpha, epsilon, gamma, lambda, randomSeedP0);
 		player.loadWeights(workingDir + "/weights_0.bin");
 		
 		// updates the config with the overwritten parameters
@@ -127,7 +129,7 @@ public class TestOnly {
 		
 		Logger logger = LogManager.getRootLogger();
 		
-		logger.info("This experiment's config (to be copied to "+ workingDir + "/settings.properties): ");
+		logger.info("This experiment's config: ");
 		logger.info(config.toString());
 		
 		//config.store(new FileOutputStream(workingDir + "/settings.properties"), null);
@@ -135,13 +137,13 @@ public class TestOnly {
 		// test matches
 		logger.info("Starting test...");
 		boolean visualizeTest = Boolean.parseBoolean(config.getProperty("visualize_test", "false"));
-		AI testOpponent = Main.loadAI(testPartnerName, types);
+		AI testOpponent = AILoader.loadAI(testPartnerName, dummyTypes);
 		
 		// if write replay (trace) is activated, sets the prefix to write files
 		String tracePrefix = writeReplay ? workingDir + "/test-trace-vs-" + testOpponent.getClass().getSimpleName() : null;
 		
 		Runner.repeatedMatches(
-			types, testMatches, workingDir + "/test-vs-" + testOpponent.getClass().getSimpleName() + ".csv", 
+			testMatches, workingDir + "/test-vs-" + testOpponent.getClass().getSimpleName() + ".csv", 
 			player, testOpponent, visualizeTest, settings, tracePrefix
 		);
 		logger.info("Test finished.");

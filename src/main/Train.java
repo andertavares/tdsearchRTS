@@ -2,7 +2,6 @@ package main;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.lang.reflect.Constructor;
 import java.util.Properties;
 
 import org.apache.commons.cli.CommandLine;
@@ -21,8 +20,9 @@ import rts.GameSettings;
 import rts.units.UnitTypeTable;
 import tdsearch.SarsaSearch;
 import tdsearch.TDSearch;
+import utils.AILoader;
 
-public class Main {
+public class Train {
 	
 	public static void main(String[] args) throws Exception {
 		Logger logger = LogManager.getRootLogger();
@@ -33,6 +33,7 @@ public class Main {
         options.addOption(new Option("o", "output", true, "Output dir"));
         options.addOption(new Option("f", "final_rep", true, "Number of the final repetition (useful to parallelize executions). Assumes 0 if omitted"));
         options.addOption(new Option("i", "initial_rep", true, "Number of the initial repetition (useful to parallelize executions). Assumes 0 if omitted"));
+        options.addOption(new Option("t", "train_opponent", true, "Full name of the AI to train against (overrides the one specified in file)."));
 
         CommandLineParser parser = new DefaultParser();
         HelpFormatter formatter = new HelpFormatter();
@@ -60,6 +61,13 @@ public class Main {
 		int finalRep = cmd.hasOption("final_rep") ? 
 				Integer.parseInt(cmd.getOptionValue("final_rep")) : 
 				Integer.parseInt(config.getProperty("final_rep", "0"));
+			
+		// overrides training partner if speficied via command line
+		if(cmd.hasOption("train_opponent")) {
+			//logger.info("Setting train_opponent to {}", cmd.getOptionValue("train_opponent"));
+			config.setProperty("train_opponent", cmd.getOptionValue("train_opponent"));
+			logger.info("Train opponent is {}", config.getProperty("train_opponent"));
+		}
 		
 		// repCount counts the actual number of repetitions
 		for (int rep = initialRep, repCount = 0; rep <= finalRep; rep++, repCount++) {
@@ -82,7 +90,7 @@ public class Main {
 			
 			// finally runs one repetition
 			// player 0's random seed increases whereas player 1's decreases with the repetitions  
-			run(configFile, outDir, rep, finalRep - repCount + 1);
+			run(config, outDir, rep, finalRep - repCount + 1);
 			
 			// writes a flag file named 'finished' to indicate this repetition ended
 			File repFinished = new File(outDir + "/finished");
@@ -92,9 +100,8 @@ public class Main {
 		}
 	}
 	
-	public static void run(String configPath, String outputPrefix, int randomSeedP0, int randomSeedP1) throws Exception {
+	public static void run(Properties config, String outputPrefix, int randomSeedP0, int randomSeedP1) throws Exception {
 		
-		Properties config = ConfigManager.loadConfig(configPath);
 		
 		int trainMatches = Integer.parseInt(config.getProperty("train_matches"));
 		int testMatches = Integer.parseInt(config.getProperty("test_matches"));
@@ -114,18 +121,18 @@ public class Main {
      	GameSettings settings = GameSettings.loadFromConfig(config);
      		
         // creates a UnitTypeTable that should be overwritten by the one in config
-        UnitTypeTable types = new UnitTypeTable(settings.getUTTVersion(), settings.getConflictPolicy());
+        UnitTypeTable dummyTypes = new UnitTypeTable(settings.getUTTVersion(), settings.getConflictPolicy());
         
         // creates the player instance
-		TDSearch player = new SarsaSearch(types, timeBudget, alpha, epsilon, gamma, lambda, randomSeedP0);
+		TDSearch player = new SarsaSearch(dummyTypes, timeBudget, alpha, epsilon, gamma, lambda, randomSeedP0);
 		
 		// creates the training opponent
 		AI trainingOpponent = null;
 		if("selfplay".equals(config.getProperty("train_opponent"))) {
-			trainingOpponent = new SarsaSearch(types, timeBudget, alpha, epsilon, gamma, lambda, randomSeedP1);
+			trainingOpponent = new SarsaSearch(dummyTypes, timeBudget, alpha, epsilon, gamma, lambda, randomSeedP1);
 		}
 		else {
-			trainingOpponent = loadAI(config.getProperty("train_opponent"), types);
+			trainingOpponent = AILoader.loadAI(config.getProperty("train_opponent"), dummyTypes);
 		}
 		
 		// updates the config with the overwritten parameters
@@ -150,7 +157,7 @@ public class Main {
 		// training matches
 		logger.info("Starting training...");
 		boolean visualizeTraining = Boolean.parseBoolean(config.getProperty("visualize_training", "false"));
-		Runner.repeatedMatches(types, trainMatches, outputPrefix + "/train.csv", player, trainingOpponent, visualizeTraining, settings, null);
+		Runner.repeatedMatches(trainMatches, outputPrefix + "/train.csv", player, trainingOpponent, visualizeTraining, settings, null);
 		logger.info("Training finished. Saving weights to " + outputPrefix + "/weights_0.bin (and weights_1.bin if selfplay).");
 		// save player weights
 		player.saveWeights(outputPrefix + "/weights_0.bin");
@@ -163,28 +170,10 @@ public class Main {
 		// test matches
 		logger.info("Starting test...");
 		boolean visualizeTest = Boolean.parseBoolean(config.getProperty("visualize_test", "false"));
-		AI testOpponent = loadAI(config.getProperty("test_opponent"), types);
+		AI testOpponent = AILoader.loadAI(config.getProperty("test_opponent"), dummyTypes);
 		player.prepareForTest();
-		Runner.repeatedMatches(types, testMatches, outputPrefix + "/test.csv", player, testOpponent, visualizeTest, settings, null);
+		Runner.repeatedMatches(testMatches, outputPrefix + "/test.csv", player, testOpponent, visualizeTest, settings, null);
 		logger.info("Test finished.");
-	}
-	
-	/**
-	 * Loads an {@link AI} according to its name, using the provided UnitTypeTable.
-	 * @param aiName
-	 * @param types
-	 * @return
-	 * @throws Exception if unable to instantiate the AI instance
-	 */
-	public static AI loadAI(String aiName, UnitTypeTable types) throws Exception {
-		AI ai;
-		
-		Logger logger = LogManager.getRootLogger();
-		logger.info("Loading {}", aiName);
-		
-		Constructor<?> cons1 = Class.forName(aiName).getConstructor(UnitTypeTable.class);
-		ai = (AI)cons1.newInstance(types);
-		return ai;
 	}
 
 }
