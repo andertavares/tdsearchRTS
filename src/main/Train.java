@@ -2,7 +2,6 @@ package main;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.lang.reflect.Constructor;
 import java.util.Properties;
 
 import org.apache.commons.cli.CommandLine;
@@ -21,6 +20,7 @@ import rts.GameSettings;
 import rts.units.UnitTypeTable;
 import tdsearch.SarsaSearch;
 import tdsearch.TDSearch;
+import utils.AILoader;
 
 public class Train {
 	
@@ -132,7 +132,7 @@ public class Train {
 			trainingOpponent = new SarsaSearch(dummyTypes, timeBudget, alpha, epsilon, gamma, lambda, randomSeedP1);
 		}
 		else {
-			trainingOpponent = loadAI(config.getProperty("train_opponent"), dummyTypes);
+			trainingOpponent = AILoader.loadAI(config.getProperty("train_opponent"), dummyTypes);
 		}
 		
 		// updates the config with the overwritten parameters
@@ -170,28 +170,10 @@ public class Train {
 		// test matches
 		logger.info("Starting test...");
 		boolean visualizeTest = Boolean.parseBoolean(config.getProperty("visualize_test", "false"));
-		AI testOpponent = loadAI(config.getProperty("test_opponent"), dummyTypes);
+		AI testOpponent = AILoader.loadAI(config.getProperty("test_opponent"), dummyTypes);
 		player.prepareForTest();
 		Runner.repeatedMatches(testMatches, outputPrefix + "/test.csv", player, testOpponent, visualizeTest, settings, null);
 		logger.info("Test finished.");
-	}
-	
-	/**
-	 * Loads an {@link AI} according to its name, using the provided UnitTypeTable.
-	 * @param aiName
-	 * @param types
-	 * @return
-	 * @throws Exception if unable to instantiate the AI instance
-	 */
-	public static AI loadAI(String aiName, UnitTypeTable types) throws Exception {
-		AI ai;
-		
-		Logger logger = LogManager.getRootLogger();
-		logger.info("Loading {}", aiName);
-		
-		Constructor<?> cons1 = Class.forName(aiName).getConstructor(UnitTypeTable.class);
-		ai = (AI)cons1.newInstance(types);
-		return ai;
 	}
 
 }

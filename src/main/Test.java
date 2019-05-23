@@ -19,6 +19,7 @@ import rts.GameSettings;
 import rts.units.UnitTypeTable;
 import tdsearch.SarsaSearch;
 import tdsearch.TDSearch;
+import utils.AILoader;
 
 public class Test {
 	public static void main(String[] args) throws Exception {
@@ -135,7 +136,7 @@ public class Test {
 		// test matches
 		logger.info("Starting test...");
 		boolean visualizeTest = Boolean.parseBoolean(config.getProperty("visualize_test", "false"));
-		AI testOpponent = Train.loadAI(testPartnerName, dummyTypes);
+		AI testOpponent = AILoader.loadAI(testPartnerName, dummyTypes);
 		
 		// if write replay (trace) is activated, sets the prefix to write files
 		String tracePrefix = writeReplay ? workingDir + "/test-trace-vs-" + testOpponent.getClass().getSimpleName() : null;
