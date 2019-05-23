@@ -64,7 +64,9 @@ public class Train {
 			
 		// overrides training partner if speficied via command line
 		if(cmd.hasOption("train_opponent")) {
+			//logger.info("Setting train_opponent to {}", cmd.getOptionValue("train_opponent"));
 			config.setProperty("train_opponent", cmd.getOptionValue("train_opponent"));
+			logger.info("Train opponent is {}", config.getProperty("train_opponent"));
 		}
 		
 		// repCount counts the actual number of repetitions
@@ -88,7 +90,7 @@ public class Train {
 			
 			// finally runs one repetition
 			// player 0's random seed increases whereas player 1's decreases with the repetitions  
-			run(configFile, outDir, rep, finalRep - repCount + 1);
+			run(config, outDir, rep, finalRep - repCount + 1);
 			
 			// writes a flag file named 'finished' to indicate this repetition ended
 			File repFinished = new File(outDir + "/finished");
@@ -98,9 +100,8 @@ public class Train {
 		}
 	}
 	
-	public static void run(String configPath, String outputPrefix, int randomSeedP0, int randomSeedP1) throws Exception {
+	public static void run(Properties config, String outputPrefix, int randomSeedP0, int randomSeedP1) throws Exception {
 		
-		Properties config = ConfigManager.loadConfig(configPath);
 		
 		int trainMatches = Integer.parseInt(config.getProperty("train_matches"));
 		int testMatches = Integer.parseInt(config.getProperty("test_matches"));
