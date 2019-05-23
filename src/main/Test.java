@@ -1,7 +1,6 @@
 package main;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.util.Properties;
 
 import org.apache.commons.cli.CommandLine;
@@ -128,7 +127,7 @@ public class Test {
 		
 		Logger logger = LogManager.getRootLogger();
 		
-		logger.info("This experiment's config (to be copied to "+ workingDir + "/settings.properties): ");
+		logger.info("This experiment's config: ");
 		logger.info(config.toString());
 		
 		//config.store(new FileOutputStream(workingDir + "/settings.properties"), null);
