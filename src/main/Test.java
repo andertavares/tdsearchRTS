@@ -21,7 +21,7 @@ import rts.units.UnitTypeTable;
 import tdsearch.SarsaSearch;
 import tdsearch.TDSearch;
 
-public class TestOnly {
+public class Test {
 	public static void main(String[] args) throws Exception {
 		Logger logger = LogManager.getRootLogger();
 		
