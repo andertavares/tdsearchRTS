@@ -21,7 +21,8 @@ public class A3N extends CmabAssymetricMCTS {
 		super(
 			100, -1, 100, 8, 0.3f, 0.0f, 0.4f, 0, new RandomBiasedAI(types),
             new SimpleSqrtEvaluationFunction3(), true, types, "ManagerClosestEnemy", 1, 
-            Arrays.asList(new LightRush(types), new RangedRush(types), new HeavyRush(types) )
+            Arrays.asList(new LightRush(types), new RangedRush(types), new HeavyRush(types)),
+            "A3N"
         );
 	}
 }
