@@ -30,6 +30,7 @@
         <pathelement location="lib/log4j-api-2.11.2.jar"/>
         <pathelement location="lib/commons-cli-1.4.jar"/>
         <pathelement location="lib/microrts.jar"/>
+	<pathelement location="lib/ufv.jar"/>
         <path refid="JUnit 5.libraryclasspath"/>
     </path>
     <target name="init">
