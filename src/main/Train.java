@@ -39,8 +39,8 @@ public class Train {
         options.addOption(new Option("f", "final_rep", true, "Number of the final repetition (useful to parallelize executions). Assumes 0 if omitted"));
         options.addOption(new Option("i", "initial_rep", true, "Number of the initial repetition (useful to parallelize executions). Assumes 0 if omitted"));
         options.addOption(new Option("t", "train_opponent", true, "Full name of the AI to train against (overrides the one specified in file)."));
-        options.addOption(new Option("p", "portfolio", false, "The type of portfolio to use: basic or standard (default, does not contain support scripts)"));
-        options.addOption(new Option("r", "rewards", false, "The reward model:  winloss-tiebreak or victory-only (default)"));
+        options.addOption(new Option("p", "portfolio", true, "The type of portfolio to use: basic or standard (default, does not contain support scripts)"));
+        options.addOption(new Option("r", "rewards", true, "The reward model:  winloss-tiebreak or victory-only (default)"));
         
         CommandLineParser parser = new DefaultParser();
         HelpFormatter formatter = new HelpFormatter();
