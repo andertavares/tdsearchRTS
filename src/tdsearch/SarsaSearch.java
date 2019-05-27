@@ -32,6 +32,7 @@ public class SarsaSearch extends TDSearch {
 	 * Creates an instance of SarsaSearch with the specified parameters
 	 * 
 	 * @param types
+	 * @param portfolio the portfolio of algorithms/action abstractions to select (a map(name -> AI))
 	 * @param timeBudget
 	 * @param alpha
 	 * @param epsilon
@@ -39,9 +40,10 @@ public class SarsaSearch extends TDSearch {
 	 * @param lambda
 	 * @param randomSeed
 	 */
-	public SarsaSearch(UnitTypeTable types, int timeBudget, double alpha, double epsilon, double gamma, double lambda,
-			int randomSeed) {
-		super(types, timeBudget, alpha, epsilon, gamma, lambda, randomSeed);
+	public SarsaSearch(UnitTypeTable types, Map<String,AI> portfolio, int timeBudget, double alpha, 
+			double epsilon, double gamma, double lambda, int randomSeed) 
+	{
+		super(types, portfolio, timeBudget, alpha, epsilon, gamma, lambda, randomSeed);
 
 		// initialize weights and eligibility
 		weights = new HashMap<>();

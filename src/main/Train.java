@@ -2,6 +2,7 @@ package main;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.util.Arrays;
 import java.util.Properties;
 
 import org.apache.commons.cli.CommandLine;
@@ -16,6 +17,7 @@ import org.apache.logging.log4j.Logger;
 
 import ai.core.AI;
 import config.ConfigManager;
+import portfolio.PortfolioManager;
 import rts.GameSettings;
 import rts.units.UnitTypeTable;
 import tdsearch.SarsaSearch;
@@ -116,6 +118,9 @@ public class Train {
         
         double gamma = Double.parseDouble(config.getProperty("td.gamma"));
         double lambda = Double.parseDouble(config.getProperty("td.lambda"));
+        
+        // the standard portfolio does not contain BuildBase and BuildBarracks
+        String portfolioNames = config.getProperty("portfolio", "WorkerRush, LightRush, RangedRush, HeavyRush, WorkerDefense, LightDefense, RangedDefense, HeavyDefense");
 		
         // loads microRTS game settings
      	GameSettings settings = GameSettings.loadFromConfig(config);
@@ -124,12 +129,20 @@ public class Train {
         UnitTypeTable types = new UnitTypeTable(settings.getUTTVersion(), settings.getConflictPolicy());
         
         // creates the player instance
-		TDSearch player = new SarsaSearch(types, timeBudget, alpha, epsilon, gamma, lambda, randomSeedP0);
+		TDSearch player = new SarsaSearch(
+			types, 
+			PortfolioManager.getPortfolio(types, Arrays.asList(portfolioNames.split(","))), 
+			timeBudget, alpha, epsilon, gamma, lambda, randomSeedP0
+		);
 		
 		// creates the training opponent
 		AI trainingOpponent = null;
 		if("selfplay".equals(config.getProperty("train_opponent"))) {
-			trainingOpponent = new SarsaSearch(types, timeBudget, alpha, epsilon, gamma, lambda, randomSeedP1);
+			trainingOpponent = new SarsaSearch(
+				types,
+				PortfolioManager.getPortfolio(types, Arrays.asList(portfolioNames.split(","))),
+				timeBudget, alpha, epsilon, gamma, lambda, randomSeedP1
+			);
 		}
 		else {
 			trainingOpponent = AILoader.loadAI(config.getProperty("train_opponent"), types);

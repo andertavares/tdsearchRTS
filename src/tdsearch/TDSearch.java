@@ -6,8 +6,8 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -16,20 +16,11 @@ import java.util.Random;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import activation.DefaultActivationFunction;
-import activation.LogisticLogLoss;
-import ai.abstraction.HeavyDefense;
-import ai.abstraction.HeavyRush;
-import ai.abstraction.LightDefense;
-import ai.abstraction.LightRush;
-import ai.abstraction.RangedDefense;
-import ai.abstraction.RangedRush;
-import ai.abstraction.WorkerDefense;
-import ai.abstraction.WorkerRush;
 import ai.core.AI;
 import ai.core.ParameterSpecification;
 import config.ConfigManager;
 import learningeval.FeatureExtractor;
+import portfolio.PortfolioManager;
 import rts.GameState;
 import rts.PlayerAction;
 import rts.units.UnitTypeTable;
@@ -90,10 +81,15 @@ public class TDSearch extends AI {
 	 * @param types
 	 */
 	public TDSearch(UnitTypeTable types) {
-		this(types, 100, 0.01, 0.1, 1, 0.1, 0);
+		this(
+			types, 
+			PortfolioManager.basicPortfolio(types),
+			100, 0.01, 0.1, 1, 0.1, 0
+		);
 	}
 	
 	/**
+	 * @deprecated
      * Returns a TDSearch with parameters specified in a file
      * @param types
      * @param configPath
@@ -124,7 +120,16 @@ public class TDSearch extends AI {
         
         double lambda = Double.parseDouble(config.getProperty("td.lambda", "0.0"));
         
-        TDSearch newInstance = new TDSearch(types, timeBudget, alpha, epsilon, gamma, lambda, randomSeed);
+        // the standard portfolio does not contain BuildBase and BuildBarracks
+        String portfolioNames = config.getProperty("portfolio", "WorkerRush, LightRush, RangedRush, HeavyRush, WorkerDefense, LightDefense, RangedDefense, HeavyDefense");
+        
+        TDSearch newInstance = new TDSearch(
+    		types, 
+    		PortfolioManager.getPortfolio(types, Arrays.asList(
+    			portfolioNames.split(",")
+			)),
+    		timeBudget, alpha, epsilon, gamma, lambda, randomSeed
+    	);
         
         if (config.containsKey("td.input.weights")){
         	try {
@@ -143,13 +148,14 @@ public class TDSearch extends AI {
 	/**
 	 * Initializes TDSearch with the given parameters 
 	 * @param types the rules defining unit types
+	 * @param portfolio the portfolio of algorithms/action abstractions to select
 	 * @param alpha learning rate
 	 * @param epsilon exploration probability
 	 * @param gamma the discount factor for future rewards
 	 * @param lambda eligibility trace
 	 * @param randomSeed 
 	 */
-	public TDSearch(UnitTypeTable types, int timeBudget, double alpha, double epsilon, double gamma, double lambda, int randomSeed) {
+	public TDSearch(UnitTypeTable types, Map<String,AI> portfolio, int timeBudget, double alpha, double epsilon, double gamma, double lambda, int randomSeed) {
 		this.timeBudget = timeBudget;
 		this.alpha = alpha;
 		this.epsilon = epsilon;
@@ -171,8 +177,7 @@ public class TDSearch extends AI {
 		
     	logger = LogManager.getRootLogger();
     	
-        //loads the portfolio according to the file specification
-        abstractions = new HashMap<>();
+        abstractions = portfolio; /*new HashMap<>();
         
         // rush scripts
 		abstractions.put("WorkerRush", new WorkerRush (types));
@@ -185,6 +190,7 @@ public class TDSearch extends AI {
 		abstractions.put("LightRush", new LightDefense(types));
 		abstractions.put("RangedRush", new RangedDefense(types));
 		abstractions.put("HeavyRush", new HeavyDefense(types));
+		*/
 	}
 
 	@Override

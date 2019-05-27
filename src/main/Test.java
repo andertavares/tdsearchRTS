@@ -1,6 +1,7 @@
 package main;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.Properties;
 
 import org.apache.commons.cli.CommandLine;
@@ -15,6 +16,7 @@ import org.apache.logging.log4j.Logger;
 
 import ai.core.AI;
 import config.ConfigManager;
+import portfolio.PortfolioManager;
 import rts.GameSettings;
 import rts.units.UnitTypeTable;
 import tdsearch.SarsaSearch;
@@ -118,13 +120,21 @@ public class Test {
         // creates a UnitTypeTable that should be overwritten by the one in config
         UnitTypeTable types = new UnitTypeTable(settings.getUTTVersion(), settings.getConflictPolicy());
         
+        // the standard portfolio does not contain BuildBase and BuildBarracks
+        String portfolioNames = config.getProperty("portfolio", "WorkerRush, LightRush, RangedRush, HeavyRush, WorkerDefense, LightDefense, RangedDefense, HeavyDefense");
+        
         // creates the player instance and loads weights
-		TDSearch player = new SarsaSearch(types, timeBudget, alpha, epsilon, gamma, lambda, randomSeedP0);
+		TDSearch player = new SarsaSearch(
+			types, 
+			PortfolioManager.getPortfolio(types, Arrays.asList(portfolioNames.split(","))),
+			timeBudget, alpha, epsilon, gamma, lambda, randomSeedP0
+		);
 		player.loadWeights(workingDir + "/weights_0.bin");
 		
 		// updates the config with the overwritten parameters
 		config.setProperty("random.seed.p0", Integer.toString(randomSeedP0));
 		config.setProperty("random.seed.p1", Integer.toString(randomSeedP1));
+		config.setProperty("portfolio", portfolioNames);
 		
 		Logger logger = LogManager.getRootLogger();
 		
