@@ -7,7 +7,7 @@ import rts.GameState;
  * @author artavares
  *
  */
-public class WinOneZero implements RewardModel {
+public class VictoryOnly implements RewardModel {
 
 	@Override
 	/**
