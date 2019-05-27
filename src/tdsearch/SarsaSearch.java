@@ -194,6 +194,7 @@ public class SarsaSearch extends TDSearch {
 		} else {
 			nextQ = qValue(nextState, player, nextActionName);
 		}
+		logger.trace("Reward for time {} for player {}: {}. q(s',a')={}. GameOver? {}", nextState.getTime(), player, reward, nextQ, nextState.gameover());
 		return reward + this.gamma * nextQ;
 	}
 
