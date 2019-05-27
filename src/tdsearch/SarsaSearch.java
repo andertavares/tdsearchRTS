@@ -116,7 +116,8 @@ public class SarsaSearch extends TDSearch {
 		
 		end = new Date(System.currentTimeMillis());
 		logger.debug(String.format(
-			"getAction for frame #%d took %dms",
+			"Player %d selected %s. getAction for frame #%d took %dms",
+			player, selectedAbstractionName,
 			gs.getTime(), end.getTime() - begin.getTime()
 		));
 		return abstractionToAction(selectedAbstractionName, gs, player);
