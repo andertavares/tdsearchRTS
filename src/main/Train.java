@@ -18,6 +18,9 @@ import org.apache.logging.log4j.Logger;
 import ai.core.AI;
 import config.ConfigManager;
 import portfolio.PortfolioManager;
+import reward.RewardModel;
+import reward.VictoryOnly;
+import reward.WinLossTiesBroken;
 import rts.GameSettings;
 import rts.units.UnitTypeTable;
 import tdsearch.SarsaSearch;
@@ -37,6 +40,7 @@ public class Train {
         options.addOption(new Option("i", "initial_rep", true, "Number of the initial repetition (useful to parallelize executions). Assumes 0 if omitted"));
         options.addOption(new Option("t", "train_opponent", true, "Full name of the AI to train against (overrides the one specified in file)."));
         options.addOption(new Option("p", "portfolio", false, "The type of portfolio to use: basic or standard (default, does not contain support scripts)"));
+        options.addOption(new Option("r", "rewards", false, "The reward model:  winloss-tiebreak or victory-only (default)"));
         
         CommandLineParser parser = new DefaultParser();
         HelpFormatter formatter = new HelpFormatter();
@@ -80,6 +84,16 @@ public class Train {
 		else {
 			logger.info("Using standard portfolio (no supporting scripts).");
 			config.setProperty("portfolio", "WorkerRush, LightRush, RangedRush, HeavyRush, WorkerDefense, LightDefense, RangedDefense, HeavyDefense");
+		}
+		
+		// reward model
+		if(cmd.hasOption("rewards") && "winloss-tiebreak".equals(cmd.getOptionValue("rewards"))) {
+			logger.info("Using winloss-tiebreak rewards");
+			config.setProperty("rewards", "winloss-tiebreak");
+		}
+		else {
+			logger.info("Using standard rewards (1 on victory, 0 otherwise)");
+			config.setProperty("rewards", "victory-only");
 		}
 		
 		// repCount counts the actual number of repetitions
@@ -138,10 +152,14 @@ public class Train {
         // creates a UnitTypeTable that should be overwritten by the one in config
         UnitTypeTable types = new UnitTypeTable(settings.getUTTVersion(), settings.getConflictPolicy());
         
+        // loads the reward model
+        RewardModel rewards = config.getProperty("rewards").equals("victory-only") ? new VictoryOnly() : new WinLossTiesBroken();
+        
         // creates the player instance
 		TDSearch player = new SarsaSearch(
 			types, 
 			PortfolioManager.getPortfolio(types, Arrays.asList(portfolioNames.split(","))), 
+			rewards,
 			timeBudget, alpha, epsilon, gamma, lambda, randomSeedP0
 		);
 		
@@ -151,6 +169,7 @@ public class Train {
 			trainingOpponent = new SarsaSearch(
 				types,
 				PortfolioManager.getPortfolio(types, Arrays.asList(portfolioNames.split(","))),
+				rewards,
 				timeBudget, alpha, epsilon, gamma, lambda, randomSeedP1
 			);
 		}
