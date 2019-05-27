@@ -35,6 +35,7 @@ public class Test {
         options.addOption(new Option("i", "initial_rep", true, "Number of the initial repetition (useful to parallelize executions). Assumes 0 if omitted"));
         options.addOption(new Option("f", "final_rep", true, "Number of the final repetition (useful to parallelize executions). Assumes 0 if omitted"));
         options.addOption(new Option("r", "save-replay", false, "If omitted, does not generate replay (trace) files."));
+        options.addOption(new Option("p", "portfolio", false, "The type of portfolio to use: basic or standard (default, does not contain support scripts)"));
         
 
         CommandLineParser parser = new DefaultParser();
@@ -55,7 +56,8 @@ public class Test {
         
         Properties config = ConfigManager.loadConfig(configFile);
 		
-		// if initial and final rep were specified via command line, ignore the ones in file		
+		// if initial and final rep were specified via command line, ignore the ones in file	
+        // TODO override in config so that these additional parameters don't need to be passed on function call
 		int initialRep = cmd.hasOption("initial_rep") ? 
 				Integer.parseInt(cmd.getOptionValue("initial_rep")) : 
 				Integer.parseInt(config.getProperty("initial_rep", "0"));
@@ -67,6 +69,16 @@ public class Test {
 		String testPartnerName = cmd.hasOption("test_opponent") ? 
 				cmd.getOptionValue("test_opponent") : 
 				config.getProperty("test_opponent", "ai.abstraction.WorkerRush");
+
+		// if the basic portfolio was specified, uses the support scripts
+		if(cmd.hasOption("portfolio") && "basic".equals(cmd.getOptionValue("portfolio"))) {
+			logger.info("Using basic portfolio.");
+			config.setProperty("portfolio", "BuildBase, BuildBarracks, WorkerRush, LightRush, RangedRush, HeavyRush, WorkerDefense, LightDefense, RangedDefense, HeavyDefense");
+		}
+		else {
+			logger.info("Using standard portfolio (no supporting scripts).");
+			config.setProperty("portfolio", "WorkerRush, LightRush, RangedRush, HeavyRush, WorkerDefense, LightDefense, RangedDefense, HeavyDefense");
+		}
 				
 		boolean writeReplay = cmd.hasOption("save-replay");
 				
@@ -120,8 +132,7 @@ public class Test {
         // creates a UnitTypeTable that should be overwritten by the one in config
         UnitTypeTable types = new UnitTypeTable(settings.getUTTVersion(), settings.getConflictPolicy());
         
-        // the standard portfolio does not contain BuildBase and BuildBarracks
-        String portfolioNames = config.getProperty("portfolio", "WorkerRush, LightRush, RangedRush, HeavyRush, WorkerDefense, LightDefense, RangedDefense, HeavyDefense");
+        String portfolioNames = config.getProperty("portfolio");
         
         // creates the player instance and loads weights
 		TDSearch player = new SarsaSearch(

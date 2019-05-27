@@ -36,7 +36,8 @@ public class Train {
         options.addOption(new Option("f", "final_rep", true, "Number of the final repetition (useful to parallelize executions). Assumes 0 if omitted"));
         options.addOption(new Option("i", "initial_rep", true, "Number of the initial repetition (useful to parallelize executions). Assumes 0 if omitted"));
         options.addOption(new Option("t", "train_opponent", true, "Full name of the AI to train against (overrides the one specified in file)."));
-
+        options.addOption(new Option("p", "portfolio", false, "The type of portfolio to use: basic or standard (default, does not contain support scripts)"));
+        
         CommandLineParser parser = new DefaultParser();
         HelpFormatter formatter = new HelpFormatter();
         CommandLine cmd = null;
@@ -69,6 +70,16 @@ public class Train {
 			//logger.info("Setting train_opponent to {}", cmd.getOptionValue("train_opponent"));
 			config.setProperty("train_opponent", cmd.getOptionValue("train_opponent"));
 			logger.info("Train opponent is {}", config.getProperty("train_opponent"));
+		}
+		
+		// if the basic portfolio was specified, uses the support scripts
+		if(cmd.hasOption("portfolio") && "basic".equals(cmd.getOptionValue("portfolio"))) {
+			logger.info("Using basic portfolio.");
+			config.setProperty("portfolio", "BuildBase, BuildBarracks, WorkerRush, LightRush, RangedRush, HeavyRush, WorkerDefense, LightDefense, RangedDefense, HeavyDefense");
+		}
+		else {
+			logger.info("Using standard portfolio (no supporting scripts).");
+			config.setProperty("portfolio", "WorkerRush, LightRush, RangedRush, HeavyRush, WorkerDefense, LightDefense, RangedDefense, HeavyDefense");
 		}
 		
 		// repCount counts the actual number of repetitions
@@ -119,8 +130,7 @@ public class Train {
         double gamma = Double.parseDouble(config.getProperty("td.gamma"));
         double lambda = Double.parseDouble(config.getProperty("td.lambda"));
         
-        // the standard portfolio does not contain BuildBase and BuildBarracks
-        String portfolioNames = config.getProperty("portfolio", "WorkerRush, LightRush, RangedRush, HeavyRush, WorkerDefense, LightDefense, RangedDefense, HeavyDefense");
+        String portfolioNames = config.getProperty("portfolio");
 		
         // loads microRTS game settings
      	GameSettings settings = GameSettings.loadFromConfig(config);
