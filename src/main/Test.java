@@ -126,7 +126,7 @@ public class Test {
 			
 			// finally runs one repetition
 			// player 0's random seed increases whereas player 1's decreases with the repetitions  
-			runTestMatches(configFile, testPartnerName, currentDir, rep, finalRep - rep + 1, writeReplay);
+			runTestMatches(config, testPartnerName, currentDir, rep, finalRep - rep + 1, writeReplay);
 			
 		}
 	}
@@ -143,9 +143,7 @@ public class Test {
 	 * @param writeReplay write the replay (traces) for each match?
 	 * @throws Exception
 	 */
-	public static void runTestMatches(String configPath, String testPartnerName, String workingDir, int randomSeedP0, int randomSeedP1, boolean writeReplay) throws Exception {
-		
-		Properties config = ConfigManager.loadConfig(configPath);
+	public static void runTestMatches(Properties config, String testPartnerName, String workingDir, int randomSeedP0, int randomSeedP1, boolean writeReplay) throws Exception {
 		
 		int testMatches = Integer.parseInt(config.getProperty("test_matches"));
 		
