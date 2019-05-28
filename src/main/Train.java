@@ -39,7 +39,7 @@ public class Train {
         options.addOption(new Option("f", "final_rep", true, "Number of the final repetition (useful to parallelize executions). Assumes 0 if omitted"));
         options.addOption(new Option("i", "initial_rep", true, "Number of the initial repetition (useful to parallelize executions). Assumes 0 if omitted"));
         options.addOption(new Option("t", "train_opponent", true, "Full name of the AI to train against (overrides the one specified in file)."));
-        options.addOption(new Option("p", "portfolio", true, "The type of portfolio to use: basic or standard (default, does not contain support scripts)"));
+        options.addOption(new Option("p", "portfolio", true, "The type of portfolio to use: basic4 (4 rush), basic6 (rush+support), basic8 (default: 4 rush + 4 defense) or basic10 (rush+defense+support)"));
         options.addOption(new Option("r", "rewards", true, "The reward model:  winloss-tiebreak or victory-only (default)"));
         
         CommandLineParser parser = new DefaultParser();
@@ -76,15 +76,33 @@ public class Train {
 			logger.info("Train opponent is {}", config.getProperty("train_opponent"));
 		}
 		
-		// if the basic portfolio was specified, uses the support scripts
-		if(cmd.hasOption("portfolio") && "basic".equals(cmd.getOptionValue("portfolio"))) {
-			logger.info("Using basic portfolio.");
-			config.setProperty("portfolio", "BuildBase, BuildBarracks, WorkerRush, LightRush, RangedRush, HeavyRush, WorkerDefense, LightDefense, RangedDefense, HeavyDefense");
+		// retrieves the portfolio from config file, with the default as basic8 (4 rush, 4 offense)
+		String csvPortfolio = config.getProperty("portfolio", "WorkerRush, LightRush, RangedRush, HeavyRush, WorkerDefense, LightDefense, RangedDefense, HeavyDefense");
+		
+		// overrides portfolio if specified via command line
+		if(cmd.hasOption("portfolio")){
+			
+			if("basic4".equals(cmd.getOptionValue("portfolio"))) {
+				logger.info("Using basic4 portfolio (only rush scripts)");
+				csvPortfolio = "WorkerRush, LightRush, RangedRush, HeavyRush";
+			}
+		
+			else if ("basic6".equals(cmd.getOptionValue("portfolio"))){
+				logger.info("Using basic6 portfolio (rush+support scripts).");
+				csvPortfolio = "WorkerRush, LightRush, RangedRush, HeavyRush, BuildBase, BuildBarracks";
+			}
+			
+			else if ("basic8".equals(cmd.getOptionValue("portfolio"))){
+				logger.info("Using basic8 portfolio (rush+defense scripts).");
+				csvPortfolio = "WorkerRush, LightRush, RangedRush, HeavyRush, WorkerDefense, LightDefense, RangedDefense, HeavyDefense";
+			}
+			
+			else if ("basic10".equals(cmd.getOptionValue("portfolio"))){
+				logger.info("Using basic10 portfolio (rush+defense+support scripts).");
+				csvPortfolio = "WorkerRush, LightRush, RangedRush, HeavyRush, WorkerDefense, LightDefense, RangedDefense, HeavyDefense, BuildBase, BuildBarracks";
+			}
 		}
-		else {
-			logger.info("Using standard portfolio (no supporting scripts).");
-			config.setProperty("portfolio", "WorkerRush, LightRush, RangedRush, HeavyRush, WorkerDefense, LightDefense, RangedDefense, HeavyDefense");
-		}
+		config.setProperty("portfolio", csvPortfolio);	//stores the chosen portfolio back into config
 		
 		// reward model
 		if(cmd.hasOption("rewards") && "winloss-tiebreak".equals(cmd.getOptionValue("rewards"))) {
