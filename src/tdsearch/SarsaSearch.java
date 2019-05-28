@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 import ai.core.AI;
+import reward.RewardModel;
 import rts.GameState;
 import rts.PlayerAction;
 import rts.units.UnitTypeTable;
@@ -27,6 +28,7 @@ public class SarsaSearch extends TDSearch {
 	 * The vectors of eligibility traces (one per abstraction)
 	 */
 	private Map<String, double[]> eligibility;
+	
 
 	/**
 	 * Creates an instance of SarsaSearch with the specified parameters
@@ -40,10 +42,10 @@ public class SarsaSearch extends TDSearch {
 	 * @param lambda
 	 * @param randomSeed
 	 */
-	public SarsaSearch(UnitTypeTable types, Map<String,AI> portfolio, int timeBudget, double alpha, 
+	public SarsaSearch(UnitTypeTable types, Map<String,AI> portfolio, RewardModel rewards, int timeBudget, double alpha, 
 			double epsilon, double gamma, double lambda, int randomSeed) 
 	{
-		super(types, portfolio, timeBudget, alpha, epsilon, gamma, lambda, randomSeed);
+		super(types, portfolio, rewards, timeBudget, alpha, epsilon, gamma, lambda, randomSeed);
 
 		// initialize weights and eligibility
 		weights = new HashMap<>();
@@ -243,12 +245,11 @@ public class SarsaSearch extends TDSearch {
 	 */
 	private double tdTarget(GameState nextState, int player, String nextActionName) {
 		double reward, nextQ;
-
+		reward = rewards.reward(nextState, player);
+		
 		if (nextState.gameover()) {
 			nextQ = 0;
-			reward = nextState.winner() == player ? 1 : 0;
 		} else {
-			reward = 0;
 			nextQ = qValue(nextState, player, nextActionName);
 		}
 		return reward + this.gamma * nextQ;

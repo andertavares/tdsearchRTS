@@ -6,11 +6,9 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Random;
 
 import org.apache.logging.log4j.LogManager;
@@ -18,9 +16,10 @@ import org.apache.logging.log4j.Logger;
 
 import ai.core.AI;
 import ai.core.ParameterSpecification;
-import config.ConfigManager;
 import learningeval.FeatureExtractor;
 import portfolio.PortfolioManager;
+import reward.RewardModel;
+import reward.VictoryOnly;
 import rts.GameState;
 import rts.PlayerAction;
 import rts.units.UnitTypeTable;
@@ -73,6 +72,11 @@ public class TDSearch extends AI {
      * Thus they're called the action abstractions.
      */
     protected Map<String,AI> abstractions;
+    
+    /**
+     * The reward model used by the agent
+     */
+    protected RewardModel rewards;
 	
 	protected Logger logger;
 	
@@ -84,16 +88,17 @@ public class TDSearch extends AI {
 		this(
 			types, 
 			PortfolioManager.basicPortfolio(types),
+			new VictoryOnly(),
 			100, 0.01, 0.1, 1, 0.1, 0
 		);
 	}
 	
-	/**
+	/* *
 	 * @deprecated
      * Returns a TDSearch with parameters specified in a file
      * @param types
      * @param configPath
-     */
+     *
     public static TDSearch fromConfigFile(UnitTypeTable types, String configPath){
     	
     	Logger logger = LogManager.getLogger();
@@ -128,6 +133,7 @@ public class TDSearch extends AI {
     		PortfolioManager.getPortfolio(types, Arrays.asList(
     			portfolioNames.split(",")
 			)),
+    		new VictoryOnly(),
     		timeBudget, alpha, epsilon, gamma, lambda, randomSeed
     	);
         
@@ -142,25 +148,27 @@ public class TDSearch extends AI {
         }
         
         return newInstance;
-    }
+    }*/
     
 	
 	/**
 	 * Initializes TDSearch with the given parameters 
 	 * @param types the rules defining unit types
 	 * @param portfolio the portfolio of algorithms/action abstractions to select
+	 * @param rewards
 	 * @param alpha learning rate
 	 * @param epsilon exploration probability
 	 * @param gamma the discount factor for future rewards
 	 * @param lambda eligibility trace
 	 * @param randomSeed 
 	 */
-	public TDSearch(UnitTypeTable types, Map<String,AI> portfolio, int timeBudget, double alpha, double epsilon, double gamma, double lambda, int randomSeed) {
+	public TDSearch(UnitTypeTable types, Map<String,AI> portfolio, RewardModel rewards, int timeBudget, double alpha, double epsilon, double gamma, double lambda, int randomSeed) {
 		this.timeBudget = timeBudget;
 		this.alpha = alpha;
 		this.epsilon = epsilon;
 		this.gamma = gamma;
 		this.lambda = lambda;
+		this.rewards = rewards;
 		random = new Random(randomSeed);
 		
 		featureExtractor = new FeatureExtractor(types);
@@ -364,13 +372,12 @@ public class TDSearch extends AI {
 	 */
 	private double tdTarget(GameState reachedState, int player) {
 		double reward, reachedStateValue;
+		reward = rewards.reward(reachedState, player);
 		
 		if (reachedState.gameover()) { 
 			reachedStateValue = 0;
-			reward = reachedState.winner() == player ? 1 : 0;
 		}
 		else {
-			reward = 0;
 			reachedStateValue = linearCombination(featureExtractor.extractFeatures(reachedState, player), weights);
 		}
 		return reward + gamma * reachedStateValue;

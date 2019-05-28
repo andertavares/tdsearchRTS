@@ -28,24 +28,25 @@ public class PortfolioManager {
 	 * @return
 	 */
 	public static Map<String,AI> basicPortfolio(UnitTypeTable types){
-		Map<String,AI> fullPortfolio = new HashMap<String, AI>();
+		Map<String,AI> basicPortfolio = new HashMap<String, AI>();
 		// rush scripts
-		fullPortfolio.put("WorkerRush", new WorkerRush(types));
-		fullPortfolio.put("LightRush", new LightRush(types));
-		fullPortfolio.put("RangedRush", new RangedRush(types));
-		fullPortfolio.put("HeavyRush", new HeavyRush(types));
+		basicPortfolio.put("WorkerRush", new WorkerRush(types));
+		basicPortfolio.put("LightRush", new LightRush(types));
+		basicPortfolio.put("RangedRush", new RangedRush(types));
+		basicPortfolio.put("HeavyRush", new HeavyRush(types));
 		
 		// defense scripts
-		fullPortfolio.put("WorkerDefense", new WorkerDefense(types));
-		fullPortfolio.put("LightDefense", new LightDefense(types));
-		fullPortfolio.put("RangedDefense", new RangedDefense(types));
-		fullPortfolio.put("HeavyDefense", new HeavyDefense(types));
+		basicPortfolio.put("WorkerDefense", new WorkerDefense(types));
+		basicPortfolio.put("LightDefense", new LightDefense(types));
+		basicPortfolio.put("RangedDefense", new RangedDefense(types));
+		basicPortfolio.put("HeavyDefense", new HeavyDefense(types));
 		
 		// support scripts
-		fullPortfolio.put("BuildBase", new BuildBase(types));
-		fullPortfolio.put("BuildBarracks", new BuildBarracks(types));
+		basicPortfolio.put("BuildBase", new BuildBase(types));
+		basicPortfolio.put("BuildBarracks", new BuildBarracks(types));
 		//fullPortfolio.put("EconomyRush", new EconomyRush(types));
-		return fullPortfolio;
+		
+		return basicPortfolio;
 	}
 	
 	/**
@@ -59,8 +60,9 @@ public class PortfolioManager {
 		Map<String,AI> portfolio = new HashMap<String, AI>();
 		Map<String,AI> basicPortfolio = basicPortfolio(types);
 
-		// adds the members found in memberNames from the fullPortfolio to the returned portfolio
+		// adds the members found in memberNames from the basicPortfolio to the returned portfolio
 		for(String name : memberNames) {
+			name = name.trim(); // removes leading and trailing whitespaces 
 			portfolio.put(name, basicPortfolio.get(name));
 		}
 		
