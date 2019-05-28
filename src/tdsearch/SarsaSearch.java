@@ -123,7 +123,7 @@ public class SarsaSearch extends TDSearch {
 		return abstractionToAction(selectedAbstractionName, gs, player);
 		
 	}
-
+	
 	/**
 	 * Performs a Sarsa update for the given experience tuple <s, a, r, s', a'>. s
 	 * is the state, a is the actionName, r is the reward (calculated internally),
@@ -139,6 +139,64 @@ public class SarsaSearch extends TDSearch {
 	 * @param nextState
 	 * @param nextActionName
 	 */
+	private void sarsaLearning(GameState state, int player, String actionName, GameState nextState,
+			String nextActionName) {
+
+		double tdError = tdTarget(nextState, player, nextActionName) - qValue(state, player, actionName);
+
+		double[] f = featureExtractor.extractFeatures(state, player); // feature vector for the state
+
+		for (String abstractionName : weights.keySet()) {
+			double[] w = weights.get(abstractionName); // weight vector
+			double[] e = eligibility.get(abstractionName); // eligibility vector 
+			
+			// certifies that things are ok
+			assert w.length == e.length;
+			assert e.length == f.length;
+			
+			// vector updates
+			for (int i = 0; i < w.length; i++) {
+				w[i] = w[i] + alpha * tdError * e[i]; // weight vector update
+				e[i] = e[i] * gamma * lambda; //the eligibility of all actions decays by gamma * lambda
+			}
+		}
+		
+		// incrementes the eligibility of the selected action by adding the feature vector
+		double[] eSelected = eligibility.get(actionName);
+		for (int i = 0; i < eSelected.length; i++) {
+			eSelected[i] += f[i];
+		}
+		
+		/*
+		 * Remark: in Silver et al (2013) TD search, the eligibility vector update is done as 
+		 * e = e * lambda + f(s,a), where f(s,a) are the features for state s and action a.
+		 * This is so because features are per state and action. 
+		 * Moreover, they use gamma=1 always so that it does not appear in the equation.
+		 * That is, the general form of the equation should be e = e * gamma * lambda + f(s,a)
+		 *  
+		 * Here, gamma can have different values and we can interpret that f(s,a) = zeros 
+		 * for the non-selected action.
+		 * Thus, we decay the eligibility vectors of all actions and then 
+		 * increase the eligibility vector of the selected action by adding the current state features.
+		 * In other words, we  implement equation e = e * gamma * lambda + f(s,a) in two steps.
+		 */
+	}
+
+	/* * (OLD VERSION)
+	 * Performs a Sarsa update for the given experience tuple <s, a, r, s', a'>. s
+	 * is the state, a is the actionName, r is the reward (calculated internally),
+	 * s' is the next state, a' is the nextActionName
+	 * 
+	 * 1) Calculates the TD error: delta = r + Q(s',a') - Q(s,a) 
+	 * 2) Updates the weight vector: w = w + alpha * delta * e (e is the eligibility vector) 
+	 * 3) Updates the eligibility vector: e = lambda * gamma * e + features
+	 * 
+	 * @param state
+	 * @param player
+	 * @param actionName
+	 * @param nextState
+	 * @param nextActionName
+	 *
 	private void sarsaLearning(GameState state, int player, String actionName, GameState nextState,
 			String nextActionName) {
 
@@ -167,7 +225,7 @@ public class SarsaSearch extends TDSearch {
 		for (int i = 0; i < e.length; i++) {
 			e[i] = e[i] * lambda + f[i];
 		}
-	}
+	}*/
 
 	/**
 	 * The temporal-difference target is, by definition, r + gamma * q(s', a'),
