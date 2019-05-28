@@ -16,6 +16,7 @@ import reward.RewardModel;
 import rts.GameState;
 import rts.PlayerAction;
 import rts.units.UnitTypeTable;
+import utils.ForwardModel;
 
 public class SarsaSearch extends TDSearch {
 
@@ -95,7 +96,7 @@ public class SarsaSearch extends TDSearch {
 				
 				nextState.issueSafe(playerAction);
 				nextState.issueSafe(opponentAction);
-				nextState.cycle();
+				ForwardModel.forward(nextState); //advances the state up to the next decision point or gameover
 
 				// nextAName is a short for next abstraction name
 				String nextAName = epsilonGreedyAbstraction(nextState, player);
