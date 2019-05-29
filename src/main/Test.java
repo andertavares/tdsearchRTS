@@ -37,9 +37,10 @@ public class Test {
         options.addOption(new Option("d", "working-dir", true, "Directory to load weights in and save results"));
         options.addOption(new Option("i", "initial_rep", true, "Number of the initial repetition (useful to parallelize executions). Assumes 0 if omitted"));
         options.addOption(new Option("f", "final_rep", true, "Number of the final repetition (useful to parallelize executions). Assumes 0 if omitted"));
-        options.addOption(new Option("r", "save-replay", false, "If omitted, does not generate replay (trace) files."));
+        options.addOption(new Option("r", "save_replay", false, "If omitted, does not generate replay (trace) files."));
         options.addOption(new Option("p", "portfolio", true, "The type of portfolio to use: basic or standard (default, does not contain support scripts)"));
         options.addOption(new Option("r", "rewards", true, "The reward model:  winloss-tiebreak or victory-only (default)"));        
+        options.addOption(new Option("m", "test_matches", true, "Number of matches to run the test."));
 
         CommandLineParser parser = new DefaultParser();
         HelpFormatter formatter = new HelpFormatter();
@@ -72,7 +73,12 @@ public class Test {
 		String testPartnerName = cmd.hasOption("test_opponent") ? 
 				cmd.getOptionValue("test_opponent") : 
 				config.getProperty("test_opponent", "ai.abstraction.WorkerRush");
-
+				
+		// overrides the number of matches if specified via command line
+		if(cmd.hasOption("test_matches")) {
+			config.setProperty("test_matches", cmd.getOptionValue("test_matches"));
+		}
+		
 		// retrieves the portfolio from config file, with the default as basic8 (4 rush + 4 offense)
 		String csvPortfolio = config.getProperty("portfolio", "WorkerRush, LightRush, RangedRush, HeavyRush, WorkerDefense, LightDefense, RangedDefense, HeavyDefense");
 		
@@ -111,7 +117,7 @@ public class Test {
 			config.setProperty("rewards", "victory-only");
 		}
 				
-		boolean writeReplay = cmd.hasOption("save-replay");
+		boolean writeReplay = cmd.hasOption("save_replay");
 				
 		for (int rep = initialRep; rep <= finalRep; rep++) {
 			// determines the output dir according to the current rep
