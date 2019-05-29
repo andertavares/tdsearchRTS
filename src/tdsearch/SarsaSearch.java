@@ -116,7 +116,7 @@ public class SarsaSearch extends TDSearch {
 		GameState state = gs.clone(); //this state will advance during the linear look-ahead search below
 		
 		while (duration < planningBudget) { // while time available
-			// resets the eligibility traces
+			// starts with a new eligibility trace vector for planning
 			Map<String, double[]> planningEligibility = new HashMap<String, double[]>(); 
 			resetMap(planningEligibility);
 
