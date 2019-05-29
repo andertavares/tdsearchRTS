@@ -53,12 +53,13 @@ public class Parameters {
 
 		// overrides 'direct' parameters
 		List<String> overrideList = Arrays.asList(
-				"initial_rep", "final_rep", "train_opponent", "test_opponent", "test_matches", "rewards"
+				"initial_rep", "final_rep", "train_opponent", "test_opponent", 
+				"test_matches", "rewards", "features"
 		);
 		
 		for(String paramName : overrideList) {
 			if(cmd.hasOption(paramName)) {
-				logger.debug("Parameter '{}' overridden to '{}'", paramName, cmd.getOptionValue(paramName));
+				logger.info("Parameter '{}' overridden to '{}'", paramName, cmd.getOptionValue(paramName));
 				prop.setProperty(paramName, cmd.getOptionValue(paramName));
 			}
 		}

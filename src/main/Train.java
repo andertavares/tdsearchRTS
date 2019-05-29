@@ -135,7 +135,7 @@ public class Train {
         if(config.getProperty("features", "mapaware").equals("mapaware")) {
         	featureExtractor = new MapAware(types, maxCycles);
         }
-        else if (config.getProperty("features", "mapaware").equals("mapaware")) {
+        else if (config.getProperty("features", "mapaware").equals("material")) {
         	 featureExtractor = new MaterialAdvantage(types, maxCycles);
         }
         
