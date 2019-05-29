@@ -17,6 +17,7 @@ import org.apache.logging.log4j.Logger;
 
 import ai.core.AI;
 import config.ConfigManager;
+import config.Parameters;
 import portfolio.PortfolioManager;
 import reward.RewardModel;
 import reward.VictoryOnly;
@@ -32,88 +33,31 @@ public class Train {
 	public static void main(String[] args) throws Exception {
 		Logger logger = LogManager.getRootLogger();
 		
-		Options options = new Options();
-
-        options.addOption(new Option("c", "config-input", true, "Input config path"));
-        options.addOption(new Option("o", "output", true, "Output dir"));
-        options.addOption(new Option("f", "final_rep", true, "Number of the final repetition (useful to parallelize executions). Assumes 0 if omitted"));
-        options.addOption(new Option("i", "initial_rep", true, "Number of the initial repetition (useful to parallelize executions). Assumes 0 if omitted"));
-        options.addOption(new Option("t", "train_opponent", true, "Full name of the AI to train against (overrides the one specified in file)."));
-        options.addOption(new Option("p", "portfolio", true, "The type of portfolio to use: basic4 (4 rush), basic6 (rush+support), basic8 (default: 4 rush + 4 defense) or basic10 (rush+defense+support)"));
-        options.addOption(new Option("r", "rewards", true, "The reward model:  winloss-tiebreak or victory-only (default)"));
-        
+        Options options = Parameters.trainCommandLineOptions();
         CommandLineParser parser = new DefaultParser();
-        HelpFormatter formatter = new HelpFormatter();
         CommandLine cmd = null;
 
         try {
             cmd = parser.parse(options, args);
         } catch (ParseException e) {
             System.out.println(e.getMessage());
-            formatter.printHelp("utility-name", options);
+            new HelpFormatter().printHelp("utility-name", options);
 
             System.exit(1);
         }
 
-        String configFile = cmd.getOptionValue("config-input", "config/selfplay-example.properties");
-        String outputPrefix = cmd.getOptionValue("output", "results/selfplay-example/");
+        String configFile = cmd.getOptionValue("config_input");
+        String outputPrefix = cmd.getOptionValue("working_dir");
         
         Properties config = ConfigManager.loadConfig(configFile);
+        
+        // overrides config with command line parameters
+        Parameters.mergeCommandLineIntoProperties(cmd, config);
 		
-		// if initial and final rep were specified via command line, ignore the ones in file		
-		int initialRep = cmd.hasOption("initial_rep") ? 
-				Integer.parseInt(cmd.getOptionValue("initial_rep")) : 
-				Integer.parseInt(config.getProperty("initial_rep", "0"));
-				
-		int finalRep = cmd.hasOption("final_rep") ? 
-				Integer.parseInt(cmd.getOptionValue("final_rep")) : 
-				Integer.parseInt(config.getProperty("final_rep", "0"));
+		// retrieves initial and final reps		
+		int initialRep = Integer.parseInt(config.getProperty("initial_rep", "0"));
+		int finalRep = Integer.parseInt(config.getProperty("final_rep", "0"));
 			
-		// overrides training partner if speficied via command line
-		if(cmd.hasOption("train_opponent")) {
-			//logger.info("Setting train_opponent to {}", cmd.getOptionValue("train_opponent"));
-			config.setProperty("train_opponent", cmd.getOptionValue("train_opponent"));
-			logger.info("Train opponent is {}", config.getProperty("train_opponent"));
-		}
-		
-		// retrieves the portfolio from config file, with the default as basic8 (4 rush, 4 offense)
-		String csvPortfolio = config.getProperty("portfolio", "WorkerRush, LightRush, RangedRush, HeavyRush, WorkerDefense, LightDefense, RangedDefense, HeavyDefense");
-		
-		// overrides portfolio if specified via command line
-		if(cmd.hasOption("portfolio")){
-			
-			if("basic4".equals(cmd.getOptionValue("portfolio"))) {
-				logger.info("Using basic4 portfolio (only rush scripts)");
-				csvPortfolio = "WorkerRush, LightRush, RangedRush, HeavyRush";
-			}
-		
-			else if ("basic6".equals(cmd.getOptionValue("portfolio"))){
-				logger.info("Using basic6 portfolio (rush+support scripts).");
-				csvPortfolio = "WorkerRush, LightRush, RangedRush, HeavyRush, BuildBase, BuildBarracks";
-			}
-			
-			else if ("basic8".equals(cmd.getOptionValue("portfolio"))){
-				logger.info("Using basic8 portfolio (rush+defense scripts).");
-				csvPortfolio = "WorkerRush, LightRush, RangedRush, HeavyRush, WorkerDefense, LightDefense, RangedDefense, HeavyDefense";
-			}
-			
-			else if ("basic10".equals(cmd.getOptionValue("portfolio"))){
-				logger.info("Using basic10 portfolio (rush+defense+support scripts).");
-				csvPortfolio = "WorkerRush, LightRush, RangedRush, HeavyRush, WorkerDefense, LightDefense, RangedDefense, HeavyDefense, BuildBase, BuildBarracks";
-			}
-		}
-		config.setProperty("portfolio", csvPortfolio);	//stores the chosen portfolio back into config
-		
-		// reward model
-		if(cmd.hasOption("rewards") && "winloss-tiebreak".equals(cmd.getOptionValue("rewards"))) {
-			logger.info("Using winloss-tiebreak rewards");
-			config.setProperty("rewards", "winloss-tiebreak");
-		}
-		else {
-			logger.info("Using standard rewards (1 on victory, 0 otherwise)");
-			config.setProperty("rewards", "victory-only");
-		}
-		
 		// repCount counts the actual number of repetitions
 		for (int rep = initialRep, repCount = 0; rep <= finalRep; rep++, repCount++) {
 			// determines the output dir according to the current rep
@@ -170,8 +114,8 @@ public class Train {
         // creates a UnitTypeTable that should be overwritten by the one in config
         UnitTypeTable types = new UnitTypeTable(settings.getUTTVersion(), settings.getConflictPolicy());
         
-        // loads the reward model
-        RewardModel rewards = config.getProperty("rewards").equals("victory-only") ? new VictoryOnly() : new WinLossTiesBroken();
+        // loads the reward model (default=victory-only)
+        RewardModel rewards = config.getProperty("rewards", "victory-only").equals("victory-only") ? new VictoryOnly() : new WinLossTiesBroken();
         
         // creates the player instance
 		TDSearch player = new SarsaSearch(
