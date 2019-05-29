@@ -13,7 +13,7 @@ import rts.units.UnitTypeTable;
  * @author artavares
  *
  */
-public class MapAwareFeatureExtractor implements FeatureExtractor {
+public class MapAware implements FeatureExtractor {
 	
 	private int numFeatures;
 	
@@ -38,7 +38,7 @@ public class MapAwareFeatureExtractor implements FeatureExtractor {
 	 * @param maxUnits the maximum number of possible units for the specific game
 	 * @param maxResources the maximum number of possible resources a player will possess in the specific game
 	 */
-	public MapAwareFeatureExtractor(UnitTypeTable unitTypeTable, int maxTime, int maxMapLength, int maxUnits, int maxResources) {
+	public MapAware(UnitTypeTable unitTypeTable, int maxTime, int maxMapLength, int maxUnits, int maxResources) {
 		
 		this.maxTime = maxTime;
 		this.maxMapSize = maxMapLength;
@@ -75,7 +75,7 @@ public class MapAwareFeatureExtractor implements FeatureExtractor {
 	 * Time is 15000, mapLength is 256, units and resources are 50
 	 * @param unitTypeTable
 	 */
-	public MapAwareFeatureExtractor(UnitTypeTable unitTypeTable) {
+	public MapAware(UnitTypeTable unitTypeTable) {
 		this(unitTypeTable, 15000, 256, 50, 50);
 		
 	}
@@ -85,7 +85,7 @@ public class MapAwareFeatureExtractor implements FeatureExtractor {
 	 * mapLength is 256, units and resources are 50
 	 * @param unitTypeTable
 	 */
-	public MapAwareFeatureExtractor(UnitTypeTable types, int maxTime) {
+	public MapAware(UnitTypeTable types, int maxTime) {
 		this(types, maxTime, 256, 50, 50);
 	}
 	
