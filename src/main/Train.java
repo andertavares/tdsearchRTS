@@ -21,6 +21,7 @@ import config.Parameters;
 import portfolio.PortfolioManager;
 import reward.RewardModel;
 import reward.VictoryOnly;
+import reward.WinLossDraw;
 import reward.WinLossTiesBroken;
 import rts.GameSettings;
 import rts.units.UnitTypeTable;
@@ -117,7 +118,16 @@ public class Train {
         UnitTypeTable types = new UnitTypeTable(settings.getUTTVersion(), settings.getConflictPolicy());
         
         // loads the reward model (default=victory-only)
-        RewardModel rewards = config.getProperty("rewards", "victory-only").equals("victory-only") ? new VictoryOnly() : new WinLossTiesBroken(maxCycles);
+        RewardModel rewards = null;
+        if(config.getProperty("rewards", "victory-only").equals("victory-only")) {
+        	rewards = new VictoryOnly();
+        }
+        else if (config.getProperty("rewards", "victory-only").equals("winloss-tiebreak")) {
+        	 rewards = new WinLossTiesBroken(maxCycles);
+        }
+        else if (config.getProperty("rewards", "victory-only").equals("winlossdraw")) {
+        	rewards = new WinLossDraw(maxCycles);
+        }
         
         // creates the player instance
 		TDSearch player = new SarsaSearch(
