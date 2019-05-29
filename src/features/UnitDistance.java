@@ -8,16 +8,10 @@ import rts.units.Unit;
 import rts.units.UnitType;
 import rts.units.UnitTypeTable;
 
-/**
- * Feature extractor that accounts for material advantage (quantity of units), 
- * plus time 
- * @author anderson
- *
- */
-public class MaterialAdvantage implements FeatureExtractor {
-
+public class UnitDistance implements FeatureExtractor {
 	private int numFeatures;
 	
+	private int mapSize;
 	private int maxUnits;
 	private int maxResources;
 	
@@ -34,23 +28,25 @@ public class MaterialAdvantage implements FeatureExtractor {
 	 * 
 	 * @param unitTypeTable the specified types for the game
 	 * @param maxTime the maximum duration of a game, in cycles
+	 * @param mapSize size of the map (preferrably of the largest dimension)
 	 * @param maxUnits the maximum number of possible units for the specific game
 	 * @param maxResources the maximum number of possible resources a player will possess in the specific game
 	 */
-	public MaterialAdvantage(UnitTypeTable unitTypeTable, int maxTime, int maxUnits, int maxResources) {
+	public UnitDistance(UnitTypeTable unitTypeTable, int maxTime, int mapSize, int maxUnits, int maxResources) {
 		
 		this.maxTime = maxTime;
+		this.mapSize = mapSize;
 		this.maxUnits = maxUnits;
 		this.maxResources = maxResources;
 		
 		/**
-		 * 1 bias, 2 resources, 1 time, 12 unit counts 
+		 * 1 bias, 1 distance, 2 resources, 1 time, 12 unit counts 
 		 */
-		numFeatures = 16;
+		numFeatures = 17;
 		
 		baseIndexes = new HashMap<UnitType, Integer>();
 		
-		initialUnitIndex = 4; //features regarding units start at this index in the feature vector
+		initialUnitIndex = 5; //features regarding units start at this index in the feature vector
 		numberTypes = 6; // there are 6 unit types (resources are not regarded)
 		
 		//TODO do as the line commented below and initialize base index by traversing the list of types
@@ -70,11 +66,11 @@ public class MaterialAdvantage implements FeatureExtractor {
 	
 	/**
 	 * Initializes the FeatureExtractor with default values for the max values.
-	 * Time is 15000, units and resources are 50
+	 * Time is 15000, mapLength is 256, units and resources are 50
 	 * @param unitTypeTable
 	 */
-	public MaterialAdvantage(UnitTypeTable unitTypeTable) {
-		this(unitTypeTable, 15000, 50, 50);
+	public UnitDistance(UnitTypeTable unitTypeTable) {
+		this(unitTypeTable, 15000, 256, 50, 50);
 		
 	}
 	
@@ -82,9 +78,11 @@ public class MaterialAdvantage implements FeatureExtractor {
 	 * Initializes the FeatureExtractor with default values for the non-specified max values.
 	 * units and resources are 50
 	 * @param unitTypeTable
+	 * @param maxTime
+	 * @param mapSize
 	 */
-	public MaterialAdvantage(UnitTypeTable types, int maxTime) {
-		this(types, maxTime, 50, 50);
+	public UnitDistance(UnitTypeTable types, int maxTime, int mapSize) {
+		this(types, maxTime, mapSize, 50, 50);
 	}
 	
 	public int getNumFeatures() {
@@ -97,12 +95,15 @@ public class MaterialAdvantage implements FeatureExtractor {
 		
 		features[0] = 1; //bias, always 1
 		
+		// shortest manhattan distance between ally and enemy units, capped at a maximum value
+		features[1] = shortestDistanceBetweenEnemies(s);
+		
 		// resources
-		features[1] = Math.min(s.getPlayer(player).getResources(), maxResources);	//player's resources
-		features[2] = Math.min(s.getPlayer(1-player).getResources(), maxResources);	//opponent's resources
+		features[2] = Math.min(s.getPlayer(player).getResources(), maxResources);	//player's resources
+		features[3] = Math.min(s.getPlayer(1-player).getResources(), maxResources);	//opponent's resources
 		
 		// time
-		features[3] = Math.min(s.getTime(), maxTime);
+		features[4] = Math.min(s.getTime(), maxTime);
 		
 		for (Unit u : s.getPhysicalGameState().getUnits()) {
 			if (u.getType().isResource) continue; //map resources are not interesting
@@ -115,12 +116,15 @@ public class MaterialAdvantage implements FeatureExtractor {
 		}
 		
 		// BEGIN: normalize features
-		// 1 and 2 are normalized by MAX_RESOURCES
-		features[1] /= maxResources;
-		features[2] /= maxResources;
+		// 1 is normalized by the largest possible manhattan distance
+		features[1] /= (mapSize + mapSize);
+		
+		// 3 and 4 are normalized at MAX_RESOURCES
+		features[3] /= maxResources;
+		features[4] /= maxResources;
 		
 		// 5 is normalized at maxTime
-		features[3] /= maxTime;
+		features[5] /= maxTime;
 		
 		// from initial unit index to 2*the number of types (inclusive) are normalized at MAX_UNITS
 		// 2*number of types is used because the count is done for each player
@@ -132,4 +136,23 @@ public class MaterialAdvantage implements FeatureExtractor {
 		return features;
 	}
 	
+	public int shortestDistanceBetweenEnemies(GameState state) {
+		int shortestDistance = mapSize + mapSize; //this is the largest manhattan distance possible in the map
+		
+		// inefficient way to determine the distance...
+		for(Unit u : state.getUnits()) {
+			for(Unit v : state.getUnits()) {
+				// skips units from the same player
+				if(u.getPlayer() == v.getPlayer()) continue;
+				
+				int distance = Math.abs(u.getX() - v.getX()) + Math.abs(u.getY() - v.getY());
+				if (distance < shortestDistance) {
+					shortestDistance = distance;
+				}
+				
+			}
+		}
+		
+		return shortestDistance;
+	}
 }
