@@ -398,6 +398,17 @@ public class TDSearch extends AI {
 		}
 		return value;
 	}
+	
+	/**
+	 * Returns the logistic activation of the linear combination of features and weights 
+	 * @param features
+	 * @param weights
+	 * @return
+	 */
+	protected double linearCombinationLogisticActivation(double[] features, double[] weights) {
+		double rawValue = linearCombination(features, weights);
+		return 1.0 / (1 + Math.exp(-rawValue));
+	}
 
 	private PlayerAction epsilonGreedy(GameState gs, int player) {
 

@@ -74,6 +74,8 @@ public class SarsaSearch extends TDSearch {
 		Date end;
 		int planningBudget = (int) (.8 * timeBudget); // 80% of budget to planning
 		long duration = 0;
+		
+		logger.debug("v({}) for player{} before planning: {}", gs.getTime(), player, stateValue(featureExtractor.extractFeatures(gs, player)));
 
 		while (duration < planningBudget) { // while time available
 			// resets the eligibility traces
@@ -111,9 +113,12 @@ public class SarsaSearch extends TDSearch {
 				end = new Date(System.currentTimeMillis());
 				duration = end.getTime() - begin.getTime();
 			}
+			
 		} // end while (timeAvailable)
 
 		String selectedAbstractionName = greedyAbstraction(gs, player);
+		
+		logger.debug("v({}) for player{} after planning: {}", gs.getTime(), player, stateValue(featureExtractor.extractFeatures(gs, player)));
 		
 		end = new Date(System.currentTimeMillis());
 		logger.debug(String.format(
@@ -121,6 +126,7 @@ public class SarsaSearch extends TDSearch {
 			player, selectedAbstractionName,
 			gs.getTime(), end.getTime() - begin.getTime()
 		));
+		
 		return abstractionToAction(selectedAbstractionName, gs, player);
 		
 	}
@@ -394,7 +400,7 @@ public class SarsaSearch extends TDSearch {
 	 * @return
 	 */
 	private double qValue(double[] features, String abstractionName) {
-		return linearCombination(features, weights.get(abstractionName));
+		return linearCombinationLogisticActivation(features, weights.get(abstractionName));
 	}
 
 	/**
