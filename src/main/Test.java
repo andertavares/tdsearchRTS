@@ -31,7 +31,7 @@ public class Test {
 	public static void main(String[] args) throws Exception {
 		Logger logger = LogManager.getRootLogger();
 		
-		Options options = Parameters.trainCommandLineOptions();
+		Options options = Parameters.testCommandLineOptions();
         CommandLineParser parser = new DefaultParser();
         CommandLine cmd = null;
 
