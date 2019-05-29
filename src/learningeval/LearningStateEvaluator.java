@@ -1,19 +1,17 @@
 package learningeval;
 
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.util.Map;
 
 import activation.DefaultActivationFunction;
 import activation.LogisticLogLoss;
 import ai.RandomBiasedAI;
 import ai.core.AI;
 import ai.evaluation.EvaluationFunction;
-import ai.evaluation.SimpleSqrtEvaluationFunction3;
+import features.FeatureExtractor;
 import rts.GameState;
 import rts.units.UnitTypeTable;
 
