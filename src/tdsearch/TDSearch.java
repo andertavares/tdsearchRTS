@@ -89,6 +89,7 @@ public class TDSearch extends AI {
 			types, 
 			PortfolioManager.basicPortfolio(types),
 			new VictoryOnly(),
+			12000,
 			100, 0.01, 0.1, 1, 0.1, 0
 		);
 	}
@@ -155,14 +156,15 @@ public class TDSearch extends AI {
 	 * Initializes TDSearch with the given parameters 
 	 * @param types the rules defining unit types
 	 * @param portfolio the portfolio of algorithms/action abstractions to select
-	 * @param rewards
+	 * @param rewards the reward model
+	 * @param matchDuration the maximum match duration in cycles
 	 * @param alpha learning rate
 	 * @param epsilon exploration probability
 	 * @param gamma the discount factor for future rewards
 	 * @param lambda eligibility trace
 	 * @param randomSeed 
 	 */
-	public TDSearch(UnitTypeTable types, Map<String,AI> portfolio, RewardModel rewards, int timeBudget, double alpha, double epsilon, double gamma, double lambda, int randomSeed) {
+	public TDSearch(UnitTypeTable types, Map<String,AI> portfolio, RewardModel rewards, int matchDuration, int timeBudget, double alpha, double epsilon, double gamma, double lambda, int randomSeed) {
 		this.timeBudget = timeBudget;
 		this.alpha = alpha;
 		this.epsilon = epsilon;
@@ -171,7 +173,7 @@ public class TDSearch extends AI {
 		this.rewards = rewards;
 		random = new Random(randomSeed);
 		
-		featureExtractor = new FeatureExtractor(types);
+		featureExtractor = new FeatureExtractor(types, matchDuration);
 		
 		weights = new double[featureExtractor.getNumFeatures()];
 		

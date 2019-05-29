@@ -177,6 +177,7 @@ public class Test {
 			types, 
 			PortfolioManager.getPortfolio(types, Arrays.asList(portfolioNames.split(","))),
 			rewards,
+			Integer.parseInt(config.getProperty("max_cycles")),
 			timeBudget, alpha, epsilon, gamma, lambda, randomSeedP0
 		);
 		player.loadWeights(workingDir + "/weights_0.bin");

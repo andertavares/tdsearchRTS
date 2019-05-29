@@ -122,6 +122,7 @@ public class Train {
 			types, 
 			PortfolioManager.getPortfolio(types, Arrays.asList(portfolioNames.split(","))), 
 			rewards,
+			Integer.parseInt(config.getProperty("max_cycles")),
 			timeBudget, alpha, epsilon, gamma, lambda, randomSeedP0
 		);
 		
@@ -132,6 +133,7 @@ public class Train {
 				types,
 				PortfolioManager.getPortfolio(types, Arrays.asList(portfolioNames.split(","))),
 				rewards,
+				Integer.parseInt(config.getProperty("max_cycles")),
 				timeBudget, alpha, epsilon, gamma, lambda, randomSeedP1
 			);
 		}

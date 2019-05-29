@@ -80,6 +80,15 @@ public class FeatureExtractor {
 		
 	}
 	
+	/**
+	 * Initializes the FeatureExtractor with default values for the non-specified max values.
+	 * mapLength is 256, units and resources are 50
+	 * @param unitTypeTable
+	 */
+	public FeatureExtractor(UnitTypeTable types, int maxTime) {
+		this(types, maxTime, 256, 50, 50);
+	}
+	
 	public int getNumFeatures() {
 		return numFeatures;
 	}

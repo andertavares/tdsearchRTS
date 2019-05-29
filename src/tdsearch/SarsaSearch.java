@@ -30,6 +30,10 @@ public class SarsaSearch extends TDSearch {
 	 */
 	private Map<String, double[]> eligibility;
 	
+	private String previousChoiceName;
+	
+	private GameState previousState;
+	
 
 	/**
 	 * Creates an instance of SarsaSearch with the specified parameters
@@ -37,16 +41,21 @@ public class SarsaSearch extends TDSearch {
 	 * @param types
 	 * @param portfolio the portfolio of algorithms/action abstractions to select (a map(name -> AI))
 	 * @param timeBudget
+	 * @param matchDuration the maximum match duration in cycles
 	 * @param alpha
 	 * @param epsilon
 	 * @param gamma
 	 * @param lambda
 	 * @param randomSeed
 	 */
-	public SarsaSearch(UnitTypeTable types, Map<String,AI> portfolio, RewardModel rewards, int timeBudget, double alpha, 
+	public SarsaSearch(UnitTypeTable types, Map<String,AI> portfolio, RewardModel rewards, int matchDuration, int timeBudget, double alpha, 
 			double epsilon, double gamma, double lambda, int randomSeed) 
 	{
-		super(types, portfolio, rewards, timeBudget, alpha, epsilon, gamma, lambda, randomSeed);
+		super(types, portfolio, rewards, matchDuration, timeBudget, alpha, epsilon, gamma, lambda, randomSeed);
+		
+		//initialize previous choice and state as null (they don't exist yet)
+		previousChoiceName = null;
+		previousState = null;
 
 		// initialize weights and eligibility
 		weights = new HashMap<>();
@@ -56,10 +65,9 @@ public class SarsaSearch extends TDSearch {
 
 			eligibility.put(aiName, new double[featureExtractor.getNumFeatures()]);
 
+			// initializes weights randomly within [-1, 1]
 			double[] abstractionWeights = new double[featureExtractor.getNumFeatures()];
-
 			for (int i = 0; i < abstractionWeights.length; i++) {
-				// weights are initialized randomly within [-1, 1]
 				abstractionWeights[i] = (random.nextDouble() * 2) - 1; // randomly initialized in [-1,1]
 			}
 			weights.put(aiName, abstractionWeights);
@@ -70,28 +78,57 @@ public class SarsaSearch extends TDSearch {
 	@Override
 	public PlayerAction getAction(int player, GameState gs) throws Exception {
 		
+		//Date begin = new Date(System.currentTimeMillis());
+
+		logger.debug("v({}) for player{} before planning: {}", gs.getTime(), player, stateValue(featureExtractor.extractFeatures(gs, player)));
+		sarsaPlanning(gs, player);
+		logger.debug("v({}) for player{} after planning: {}", gs.getTime(), player, stateValue(featureExtractor.extractFeatures(gs, player)));
+		
+		String currentChoiceName = epsilonGreedyAbstraction(gs, player);
+		
+		if(previousChoiceName != null && previousChoiceName != null) {
+			// updates the 'long-term' memory from actual experience
+			sarsaUpdate(previousState, player, previousChoiceName, gs, currentChoiceName, weights, eligibility);
+		}
+		
+		// updates previous choices for the next sarsa learning update
+		previousChoiceName = currentChoiceName;
+		previousState = gs;
+		
+		//Date end = new Date(System.currentTimeMillis());
+		logger.debug("Player {} selected {}.",
+			player, currentChoiceName
+		);
+		
+		return abstractionToAction(currentChoiceName, gs, player);
+		
+	}
+
+	private void sarsaPlanning(GameState gs, int player) {
 		Date begin = new Date(System.currentTimeMillis());
-		Date end;
+		Date end = begin;
 		int planningBudget = (int) (.8 * timeBudget); // 80% of budget to planning
 		long duration = 0;
 		
-		logger.debug("v({}) for player{} before planning: {}", gs.getTime(), player, stateValue(featureExtractor.extractFeatures(gs, player)));
-
+		// copies 'long-term' memory to 'short-term' memory
+		Map<String, double[]> planningWeights = new HashMap<>(weights);
+		
 		GameState state = gs.clone(); //this state will advance during the linear look-ahead search below
 		
 		while (duration < planningBudget) { // while time available
 			// resets the eligibility traces
-			resetEligibility();
+			Map<String, double[]> planningEligibility = new HashMap<String, double[]>(); 
+			resetMap(planningEligibility);
 
 			state = gs.clone();
 			String aName = epsilonGreedyAbstraction(state, player); // aName is a short for abstraction name
 
-			while (!state.gameover() && duration < planningBudget) { // go until game over or time is out
+			while (!state.gameover() && duration < planningBudget) { // go until game over or time is out TODO add maxcycles condition
 
 				// issue the action to obtain the next state, issues a self-play move for the
 				// opponent
 				GameState nextState = state.clone();
-				logger.trace("Selected abstraction " + aName);
+				logger.trace("Planning step, selected {}", aName);
 				String opponentAName = epsilonGreedyAbstraction(state, 1 - player);
 				
 				// must retrieve both actions and only then issue them
@@ -105,8 +142,8 @@ public class SarsaSearch extends TDSearch {
 				// nextAName is a short for next abstraction name
 				String nextAName = epsilonGreedyAbstraction(nextState, player);
 
-				// updates the value function from this experience tuple
-				sarsaLearning(state, player, aName, nextState, nextAName);
+				// updates the 'short-term' memory from simulated experience
+				sarsaUpdate(state, player, aName, nextState, nextAName, planningWeights, planningEligibility);
 
 				state = nextState;
 				aName = nextAName;
@@ -117,37 +154,31 @@ public class SarsaSearch extends TDSearch {
 			}
 			
 		} // end while (timeAvailable)
-
-		String selectedAbstractionName = greedyAbstraction(gs, player);
 		
-		logger.debug("v({}) for player{} after planning: {}", gs.getTime(), player, stateValue(featureExtractor.extractFeatures(gs, player)));
-		
-		end = new Date(System.currentTimeMillis());
-		logger.debug("Player {} selected {}. getAction for frame #{} looked up to frame {} and took {}ms",
-			player, selectedAbstractionName,
-			gs.getTime(), state.getTime(), end.getTime() - begin.getTime()
+		logger.debug("Planning for player {} at frame #{} looked up to frame {} and took {}ms",
+			player, gs.getTime(), state.getTime(), end.getTime() - begin.getTime()
 		);
-		
-		return abstractionToAction(selectedAbstractionName, gs, player);
-		
 	}
 	
 	/**
-	 * Performs a Sarsa update for the given experience tuple <s, a, r, s', a'>. s
-	 * is the state, a is the actionName, r is the reward (calculated internally),
+	 * Performs a Sarsa update on the given weights using the given eligibility traces.
+	 * For an experience tuple <s, a, r, s', a'>, where s is the state, a is the actionName, 
+	 * r is the reward (calculated internally),
 	 * s' is the next state, a' is the nextActionName
 	 * 
 	 * 1) Calculates the TD error: delta = r + gammna * Q(s',a') - Q(s,a) 
 	 * 2) Updates the weight vector: w = w + alpha * delta * e (e is the eligibility vector) 
 	 * 3) Updates the eligibility vector: e = lambda * gamma * e + features
-	 * 
 	 * @param state
 	 * @param player
 	 * @param actionName
 	 * @param nextState
 	 * @param nextActionName
+	 * @param weights
+	 * @param eligibility
 	 */
-	private void sarsaLearning(GameState state, int player, String actionName, GameState nextState, String nextActionName) {
+	private void sarsaUpdate(GameState state, int player, String actionName, GameState nextState, String nextActionName, 
+			Map<String, double[]> weights, Map<String, double[]> eligibility) {
 		
 		//delta = r + gammna * Q(s',a') - Q(s,a)
 		double tdError = tdTarget(nextState, player, nextActionName) - qValue(state, player, actionName);
@@ -189,7 +220,7 @@ public class SarsaSearch extends TDSearch {
 		 * In other words, we  implement equation e = e * gamma * lambda + f(s,a) in two steps.
 		 */
 	}
-
+	
 	/* * (OLD VERSION)
 	 * Performs a Sarsa update for the given experience tuple <s, a, r, s', a'>. s
 	 * is the state, a is the actionName, r is the reward (calculated internally),
@@ -409,10 +440,10 @@ public class SarsaSearch extends TDSearch {
 	/**
 	 * Resets the eligibility vectors (all zeros)
 	 */
-	private void resetEligibility() {
+	private void resetMap(Map<String, double[]> map) {
 		for (String abstractionName : abstractions.keySet()) {
-			// each vector of eligibility traces is initialized to zero (thanks, java)
-			eligibility.put(abstractionName, new double[featureExtractor.getNumFeatures()]);
+			// resets all values in vector to zero
+			map.put(abstractionName, new double[featureExtractor.getNumFeatures()]);
 		}
 	}
 
