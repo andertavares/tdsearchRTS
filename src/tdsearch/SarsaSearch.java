@@ -77,11 +77,13 @@ public class SarsaSearch extends TDSearch {
 		
 		logger.debug("v({}) for player{} before planning: {}", gs.getTime(), player, stateValue(featureExtractor.extractFeatures(gs, player)));
 
+		GameState state = gs.clone(); //this state will advance during the linear look-ahead search below
+		
 		while (duration < planningBudget) { // while time available
 			// resets the eligibility traces
 			resetEligibility();
 
-			GameState state = gs.clone();
+			state = gs.clone();
 			String aName = epsilonGreedyAbstraction(state, player); // aName is a short for abstraction name
 
 			while (!state.gameover() && duration < planningBudget) { // go until game over or time is out
@@ -121,11 +123,10 @@ public class SarsaSearch extends TDSearch {
 		logger.debug("v({}) for player{} after planning: {}", gs.getTime(), player, stateValue(featureExtractor.extractFeatures(gs, player)));
 		
 		end = new Date(System.currentTimeMillis());
-		logger.debug(String.format(
-			"Player %d selected %s. getAction for frame #%d took %dms",
+		logger.debug("Player {} selected {}. getAction for frame #{} looked up to frame {} and took {}ms",
 			player, selectedAbstractionName,
-			gs.getTime(), end.getTime() - begin.getTime()
-		));
+			gs.getTime(), state.getTime(), end.getTime() - begin.getTime()
+		);
 		
 		return abstractionToAction(selectedAbstractionName, gs, player);
 		
@@ -146,9 +147,9 @@ public class SarsaSearch extends TDSearch {
 	 * @param nextState
 	 * @param nextActionName
 	 */
-	private void sarsaLearning(GameState state, int player, String actionName, GameState nextState,
-			String nextActionName) {
-
+	private void sarsaLearning(GameState state, int player, String actionName, GameState nextState, String nextActionName) {
+		
+		//delta = r + Q(s',a') - Q(s,a)
 		double tdError = tdTarget(nextState, player, nextActionName) - qValue(state, player, actionName);
 
 		double[] f = featureExtractor.extractFeatures(state, player); // feature vector for the state
@@ -372,6 +373,8 @@ public class SarsaSearch extends TDSearch {
 		double maxQ = Double.NEGATIVE_INFINITY;
 		for (String candidateName : weights.keySet()) {
 			double q = qValue(features, candidateName);
+			
+			logger.debug("q(s,{})={}", candidateName, q);
 			if (q > maxQ) {
 				maxQ = q;
 			}
