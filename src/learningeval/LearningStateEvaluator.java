@@ -12,6 +12,7 @@ import ai.RandomBiasedAI;
 import ai.core.AI;
 import ai.evaluation.EvaluationFunction;
 import features.FeatureExtractor;
+import features.MapAwareFeatureExtractor;
 import rts.GameState;
 import rts.units.UnitTypeTable;
 
@@ -73,7 +74,7 @@ public class LearningStateEvaluator extends EvaluationFunction {
 		isTraining = true;
 		randomBiasedPolicy = new RandomBiasedAI(unitTypeTable);
 		
-		featureExtractor = new FeatureExtractor(unitTypeTable);
+		featureExtractor = new MapAwareFeatureExtractor(unitTypeTable);
 		
 		weights = new double[featureExtractor.getNumFeatures()];
 		

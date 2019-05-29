@@ -11,7 +11,7 @@ import org.jdom.JDOMException;
 import org.jdom.input.SAXBuilder;
 import org.junit.jupiter.api.Test;
 
-import features.FeatureExtractor;
+import features.MapAwareFeatureExtractor;
 import rts.GameState;
 import rts.PhysicalGameState;
 import rts.units.Unit;
@@ -26,7 +26,7 @@ class TestFeatureExtractor {
 		
 		GameState state = new GameState(map, types);
 		
-		FeatureExtractor extractor = new FeatureExtractor(types, 3000, 64, 64, 50);
+		MapAwareFeatureExtractor extractor = new MapAwareFeatureExtractor(types, 3000, 64, 64, 50);
 		
 		double[] features = extractor.extractFeatures(state, 1);
 		
@@ -61,7 +61,7 @@ class TestFeatureExtractor {
 		// loads errorState.xml 
 		GameState state = GameState.fromXML("src/test/errorState.xml", types);
 		
-		FeatureExtractor extractor = new FeatureExtractor(types, 3000, 64, 64, 50);
+		MapAwareFeatureExtractor extractor = new MapAwareFeatureExtractor(types, 3000, 64, 64, 50);
 		
 		double[] features = extractor.extractFeatures(state, 0);
 		

@@ -441,7 +441,7 @@ public class SarsaSearch extends TDSearch {
 	 * @return
 	 */
 	private double qValue(double[] features, String abstractionName) {
-		return linearCombinationLogisticActivation(features, weights.get(abstractionName));
+		return linearCombination(features, weights.get(abstractionName));
 	}
 
 	/**

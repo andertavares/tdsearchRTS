@@ -16,7 +16,7 @@ import org.apache.logging.log4j.Logger;
 
 import ai.core.AI;
 import ai.core.ParameterSpecification;
-import features.FeatureExtractor;
+import features.MapAwareFeatureExtractor;
 import portfolio.PortfolioManager;
 import reward.RewardModel;
 import reward.VictoryOnly;
@@ -69,7 +69,7 @@ public class TDSearch extends AI {
 	/**
 	 * The state feature extractor
 	 */
-	protected FeatureExtractor featureExtractor;
+	protected MapAwareFeatureExtractor featureExtractor;
 	
 	/**
 	 * This maps the AI name to its instance.
@@ -180,7 +180,7 @@ public class TDSearch extends AI {
 		
 		random = new Random(randomSeed);
 		
-		featureExtractor = new FeatureExtractor(types, matchDuration);
+		featureExtractor = new MapAwareFeatureExtractor(types, matchDuration);
 		
 		weights = new double[featureExtractor.getNumFeatures()];
 		
