@@ -11,7 +11,7 @@ import org.jdom.JDOMException;
 import org.jdom.input.SAXBuilder;
 import org.junit.jupiter.api.Test;
 
-import learningeval.FeatureExtractor;
+import features.FeatureExtractor;
 import rts.GameState;
 import rts.PhysicalGameState;
 import rts.units.Unit;
