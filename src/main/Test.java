@@ -153,13 +153,13 @@ public class Test {
 		
 		int testMatches = Integer.parseInt(config.getProperty("test_matches"));
 		
-		int timeBudget = 0; // no planning budget, just gimme the greedy action
+		int timeBudget = Integer.parseInt(config.getProperty("search.timebudget"));
 		
         double epsilon = 0;
-        double alpha = 0;
+        double alpha = Double.parseDouble(config.getProperty("td.alpha.initial"));
         
-        double gamma = 0;
-        double lambda = 0;
+        double gamma = Double.parseDouble(config.getProperty("td.gamma"));
+        double lambda = Double.parseDouble(config.getProperty("td.lambda"));
 		
         // loads microRTS game settings
      	GameSettings settings = GameSettings.loadFromConfig(config);

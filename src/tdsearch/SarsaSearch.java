@@ -33,6 +33,8 @@ public class SarsaSearch extends TDSearch {
 	private String previousChoiceName;
 	
 	private GameState previousState;
+
+	private double planningEpsilon;
 	
 
 	/**
@@ -52,6 +54,8 @@ public class SarsaSearch extends TDSearch {
 			double epsilon, double gamma, double lambda, int randomSeed) 
 	{
 		super(types, portfolio, rewards, matchDuration, timeBudget, alpha, epsilon, gamma, lambda, randomSeed);
+		
+		planningEpsilon = 0.1; // TODO: make this a configurable parameter!
 		
 		//initialize previous choice and state as null (they don't exist yet)
 		previousChoiceName = null;
@@ -84,7 +88,7 @@ public class SarsaSearch extends TDSearch {
 		sarsaPlanning(gs, player);
 		logger.debug("v({}) for player{} after planning: {}", gs.getTime(), player, stateValue(featureExtractor.extractFeatures(gs, player)));
 		
-		String currentChoiceName = epsilonGreedyAbstraction(gs, player);
+		String currentChoiceName = epsilonGreedy(gs, player, weights, epsilon);
 		
 		if(previousChoiceName != null && previousChoiceName != null) {
 			// updates the 'long-term' memory from actual experience
@@ -121,7 +125,7 @@ public class SarsaSearch extends TDSearch {
 			resetMap(planningEligibility);
 
 			state = gs.clone();
-			String aName = epsilonGreedyAbstraction(state, player); // aName is a short for abstraction name
+			String aName = epsilonGreedy(state, player, planningWeights, planningEpsilon); // aName is a short for abstraction name
 
 			while (!state.gameover() && duration < planningBudget) { // go until game over or time is out TODO add maxcycles condition
 
@@ -129,7 +133,7 @@ public class SarsaSearch extends TDSearch {
 				// opponent
 				GameState nextState = state.clone();
 				logger.trace("Planning step, selected {}", aName);
-				String opponentAName = epsilonGreedyAbstraction(state, 1 - player);
+				String opponentAName = epsilonGreedy(state, 1 - player, planningWeights, planningEpsilon);
 				
 				// must retrieve both actions and only then issue them
 				PlayerAction playerAction = abstractionToAction(aName, state, player);
@@ -140,7 +144,7 @@ public class SarsaSearch extends TDSearch {
 				ForwardModel.forward(nextState); //advances the state up to the next decision point or gameover
 
 				// nextAName is a short for next abstraction name
-				String nextAName = epsilonGreedyAbstraction(nextState, player);
+				String nextAName = epsilonGreedy(nextState, player, planningWeights, planningEpsilon);
 
 				// updates the 'short-term' memory from simulated experience
 				sarsaUpdate(state, player, aName, nextState, nextAName, planningWeights, planningEligibility);
@@ -287,7 +291,8 @@ public class SarsaSearch extends TDSearch {
 		double reward, nextQ;
 		reward = rewards.reward(nextState, player);
 		
-		if (nextState.gameover()) {
+		// terminal states have value of zero
+		if (nextState.gameover() || nextState.getTime() >= matchDuration) {
 			nextQ = 0;
 		} else {
 			nextQ = qValue(nextState, player, nextActionName);
@@ -303,9 +308,11 @@ public class SarsaSearch extends TDSearch {
 	 * 
 	 * @param state
 	 * @param player
+	 * @param weights
+	 * @param epsilon 
 	 * @return
 	 */
-	private String epsilonGreedyAbstraction(GameState state, int player) {
+	private String epsilonGreedy(GameState state, int player, Map<String, double[]> weights, double epsilon) {
 
 		// the name of the AI that will choose the action for this state
 		String chosenName = null;
@@ -314,13 +321,13 @@ public class SarsaSearch extends TDSearch {
 		if (random.nextDouble() < epsilon) { // random choice
 			// trick to randomly select from HashMap adapted from:
 			// https://stackoverflow.com/a/9919827/1251716
-			List<String> keys = new ArrayList<String>(abstractions.keySet());
+			List<String> keys = new ArrayList<String>(weights.keySet());
 			chosenName = keys.get(random.nextInt(keys.size()));
 			if (chosenName == null) {
 				logger.error("Unable to select a random abstraction!");
 			}
 		} else { // greedy choice
-			chosenName = greedyAbstraction(state, player);
+			chosenName = greedyChoice(state, player, weights);
 		}
 
 		return chosenName;
@@ -334,7 +341,7 @@ public class SarsaSearch extends TDSearch {
 	 * @param player
 	 * @return
 	 */
-	private String greedyAbstraction(GameState state, int player) {
+	private String greedyChoice(GameState state, int player, Map<String, double[]> weights) {
 
 		// the name of the AI that will choose the action for this state
 		String chosenName = null;
