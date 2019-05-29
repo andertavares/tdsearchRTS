@@ -19,6 +19,7 @@ import config.Parameters;
 import features.FeatureExtractor;
 import features.MapAware;
 import features.MaterialAdvantage;
+import features.UnitDistance;
 import portfolio.PortfolioManager;
 import reward.RewardModel;
 import reward.VictoryOnly;
@@ -132,6 +133,9 @@ public class Test {
         }
         else if (config.getProperty("features", "mapaware").equals("material")) {
         	 featureExtractor = new MaterialAdvantage(types, maxCycles);
+        }
+        else if (config.getProperty("features", "mapaware").equals("distance")) {
+        	featureExtractor = new UnitDistance(types, maxCycles);
         }
         
         // creates the player instance and loads weights

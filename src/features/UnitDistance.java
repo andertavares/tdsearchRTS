@@ -11,7 +11,6 @@ import rts.units.UnitTypeTable;
 public class UnitDistance implements FeatureExtractor {
 	private int numFeatures;
 	
-	private int mapSize;
 	private int maxUnits;
 	private int maxResources;
 	
@@ -28,14 +27,12 @@ public class UnitDistance implements FeatureExtractor {
 	 * 
 	 * @param unitTypeTable the specified types for the game
 	 * @param maxTime the maximum duration of a game, in cycles
-	 * @param mapSize size of the map (preferrably of the largest dimension)
 	 * @param maxUnits the maximum number of possible units for the specific game
 	 * @param maxResources the maximum number of possible resources a player will possess in the specific game
 	 */
-	public UnitDistance(UnitTypeTable unitTypeTable, int maxTime, int mapSize, int maxUnits, int maxResources) {
+	public UnitDistance(UnitTypeTable unitTypeTable, int maxTime, int maxUnits, int maxResources) {
 		
 		this.maxTime = maxTime;
-		this.mapSize = mapSize;
 		this.maxUnits = maxUnits;
 		this.maxResources = maxResources;
 		
@@ -66,11 +63,11 @@ public class UnitDistance implements FeatureExtractor {
 	
 	/**
 	 * Initializes the FeatureExtractor with default values for the max values.
-	 * Time is 15000, mapLength is 256, units and resources are 50
+	 * Time is 15000, units and resources are 50
 	 * @param unitTypeTable
 	 */
 	public UnitDistance(UnitTypeTable unitTypeTable) {
-		this(unitTypeTable, 15000, 256, 50, 50);
+		this(unitTypeTable, 15000, 50, 50);
 		
 	}
 	
@@ -81,8 +78,8 @@ public class UnitDistance implements FeatureExtractor {
 	 * @param maxTime
 	 * @param mapSize
 	 */
-	public UnitDistance(UnitTypeTable types, int maxTime, int mapSize) {
-		this(types, maxTime, mapSize, 50, 50);
+	public UnitDistance(UnitTypeTable types, int maxTime) {
+		this(types, maxTime, 50, 50);
 	}
 	
 	public int getNumFeatures() {
@@ -93,10 +90,12 @@ public class UnitDistance implements FeatureExtractor {
 		//count: resources, bases, barracks, workers, heavy, light, ranged for both players
 		double[] features = new double[numFeatures];
 		
+		int mapSize = Math.max(s.getPhysicalGameState().getHeight(), s.getPhysicalGameState().getWidth());
+		
 		features[0] = 1; //bias, always 1
 		
 		// shortest manhattan distance between ally and enemy units, capped at a maximum value
-		features[1] = shortestDistanceBetweenEnemies(s);
+		features[1] = shortestDistanceBetweenEnemies(s, mapSize);
 		
 		// resources
 		features[2] = Math.min(s.getPlayer(player).getResources(), maxResources);	//player's resources
@@ -136,7 +135,7 @@ public class UnitDistance implements FeatureExtractor {
 		return features;
 	}
 	
-	public int shortestDistanceBetweenEnemies(GameState state) {
+	public int shortestDistanceBetweenEnemies(GameState state, int mapSize) {
 		int shortestDistance = mapSize + mapSize; //this is the largest manhattan distance possible in the map
 		
 		// inefficient way to determine the distance...
