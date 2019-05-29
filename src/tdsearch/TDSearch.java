@@ -57,6 +57,11 @@ public class TDSearch extends AI {
 	private double[] weights;
 	
 	/**
+	 * The match duration
+	 */
+	protected int matchDuration;
+	
+	/**
 	 * The random number generator
 	 */
 	protected Random random;
@@ -171,6 +176,8 @@ public class TDSearch extends AI {
 		this.gamma = gamma;
 		this.lambda = lambda;
 		this.rewards = rewards;
+		this.matchDuration = matchDuration;
+		
 		random = new Random(randomSeed);
 		
 		featureExtractor = new FeatureExtractor(types, matchDuration);
