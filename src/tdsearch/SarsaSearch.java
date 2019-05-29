@@ -137,7 +137,7 @@ public class SarsaSearch extends TDSearch {
 	 * is the state, a is the actionName, r is the reward (calculated internally),
 	 * s' is the next state, a' is the nextActionName
 	 * 
-	 * 1) Calculates the TD error: delta = r + Q(s',a') - Q(s,a) 
+	 * 1) Calculates the TD error: delta = r + gammna * Q(s',a') - Q(s,a) 
 	 * 2) Updates the weight vector: w = w + alpha * delta * e (e is the eligibility vector) 
 	 * 3) Updates the eligibility vector: e = lambda * gamma * e + features
 	 * 
@@ -149,7 +149,7 @@ public class SarsaSearch extends TDSearch {
 	 */
 	private void sarsaLearning(GameState state, int player, String actionName, GameState nextState, String nextActionName) {
 		
-		//delta = r + Q(s',a') - Q(s,a)
+		//delta = r + gammna * Q(s',a') - Q(s,a)
 		double tdError = tdTarget(nextState, player, nextActionName) - qValue(state, player, actionName);
 
 		double[] f = featureExtractor.extractFeatures(state, player); // feature vector for the state
