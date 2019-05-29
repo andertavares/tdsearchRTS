@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 import ai.core.AI;
+import features.FeatureExtractor;
 import reward.RewardModel;
 import rts.GameState;
 import rts.PlayerAction;
@@ -42,6 +43,8 @@ public class SarsaSearch extends TDSearch {
 	 * 
 	 * @param types
 	 * @param portfolio the portfolio of algorithms/action abstractions to select (a map(name -> AI))
+	 * @param rewards
+	 * @param featureExtractor
 	 * @param timeBudget
 	 * @param matchDuration the maximum match duration in cycles
 	 * @param alpha
@@ -50,10 +53,10 @@ public class SarsaSearch extends TDSearch {
 	 * @param lambda
 	 * @param randomSeed
 	 */
-	public SarsaSearch(UnitTypeTable types, Map<String,AI> portfolio, RewardModel rewards, int matchDuration, int timeBudget, double alpha, 
+	public SarsaSearch(UnitTypeTable types, Map<String,AI> portfolio, RewardModel rewards, FeatureExtractor featureExtractor, int matchDuration, int timeBudget, double alpha, 
 			double epsilon, double gamma, double lambda, int randomSeed) 
 	{
-		super(types, portfolio, rewards, matchDuration, timeBudget, alpha, epsilon, gamma, lambda, randomSeed);
+		super(types, portfolio, rewards, featureExtractor, matchDuration, timeBudget, alpha, epsilon, gamma, lambda, randomSeed);
 		
 		planningEpsilon = 0.1; // TODO: make this a configurable parameter!
 		

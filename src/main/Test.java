@@ -16,6 +16,9 @@ import org.apache.logging.log4j.Logger;
 import ai.core.AI;
 import config.ConfigManager;
 import config.Parameters;
+import features.FeatureExtractor;
+import features.MapAware;
+import features.MaterialAdvantage;
 import portfolio.PortfolioManager;
 import reward.RewardModel;
 import reward.VictoryOnly;
@@ -123,11 +126,20 @@ public class Test {
         	rewards = new WinLossDraw(maxCycles);
         }
         
+        FeatureExtractor featureExtractor = null;
+        if(config.getProperty("features", "mapaware").equals("mapaware")) {
+        	featureExtractor = new MapAware(types, maxCycles);
+        }
+        else if (config.getProperty("features", "mapaware").equals("mapaware")) {
+        	 featureExtractor = new MaterialAdvantage(types, maxCycles);
+        }
+        
         // creates the player instance and loads weights
 		TDSearch player = new SarsaSearch(
 			types, 
 			PortfolioManager.getPortfolio(types, Arrays.asList(portfolioNames.split(","))),
 			rewards,
+			featureExtractor,
 			maxCycles,
 			timeBudget, alpha, epsilon, gamma, lambda, randomSeedP0
 		);

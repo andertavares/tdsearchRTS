@@ -16,6 +16,7 @@ import org.apache.logging.log4j.Logger;
 
 import ai.core.AI;
 import ai.core.ParameterSpecification;
+import features.FeatureExtractor;
 import features.MapAware;
 import portfolio.PortfolioManager;
 import reward.RewardModel;
@@ -69,7 +70,7 @@ public class TDSearch extends AI {
 	/**
 	 * The state feature extractor
 	 */
-	protected MapAware featureExtractor;
+	protected FeatureExtractor featureExtractor;
 	
 	/**
 	 * This maps the AI name to its instance.
@@ -94,6 +95,7 @@ public class TDSearch extends AI {
 			types, 
 			PortfolioManager.basicPortfolio(types),
 			new VictoryOnly(),
+			new MapAware(types),
 			12000,
 			100, 0.01, 0.1, 1, 0.1, 0
 		);
@@ -162,6 +164,7 @@ public class TDSearch extends AI {
 	 * @param types the rules defining unit types
 	 * @param portfolio the portfolio of algorithms/action abstractions to select
 	 * @param rewards the reward model
+	 * @param featureExtractor
 	 * @param matchDuration the maximum match duration in cycles
 	 * @param alpha learning rate
 	 * @param epsilon exploration probability
@@ -169,7 +172,7 @@ public class TDSearch extends AI {
 	 * @param lambda eligibility trace
 	 * @param randomSeed 
 	 */
-	public TDSearch(UnitTypeTable types, Map<String,AI> portfolio, RewardModel rewards, int matchDuration, int timeBudget, double alpha, double epsilon, double gamma, double lambda, int randomSeed) {
+	public TDSearch(UnitTypeTable types, Map<String,AI> portfolio, RewardModel rewards, FeatureExtractor featureExtractor, int matchDuration, int timeBudget, double alpha, double epsilon, double gamma, double lambda, int randomSeed) {
 		this.timeBudget = timeBudget;
 		this.alpha = alpha;
 		this.epsilon = epsilon;
@@ -180,7 +183,7 @@ public class TDSearch extends AI {
 		
 		random = new Random(randomSeed);
 		
-		featureExtractor = new MapAware(types, matchDuration);
+		this.featureExtractor = featureExtractor;
 		
 		weights = new double[featureExtractor.getNumFeatures()];
 		
@@ -194,20 +197,7 @@ public class TDSearch extends AI {
 		
     	logger = LogManager.getRootLogger();
     	
-        abstractions = portfolio; /*new HashMap<>();
-        
-        // rush scripts
-		abstractions.put("WorkerRush", new WorkerRush (types));
-		abstractions.put("LightRush", new LightRush (types));
-		abstractions.put("RangedRush", new RangedRush (types));
-		abstractions.put("HeavyRush", new HeavyRush (types));
-		
-		// defensive scripts
-		abstractions.put("WorkerDefense", new WorkerDefense(types));
-		abstractions.put("LightRush", new LightDefense(types));
-		abstractions.put("RangedRush", new RangedDefense(types));
-		abstractions.put("HeavyRush", new HeavyDefense(types));
-		*/
+        abstractions = portfolio; 
 	}
 
 	@Override
