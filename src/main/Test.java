@@ -153,6 +153,7 @@ public class Test {
 		
 		int testMatches = Integer.parseInt(config.getProperty("test_matches"));
 		
+		int maxCycles = Integer.parseInt(config.getProperty("max_cycles"));
 		int timeBudget = Integer.parseInt(config.getProperty("search.timebudget"));
 		
         double epsilon = 0;
@@ -170,14 +171,14 @@ public class Test {
         String portfolioNames = config.getProperty("portfolio");
         
         // loads the reward model
-        RewardModel rewards = config.getProperty("rewards").equals("victory-only") ? new VictoryOnly() : new WinLossTiesBroken();
+        RewardModel rewards = config.getProperty("rewards").equals("victory-only") ? new VictoryOnly() : new WinLossTiesBroken(maxCycles);
         
         // creates the player instance and loads weights
 		TDSearch player = new SarsaSearch(
 			types, 
 			PortfolioManager.getPortfolio(types, Arrays.asList(portfolioNames.split(","))),
 			rewards,
-			Integer.parseInt(config.getProperty("max_cycles")),
+			maxCycles,
 			timeBudget, alpha, epsilon, gamma, lambda, randomSeedP0
 		);
 		player.loadWeights(workingDir + "/weights_0.bin");

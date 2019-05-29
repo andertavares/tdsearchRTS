@@ -95,6 +95,8 @@ public class Train {
 		int trainMatches = Integer.parseInt(config.getProperty("train_matches"));
 		int testMatches = Integer.parseInt(config.getProperty("test_matches"));
 		
+		int maxCycles = Integer.parseInt(config.getProperty("max_cycles"));
+		
 		int timeBudget = Integer.parseInt(config.getProperty("search.timebudget"));
 		
         double epsilon = Double.parseDouble(config.getProperty("td.epsilon.initial"));
@@ -115,14 +117,14 @@ public class Train {
         UnitTypeTable types = new UnitTypeTable(settings.getUTTVersion(), settings.getConflictPolicy());
         
         // loads the reward model (default=victory-only)
-        RewardModel rewards = config.getProperty("rewards", "victory-only").equals("victory-only") ? new VictoryOnly() : new WinLossTiesBroken();
+        RewardModel rewards = config.getProperty("rewards", "victory-only").equals("victory-only") ? new VictoryOnly() : new WinLossTiesBroken(maxCycles);
         
         // creates the player instance
 		TDSearch player = new SarsaSearch(
 			types, 
 			PortfolioManager.getPortfolio(types, Arrays.asList(portfolioNames.split(","))), 
 			rewards,
-			Integer.parseInt(config.getProperty("max_cycles")),
+			maxCycles,
 			timeBudget, alpha, epsilon, gamma, lambda, randomSeedP0
 		);
 		

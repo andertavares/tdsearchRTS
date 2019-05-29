@@ -10,6 +10,12 @@ import rts.GameState;
  *
  */
 public class WinLossTiesBroken implements RewardModel {
+	
+	int timeLimit;
+	
+	public WinLossTiesBroken(int timeLimit) {
+		this.timeLimit = timeLimit;
+	}
 
 	@Override
 	/**
@@ -19,7 +25,7 @@ public class WinLossTiesBroken implements RewardModel {
 	 */
 	public double reward(GameState state, int player) {
 		double reward;
-		if(state.gameover()) {
+		if(state.gameover() || state.getTime() > timeLimit) {
 			if(state.winner() == -1) { // draw
 				//break ties by the evaluation of the terminal state
 				reward = (new SimpleSqrtEvaluationFunction3().evaluate(player, 1-player, state) > 0) ? 1 : 0;  

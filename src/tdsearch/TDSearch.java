@@ -16,7 +16,7 @@ import org.apache.logging.log4j.Logger;
 
 import ai.core.AI;
 import ai.core.ParameterSpecification;
-import learningeval.FeatureExtractor;
+import features.FeatureExtractor;
 import portfolio.PortfolioManager;
 import reward.RewardModel;
 import reward.VictoryOnly;
