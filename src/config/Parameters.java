@@ -25,8 +25,11 @@ public class Parameters {
         options.addOption(new Option("t", "train_opponent", true, "Full name of the AI to train against (overrides the one specified in file)."));
         options.addOption(new Option("p", "portfolio", true, "The type of portfolio to use: basic4 (4 rush), basic6 (rush+support), basic8 (default: 4 rush + 4 defense) or basic10 (rush+defense+support)"));
         options.addOption(new Option("r", "rewards", true, "The reward model:  winloss-tiebreak, winlossdraw or victory-only (default)"));
-        options.addOption(new Option("f", "features", true, "The feature model:  material, distance or mapaware (default)"));
+        options.addOption(new Option("l", "features", true, "The feature model:  material, distance or mapaware (default)"));
         options.addOption(new Option("o", "test_opponent", true, "Full name of the AI to test against (overrides the one specified in file)."));
+        options.addOption(new Option(null, "train_matches", true, "Number of training matches."));
+        options.addOption(new Option(null, "search_timebudget", true, "Milisseconds of planning time."));
+        
         return options;
 	}
 	
@@ -54,7 +57,7 @@ public class Parameters {
 		// overrides 'direct' parameters
 		List<String> overrideList = Arrays.asList(
 				"initial_rep", "final_rep", "train_opponent", "test_opponent", 
-				"test_matches", "rewards", "features"
+				"test_matches", "rewards", "features", "train_matches"
 		);
 		
 		for(String paramName : overrideList) {
@@ -62,6 +65,11 @@ public class Parameters {
 				logger.info("Parameter '{}' overridden to '{}'", paramName, cmd.getOptionValue(paramName));
 				prop.setProperty(paramName, cmd.getOptionValue(paramName));
 			}
+		}
+		
+		// search_timebudget requires special treatment (a workaround because . is forbidden by apache's cli
+		if(cmd.hasOption("search_timebudget")) {
+			prop.setProperty("search.timebudget", cmd.getOptionValue("search_timebudget"));
 		}
 		
 		// the portfolio parameter requires a special treatment:
