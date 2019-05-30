@@ -391,13 +391,17 @@ public class SarsaSearch extends TDSearch {
 		double maxQ = Double.NEGATIVE_INFINITY; // because MIN_VALUE is positive =/
 		for (String candidateName : weights.keySet()) {
 			double q = qValue(features, candidateName);
+			if(Double.isInfinite(q) || Double.isNaN(q)) {
+				logger.warn("(+ or -) infinite qValue for action {} in state {}", candidateName, features); 
+			}
 			if (q > maxQ) {
 				maxQ = q;
 				chosenName = candidateName;
 			}
 		}
 		if (chosenName == null) {
-			logger.error("Unable to select an action abstraction for the greedy action!");
+			logger.error("Unable to select an action abstraction for the greedy action in state {}! Selecting WorkerRush to avoid a crash.", state.getTime());
+			chosenName = "WorkerRush";
 		}
 
 		return chosenName;
