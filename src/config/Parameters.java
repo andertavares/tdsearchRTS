@@ -29,6 +29,8 @@ public class Parameters {
         options.addOption(new Option("o", "test_opponent", true, "Full name of the AI to test against (overrides the one specified in file)."));
         options.addOption(new Option(null, "train_matches", true, "Number of training matches."));
         options.addOption(new Option(null, "search_timebudget", true, "Milisseconds of planning time."));
+        options.addOption(new Option(null, "td_alpha_initial", true, "Initial learning rate (held constant throughout experiment by now)"));
+        options.addOption(new Option(null, "td_lambda", true, "Eligibility trace parameter"));
         
         return options;
 	}
@@ -64,6 +66,18 @@ public class Parameters {
 			if(cmd.hasOption(paramName)) {
 				logger.info("Parameter '{}' overridden to '{}'", paramName, cmd.getOptionValue(paramName));
 				prop.setProperty(paramName, cmd.getOptionValue(paramName));
+			}
+		}
+		
+		//parameters whose _ must be replaced by .
+		List<String> underscoreToDot = Arrays.asList(
+				"td_alpha_initial", "td_lambda"
+		);
+		for(String paramName : underscoreToDot) {
+			if(cmd.hasOption(paramName)) {
+				String dotParamName = paramName.replace('_', '.');
+				logger.info("Parameter '{}' overridden to '{}'", dotParamName, cmd.getOptionValue(paramName));
+				prop.setProperty(dotParamName, cmd.getOptionValue(paramName));
 			}
 		}
 		

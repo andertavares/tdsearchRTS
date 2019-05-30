@@ -95,7 +95,6 @@ public class Train {
 	
 	public static void run(Properties config, String outputPrefix, int randomSeedP0, int randomSeedP1) throws Exception {
 		
-		
 		int trainMatches = Integer.parseInt(config.getProperty("train_matches"));
 		int testMatches = Integer.parseInt(config.getProperty("test_matches"));
 		
