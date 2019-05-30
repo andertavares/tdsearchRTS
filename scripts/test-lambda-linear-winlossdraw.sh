@@ -16,7 +16,7 @@ for map in $@; do
 			
 			echo "		Testing against $opp";
 			./test.sh -c config/selfplay-"$map".properties -p basic4 -d results/lambda-winlossdraw/"$lambda"-"$map" \
-			-r winlossdraw -i 0 -f 2 -m 10 --search_timebudget 0 ;
+			-r winlossdraw -i 0 -f 2 -m 10 --search_timebudget 0 -o $opp ;
 		done
 	done
 done

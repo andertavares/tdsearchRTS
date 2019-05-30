@@ -17,14 +17,21 @@ for map in $@; do
 			
 			echo "		Testing against $opp";
 			./test.sh -c config/selfplay-"$map".properties -p basic4 -d results/alpha-winlossdraw/"$alpha"-"$map" \
-			-r winlossdraw -i 0 -f 2 -m 10 --search_timebudget 0 ;
+			-r winlossdraw -i 0 -f 2 -m 10 --search_timebudget 0 -o $opp;
 		done
 	done
 done
 
 # view results
-for for alpha in {0.001,0.01,0.1,0.3,0.7,1}; do
-	for map in $@; do
-		./scripts/average-score-all-opponents.sh results/alpha-winlossdraw/"$alpha"-"$map" 0 2
+for alpha in {0.001,0.01,0.1,0.3,0.7,1}; do
+	
+	# traverses opponents
+	for opp in {{Worker,Light}"Rush",NaiveMCTS,A3N,GAB}; do
+			
+		echo "Opponent: $opp";
+		
+		for map in $@; do
+			python3 analysis/average_score.py results/alpha-winlossdraw/"$alpha"-"$map" -i 0 -f 2 -o $opp
+		done
 	done
 done
