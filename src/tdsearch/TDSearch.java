@@ -28,6 +28,11 @@ import rts.units.UnitTypeTable;
 public class TDSearch extends AI {
 	
 	/**
+	 * The actual ID of this player
+	 */
+	protected int playerID;
+	
+	/**
 	 * The learning rate for weight update
 	 */
 	protected double alpha;
@@ -247,6 +252,15 @@ public class TDSearch extends AI {
 
 	@Override
 	public PlayerAction getAction(int player, GameState gs) throws Exception {
+		//sanity check for player ID:
+		if(gs.getTime() == 0) {
+			playerID = player; //assigns the ID on the initial state
+			
+		} else if (player != playerID) { // consistency check for other states
+			logger.error("Called to play with different ID! (mine={}, given={}", playerID, player);
+			logger.error("Will proceed, but behavior might be unpredictable");
+		}
+		
 		
 		Date begin = new Date(System.currentTimeMillis());
 		Date end;

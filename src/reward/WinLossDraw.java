@@ -29,4 +29,13 @@ int timeLimit;
 		return reward;
 	}
 
+	@Override
+	/**
+	 * Returns 1 for victory, 0 for draw, -1 for loss
+	 */
+	public double gameOverReward(int player, int winner) {
+		if(winner == -1) return 0;
+		return winner == player ? 1 : -1; 
+	}
+
 }

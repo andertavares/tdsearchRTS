@@ -84,23 +84,29 @@ public class SarsaSearch extends TDSearch {
 
 	@Override
 	public PlayerAction getAction(int player, GameState gs) throws Exception {
+		//sanity check for player ID:
+		if(gs.getTime() == 0) {
+			playerID = player; //assigns the ID on the initial state
+			
+		} else if (player != playerID) { // consistency check for other states
+			logger.error("Called to play with different ID! (mine={}, given={}", playerID, player);
+			logger.error("Will proceed, but behavior might be unpredictable");
+		}
 		
-		//Date begin = new Date(System.currentTimeMillis());
-
 		logger.debug("v({}) for player{} before planning: {}", gs.getTime(), player, stateValue(featureExtractor.extractFeatures(gs, player)));
 		sarsaPlanning(gs, player);
 		logger.debug("v({}) for player{} after planning: {}", gs.getTime(), player, stateValue(featureExtractor.extractFeatures(gs, player)));
 		
 		String currentChoiceName = epsilonGreedy(gs, player, weights, epsilon);
 		
-		if(previousChoiceName != null && previousChoiceName != null) {
+		if(previousState != null && previousChoiceName != null) {
 			// updates the 'long-term' memory from actual experience
 			sarsaUpdate(previousState, player, previousChoiceName, gs, currentChoiceName, weights, eligibility);
 		}
 		
 		// updates previous choices for the next sarsa learning update
 		previousChoiceName = currentChoiceName;
-		previousState = gs;
+		previousState = gs.clone(); //cloning fixes a subtle error where gs changes in the game engine and becomes the next state, which is undesired 
 		
 		//Date end = new Date(System.currentTimeMillis());
 		logger.debug("Player {} selected {}.",
@@ -110,6 +116,21 @@ public class SarsaSearch extends TDSearch {
 		return abstractionToAction(currentChoiceName, gs, player);
 		
 	}
+	
+	@Override
+	public void gameOver(int winner) {
+		/*
+		 *  if learning from actual experience, the agent never is called to act
+		 *  in a terminal state and therefore, never sees the final reward, 
+		 *  whith is the most important
+		 */
+		logger.debug("gameOver. winner={}, playerID={}", winner, playerID);
+		double tdError = rewards.gameOverReward(playerID, winner) - qValue(previousState, playerID, previousChoiceName);
+		
+		tdLambdaUpdateRule(previousState, playerID, previousChoiceName, tdError, weights, eligibility);
+		
+	}
+
 
 	private void sarsaPlanning(GameState gs, int player) {
 		Date begin = new Date(System.currentTimeMillis());
@@ -187,11 +208,39 @@ public class SarsaSearch extends TDSearch {
 	private void sarsaUpdate(GameState state, int player, String actionName, GameState nextState, String nextActionName, 
 			Map<String, double[]> weights, Map<String, double[]> eligibility) {
 		
+		logger.debug(
+			"<s,a,r,s'(gameover?),a',q(s',a')> = <{}, {}, {}, {}({}), {}, {}>",
+			state.getTime(), actionName, 
+			rewards.reward(nextState, player), 
+			nextState.getTime(), nextState.gameover(), nextActionName,
+			qValue(nextState, player, nextActionName)
+		);
+		
 		//delta = r + gammna * Q(s',a') - Q(s,a)
 		double tdError = tdTarget(nextState, player, nextActionName) - qValue(state, player, actionName);
 
-		double[] f = featureExtractor.extractFeatures(state, player); // feature vector for the state
+		tdLambdaUpdateRule(state, player, actionName, tdError, weights, eligibility);
+		
+		/*
+		 * Remark: in Silver et al (2013) TD search, the eligibility vector update is done as 
+		 * e = e * lambda + f(s,a), where f(s,a) are the features for state s and action a.
+		 * This is so because features are per state and action. 
+		 * Moreover, they use gamma=1 always so that it does not appear in the equation.
+		 * That is, the general form of the equation should be e = e * gamma * lambda + f(s,a)
+		 *  
+		 * Here, gamma can have different values and we can interpret that f(s,a) = zeros 
+		 * for the non-selected action.
+		 * Thus, we decay the eligibility vectors of all actions and then 
+		 * increase the eligibility vector of the selected action by adding the current state features.
+		 * In other words, we  implement equation e = e * gamma * lambda + f(s,a) in two steps.
+		 */
+	}
 
+	private void tdLambdaUpdateRule(GameState state, int player, String actionName, double tdError, Map<String, double[]> weights,
+			Map<String, double[]> eligibility) {
+		
+		double[] f = featureExtractor.extractFeatures(state, player); // feature vector for the state
+		
 		for (String abstractionName : weights.keySet()) {
 			double[] w = weights.get(abstractionName); // weight vector
 			double[] e = eligibility.get(abstractionName); // eligibility vector 
@@ -212,20 +261,6 @@ public class SarsaSearch extends TDSearch {
 		for (int i = 0; i < eSelected.length; i++) {
 			eSelected[i] += f[i];
 		}
-		
-		/*
-		 * Remark: in Silver et al (2013) TD search, the eligibility vector update is done as 
-		 * e = e * lambda + f(s,a), where f(s,a) are the features for state s and action a.
-		 * This is so because features are per state and action. 
-		 * Moreover, they use gamma=1 always so that it does not appear in the equation.
-		 * That is, the general form of the equation should be e = e * gamma * lambda + f(s,a)
-		 *  
-		 * Here, gamma can have different values and we can interpret that f(s,a) = zeros 
-		 * for the non-selected action.
-		 * Thus, we decay the eligibility vectors of all actions and then 
-		 * increase the eligibility vector of the selected action by adding the current state features.
-		 * In other words, we  implement equation e = e * gamma * lambda + f(s,a) in two steps.
-		 */
 	}
 	
 	/* * (OLD VERSION)
@@ -415,7 +450,7 @@ public class SarsaSearch extends TDSearch {
 		for (String candidateName : weights.keySet()) {
 			double q = qValue(features, candidateName);
 			
-			logger.debug("q(s,{})={}", candidateName, q);
+			logger.trace("q(s,{})={}", candidateName, q);
 			if (q > maxQ) {
 				maxQ = q;
 			}
@@ -425,6 +460,7 @@ public class SarsaSearch extends TDSearch {
 
 	/**
 	 * Returns the Q-value for the given state-action pair
+	 * FIXME: must receive the weights to differentiate simulated from real experience
 	 * 
 	 * @param state
 	 * @param player
@@ -438,6 +474,7 @@ public class SarsaSearch extends TDSearch {
 	/**
 	 * Returns the Q-value of an action abstraction for the state described by the
 	 * given feature vector
+	 * FIXME: must receive the weights to differentiate simulated from real experience
 	 * 
 	 * @param features
 	 * @param abstractionName

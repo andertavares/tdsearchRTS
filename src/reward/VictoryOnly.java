@@ -22,4 +22,12 @@ public class VictoryOnly implements RewardModel {
 		}
 	}
 
+	@Override
+	/**
+	 * Returns 1 for victories and 0 for draws and losses
+	 */
+	public double gameOverReward(int player, int winner) {
+		return winner == player ? 1 : 0;
+	}
+
 }
