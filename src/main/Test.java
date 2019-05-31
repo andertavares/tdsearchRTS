@@ -166,6 +166,8 @@ public class Test {
 		boolean visualizeTest = Boolean.parseBoolean(config.getProperty("visualize_test", "false"));
 		AI testOpponent = AILoader.loadAI(testPartnerName, types);
 		
+		logger.info("{} write replay.", writeReplay ? "Will" : "Will not");
+		
 		// if write replay (trace) is activated, sets the prefix to write files
 		String tracePrefix = writeReplay ? workingDir + "/test-trace-vs-" + testOpponent.getClass().getSimpleName() : null;
 		
