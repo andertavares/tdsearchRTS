@@ -8,7 +8,7 @@ package activation;
  * @author artavares
  *
  */
-public class LogisticLogLoss extends DefaultActivationFunction {
+public class LogisticLogLoss extends IdentityActivation {
 
 	@Override
 	public double function(double x) {
