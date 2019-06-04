@@ -8,7 +8,7 @@ package activation;
  * @author artavares
  *
  */
-public class IdentityActivation implements ActivationFunction {
+public class IdentityMSE implements ActivationFunction {
 	/**
 	 * Returns x itself (a dummy activation function).
 	 * Suitable for linear regression
