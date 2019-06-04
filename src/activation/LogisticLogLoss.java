@@ -11,7 +11,7 @@ package activation;
 public class LogisticLogLoss extends IdentityActivation {
 
 	@Override
-	public double function(double x) {
+	public double activate(double x) {
 		return 1 / (1 + Math.exp(-x));
 	}
 

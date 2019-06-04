@@ -8,7 +8,7 @@ package activation;
 public class TanhMSE extends IdentityActivation {
 
 	@Override
-	public double function(double x) {
+	public double activate(double x) {
 		return (2 / (1 - Math.exp(-x))) - 1;
 	}
 

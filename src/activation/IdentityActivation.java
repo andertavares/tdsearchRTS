@@ -16,7 +16,7 @@ public class IdentityActivation {
 	 * @param x
 	 * @return
 	 */
-	public double function(double x) {
+	public double activate(double x) {
 		return x;
 	}
 	
