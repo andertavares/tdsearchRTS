@@ -6,7 +6,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
-import activation.DefaultActivationFunction;
+import activation.ActivationFunction;
 import activation.LogisticLogLoss;
 import ai.RandomBiasedAI;
 import ai.core.AI;
@@ -53,7 +53,7 @@ public class LearningStateEvaluator extends EvaluationFunction {
 	/**
 	 * The activation function
 	 */
-	private DefaultActivationFunction activation;
+	private ActivationFunction activation;
 	
 	/**
 	 * Flag to activate or deactivate training. 
@@ -282,7 +282,7 @@ public class LearningStateEvaluator extends EvaluationFunction {
 		double[] features = featureExtractor.extractFeatures(state, maxplayer);
 	       
 		double value = linearCombination(features, weights);
-		return (float) activation.function(value);
+		return (float) activation.activate(value);
 	       
 	       //calculate predicted error
 	       
