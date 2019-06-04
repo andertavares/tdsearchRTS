@@ -1,14 +1,14 @@
 package activation;
 
 /**
- * Defines a default activation: the identity function, suitable for linear regression 
+ * Defines a identity activation function, suitable for linear regression 
  * with mean squared error. Moreover, provides a dummy scaling for the 
  * target (actual rather than predicted) value  
  * 
  * @author artavares
  *
  */
-public class IdentityActivation {
+public class IdentityActivation implements ActivationFunction {
 	/**
 	 * Returns x itself (a dummy activation function).
 	 * Suitable for linear regression
