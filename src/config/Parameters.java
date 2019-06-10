@@ -42,7 +42,7 @@ public class Parameters {
 	 */
 	public static Options testCommandLineOptions() {
 		Options options = trainCommandLineOptions();
-		options.addOption(new Option("r", "save_replay", false, "If omitted, does not generate replay (trace) files."));
+		options.addOption(new Option(null, "save_replay", false, "If omitted, does not generate replay (trace) files."));
 		options.addOption(new Option("m", "test_matches", true, "Number of test matches."));
 		
 		return options;

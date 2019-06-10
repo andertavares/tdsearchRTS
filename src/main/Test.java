@@ -63,6 +63,7 @@ public class Test {
 		String testPartnerName = config.getProperty("test_opponent");
 						
 		boolean writeReplay = cmd.hasOption("save_replay");
+		logger.info("Will {}save replays (.trace files).", writeReplay ? "" : "NOT ");
 				
 		for (int rep = initialRep; rep <= finalRep; rep++) {
 			// determines the output dir according to the current rep
