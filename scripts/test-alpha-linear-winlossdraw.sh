@@ -22,16 +22,4 @@ for map in $@; do
 	done
 done
 
-# view results
-for alpha in {0.001,0.01,0.1,0.3,0.7,1}; do
-	
-	# traverses opponents
-	for opp in {{Worker,Light}"Rush",NaiveMCTS,A3N,GAB}; do
-			
-		echo "Opponent: $opp";
-		
-		for map in $@; do
-			python3 analysis/average_score.py results/alpha-winlossdraw/"$alpha"-"$map" -i 0 -f 2 -o $opp
-		done
-	done
-done
+./view-results-alpha.sh
