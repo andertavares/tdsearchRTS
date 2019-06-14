@@ -103,18 +103,18 @@ public class Test {
 		int timeBudget = Integer.parseInt(config.getProperty("search.timebudget"));
 		
         double epsilon = 0;
-        double alpha = Double.parseDouble(config.getProperty("td.alpha.initial"));
+        double alpha = 0; //Double.parseDouble(config.getProperty("td.alpha.initial"));
         
         double gamma = Double.parseDouble(config.getProperty("td.gamma"));
         double lambda = Double.parseDouble(config.getProperty("td.lambda"));
-		
+
+        String portfolioNames = config.getProperty("portfolio");
+        
         // loads microRTS game settings
      	GameSettings settings = GameSettings.loadFromConfig(config);
      		
         // creates a UnitTypeTable that should be overwritten by the one in config
         UnitTypeTable types = new UnitTypeTable(settings.getUTTVersion(), settings.getConflictPolicy());
-        
-        String portfolioNames = config.getProperty("portfolio");
         
         // loads the reward model (default=victory-only)
         RewardModel rewards = null;
