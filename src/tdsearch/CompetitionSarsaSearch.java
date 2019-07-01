@@ -52,7 +52,7 @@ public class CompetitionSarsaSearch extends TDSearch {
                 new MaterialAdvantage(types, 12000), 
                 12000, //duration
                 100,   //planning budget
-                0.1,   // alpha
+                0.01,   // alpha
                 0.1,   //epsilon
                 0.99,  //gamma
                 0.1,   //lambda
@@ -115,7 +115,7 @@ public class CompetitionSarsaSearch extends TDSearch {
                     String weightsPath = "io/" + gs.getPhysicalGameState().getWidth() 
                             + "x" + gs.getPhysicalGameState().getHeight() + 
                             "/weights_"+player + ".bin";
-
+                    logger.info("Attempting to load weights at " + weightsPath);
                     try{
                         loadWeights(weightsPath);
                     }
@@ -128,18 +128,19 @@ public class CompetitionSarsaSearch extends TDSearch {
                     if (gs.getPhysicalGameState().getWidth() <= 64) {
                         matchDuration = 8000;
                     }
-                    else if (gs.getPhysicalGameState().getWidth() <= 32) {
+                    if (gs.getPhysicalGameState().getWidth() <= 32) {
                         matchDuration = 6000;
                     }
-                    else if (gs.getPhysicalGameState().getWidth() <= 24) {
+                    if (gs.getPhysicalGameState().getWidth() <= 24) {
                         matchDuration = 5000;
                     }
-                    else if (gs.getPhysicalGameState().getWidth() <= 16) {
+                    if (gs.getPhysicalGameState().getWidth() <= 16) {
                         matchDuration = 4000;
                     }
-                    else if (gs.getPhysicalGameState().getWidth() <= 8) {
+                    if (gs.getPhysicalGameState().getWidth() <= 8) {
                         matchDuration = 3000;
                     } 
+                    logger.info("Duration set to " + matchDuration);
                     //end (determine match duration)
 			
 		} else if (player != playerID) { // consistency check for other states
@@ -598,16 +599,16 @@ public class CompetitionSarsaSearch extends TDSearch {
         if (gs.getPhysicalGameState().getWidth() <= 64) {
             maxCycles = 8000;
         }
-        else if (gs.getPhysicalGameState().getWidth() <= 32) {
+        if (gs.getPhysicalGameState().getWidth() <= 32) {
             maxCycles = 6000;
         }
-        else if (gs.getPhysicalGameState().getWidth() <= 24) {
+        if (gs.getPhysicalGameState().getWidth() <= 24) {
             maxCycles = 5000;
         }
-        else if (gs.getPhysicalGameState().getWidth() <= 16) {
+        if (gs.getPhysicalGameState().getWidth() <= 16) {
             maxCycles = 4000;
         }
-        else if (gs.getPhysicalGameState().getWidth() <= 8) {
+        if (gs.getPhysicalGameState().getWidth() <= 8) {
             maxCycles = 3000;
         }
                 
@@ -675,26 +676,26 @@ public class CompetitionSarsaSearch extends TDSearch {
 
 		// runs one cycle of the game
 		gameover = state.cycle();
+                
+                // updates duration
+                end = new Date(System.currentTimeMillis());
+                duration = end.getTime() - begin.getTime();
             } //end of the match
         
             player.gameOver(state.winner());
             trainingOpponent.gameOver(state.winner());
             
-            
-            
             player.saveWeights(outputPrefix + "/weights_0.bin");
-
-            //save opponent weights if selfplay
-            if (trainingOpponent instanceof TDSearch) {
-                ((TDSearch) trainingOpponent).saveWeights(outputPrefix + "/weights_1.bin");
-            }
+            trainingOpponent.saveWeights(outputPrefix + "/weights_1.bin");
+            
+            logger.info("weights saved");
             
             System.out.print(String.format("\rMatch %8d finished with result %3d.", currentMatch, state.winner()));
             currentMatch++;
 
         }
         
-        logger.info("Starting training finished...");
+        logger.info("Taining finished...");
         
     }
 	
