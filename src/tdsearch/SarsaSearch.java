@@ -13,10 +13,24 @@ import java.util.Map;
 
 import ai.core.AI;
 import features.FeatureExtractor;
+import features.MapAware;
+import features.MaterialAdvantage;
+import features.UnitDistance;
+import java.io.File;
+import java.util.Arrays;
+import main.Runner;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import portfolio.PortfolioManager;
 import reward.RewardModel;
+import reward.VictoryOnly;
+import reward.WinLossDraw;
+import reward.WinLossTiesBroken;
+import rts.GameSettings;
 import rts.GameState;
 import rts.PlayerAction;
 import rts.units.UnitTypeTable;
+import utils.AILoader;
 import utils.ForwardModel;
 
 public class SarsaSearch extends TDSearch {
@@ -534,12 +548,123 @@ public class SarsaSearch extends TDSearch {
 	
 	@Override
     public void preGameAnalysis(GameState gs, long milliseconds) throws Exception {
-		// does nothing for now
+		preGameAnalysis(gs, milliseconds, "io");
     }
 
 	@Override
     public void preGameAnalysis(GameState gs, long milliseconds, String readWriteFolder) throws Exception {
-		// does nothing for now
+	String portfolioNames = "WorkerRush, LightRush, RangedRush, HeavyRush, "
+                + "WorkerDefense, LightDefense, RangedDefense, HeavyDefense, "
+                + "BuildBase, BuildBarracks";
+        
+        int maxCycles = 12000;
+        if (gs.getPhysicalGameState().getWidth() <= 64) {
+            maxCycles = 8000;
+        }
+        else if (gs.getPhysicalGameState().getWidth() <= 32) {
+            maxCycles = 6000;
+        }
+        else if (gs.getPhysicalGameState().getWidth() <= 24) {
+            maxCycles = 5000;
+        }
+        else if (gs.getPhysicalGameState().getWidth() <= 16) {
+            maxCycles = 4000;
+        }
+        else if (gs.getPhysicalGameState().getWidth() <= 8) {
+            maxCycles = 3000;
+        }
+        
+        
+        // loads the reward model (default=victory-only)
+        RewardModel rwd = new WinLossTiesBroken(maxCycles);
+        
+        FeatureExtractor fe = new MaterialAdvantage(gs.getUnitTypeTable(), maxCycles);
+                
+        // creates the player instance
+        TDSearch player = new SarsaSearch(
+            gs.getUnitTypeTable(), 
+            PortfolioManager.getPortfolio(gs.getUnitTypeTable(), Arrays.asList(portfolioNames.split(","))), 
+            rwd,
+            fe,
+            maxCycles,
+            0, alpha, epsilon, gamma, lambda, 1
+        );
+
+		// creates the training opponent
+        TDSearch trainingOpponent = new SarsaSearch(
+            gs.getUnitTypeTable(),
+            PortfolioManager.getPortfolio(gs.getUnitTypeTable(), Arrays.asList(portfolioNames.split(","))),
+            rwd,
+            fe,
+            maxCycles,
+            0, alpha, epsilon, gamma, lambda, 2
+        );
+		
+	Logger logger = LogManager.getRootLogger();
+			
+        // creates output directory if needed
+        String outputPrefix = readWriteFolder + "/" + gs.getPhysicalGameState().getWidth() + "x" + gs.getPhysicalGameState().getHeight();
+        File f = new File(outputPrefix);
+        if (!f.exists()) {
+                logger.info("Creating directory " + outputPrefix);
+                System.out.println();
+                f.mkdirs();
+        }
+		
+        // training matches
+        logger.info("Starting training...");
+        
+        Date begin = new Date(System.currentTimeMillis());
+        Date end = begin;
+        int planningBudget = (int) (.99 * milliseconds); // saves 1% to prevent hiccups
+        long duration = 0;
+
+        int currentMatch = 1;
+        while (duration < planningBudget) { // while time available
+ 
+            GameState state = gs.clone();
+        
+            boolean gameover = false;
+
+            while (!gameover && state.getTime() < maxCycles) {
+        	
+                if(duration > planningBudget) return;   //no time left, quit the current match
+                
+        	// initializes state equally for the players 
+        	GameState player1State = state; 
+        	GameState player2State = state; 
+        	       	
+        	// retrieves the players' actions
+        	PlayerAction player1Action = player.getAction(0, player1State);
+        	PlayerAction player2Action = trainingOpponent.getAction(1, player2State);
+
+        	// issues the players' actions
+        	state.issueSafe(player1Action);
+		state.issueSafe(player2Action);
+
+		// runs one cycle of the game
+		gameover = state.cycle();
+            } //end of the match
+        
+            player.gameOver(state.winner());
+            trainingOpponent.gameOver(state.winner());
+            
+            
+            
+            player.saveWeights(outputPrefix + "/weights_0.bin");
+
+            //save opponent weights if selfplay
+            if (trainingOpponent instanceof TDSearch) {
+                ((TDSearch) trainingOpponent).saveWeights(outputPrefix + "/weights_1.bin");
+            }
+            
+            System.out.print(String.format("\rMatch %8d finished with result %3d.", currentMatch, state.winner()));
+            currentMatch++;
+
+        }
+        
+        logger.info("Starting training finished...");
+        
     }
 	
 	/**
