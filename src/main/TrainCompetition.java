@@ -52,12 +52,15 @@ public class TrainCompetition {
 
             // training matches
             logger.info("Starting training...");
-            player.preGameAnalysis(state, 1000);
+            player.preGameAnalysis(state, 1000, "rw");
             logger.info("Training finished!");       
             
             //test time: resets the player
             player = new CompetitionSarsaSearch(types);
             AI opponent = new LightRush(types);
+            
+            // as per the tournament workflow: preGameAnalysis is called again
+            player.preGameAnalysis(state, 10, "rw");
             
             GameState initialState = state.clone();
             
