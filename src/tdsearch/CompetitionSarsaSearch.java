@@ -28,7 +28,7 @@ import utils.ForwardModel;
 
 public class CompetitionSarsaSearch extends TDSearch {
 	
-        String ioDirectory;
+    String ioDirectory;
         
 	/**
 	 * The weights are per action abstraction (indexed by their names)
@@ -46,6 +46,8 @@ public class CompetitionSarsaSearch extends TDSearch {
 
 	private double planningEpsilon;
         
+        private UnitTypeTable types;
+        
         public CompetitionSarsaSearch(UnitTypeTable types){
             this(
                 types, 
@@ -60,6 +62,8 @@ public class CompetitionSarsaSearch extends TDSearch {
                 0.1,   //lambda
                 1      //random seed
             );
+            
+            this.types = types; //to use in clone method
         }
 	
 
@@ -736,12 +740,14 @@ public class CompetitionSarsaSearch extends TDSearch {
 	
 	/**
      * Resets the portfolio with the new unit type table
+     * @param utt
      */
+    @Override
     public void reset(UnitTypeTable utt) {
     	for(AI ai : abstractions.values()){
     		ai.reset(utt);
     	}
-    	
+    	types = utt;
     	reset();
     	
     }
@@ -755,5 +761,10 @@ public class CompetitionSarsaSearch extends TDSearch {
     		ai.reset();
     	}
     }
+    
+	@Override
+	public AI clone() {
+            return new CompetitionSarsaSearch(types);
+	}
 
 }
