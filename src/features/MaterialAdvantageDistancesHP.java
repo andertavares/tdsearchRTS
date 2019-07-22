@@ -205,32 +205,6 @@ public class MaterialAdvantageDistancesHP extends MaterialAdvantage {
 	*/
 	
 	/**
-	 * Returns the shortest manhattan distance from any enemy mobile unit 
-	 * to any of my bases
-	 * @param state
-	 * @param player
-	 * @return
-	 */
-	public int shortestManhattanDistanceToMyBase(GameState state, int player) {
-		int shortestDistance = Integer.MAX_VALUE;
-		
-		// inefficient way to determine the distance...
-		for(Unit myBase : state.getUnits()) {
-			for(Unit enemyUnit : state.getUnits()) {
-				// considers only my mobile units and enemy bases (stockpiles)
-				if(myBase.getPlayer() != player || enemyUnit.getPlayer() != 1-player 
-						|| !myBase.getType().isStockpile || !enemyUnit.getType().canMove) continue;
-				
-				int distance = Math.abs(myBase.getX() - enemyUnit.getX()) + Math.abs(myBase.getY() - enemyUnit.getY());
-				if (distance < shortestDistance) {
-					shortestDistance = distance;
-				}
-			}
-		}
-		return shortestDistance;
-	}
-	
-	/**
 	 * Returns the remaining HP ratio (currHP / maxHP) of the player's 
 	 * healthiest unit 
 	 * @param state
