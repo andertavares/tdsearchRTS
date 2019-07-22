@@ -1,42 +1,16 @@
 package main;
 
 import ai.abstraction.LightRush;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.util.Arrays;
-import java.util.Properties;
-
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.DefaultParser;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import ai.core.AI;
-import config.ConfigManager;
-import config.Parameters;
-import features.FeatureExtractor;
-import features.MapAware;
-import features.MaterialAdvantage;
-import features.UnitDistance;
-import java.util.Date;
-import portfolio.PortfolioManager;
-import reward.RewardModel;
-import reward.VictoryOnly;
-import reward.WinLossDraw;
-import reward.WinLossTiesBroken;
-import rts.GameSettings;
 import rts.GameState;
 import rts.PhysicalGameState;
 import rts.PlayerAction;
 import rts.units.UnitTypeTable;
 import tdsearch.CompetitionSarsaSearch;
-import tdsearch.SarsaSearch;
 import tdsearch.TDSearch;
-import utils.AILoader;
 
 public class TrainCompetition {
 	
