@@ -17,15 +17,10 @@ import ai.core.AI;
 import config.ConfigManager;
 import config.Parameters;
 import features.FeatureExtractor;
-import features.MapAware;
-import features.MaterialAdvantage;
-import features.UnitDistance;
+import features.FeatureExtractorFactory;
 import portfolio.PortfolioManager;
 import reward.RewardModel;
 import reward.RewardModelFactory;
-import reward.VictoryOnly;
-import reward.WinLossDraw;
-import reward.WinLossTiesBroken;
 import rts.GameSettings;
 import rts.units.UnitTypeTable;
 import tdsearch.SarsaSearch;
@@ -122,16 +117,9 @@ public class Test {
     		config.getProperty("rewards", "victory-only"), maxCycles
     	);
         
-        FeatureExtractor featureExtractor = null;
-        if(config.getProperty("features", "mapaware").equals("mapaware")) {
-        	featureExtractor = new MapAware(types, maxCycles);
-        }
-        else if (config.getProperty("features", "mapaware").equals("material")) {
-        	 featureExtractor = new MaterialAdvantage(types, maxCycles);
-        }
-        else if (config.getProperty("features", "mapaware").equals("distance")) {
-        	featureExtractor = new UnitDistance(types, maxCycles);
-        }
+        FeatureExtractor featureExtractor = FeatureExtractorFactory.getFeatureExtractor(
+    		config.getProperty("features", "mapaware"), types, maxCycles
+    	);
         
         // creates the player instance and loads weights
 		TDSearch player = new SarsaSearch(
