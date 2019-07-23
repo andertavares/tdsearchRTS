@@ -1,36 +1,33 @@
 package tdsearch;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import ai.core.AI;
 import features.FeatureExtractor;
-import features.MapAware;
+import features.FeatureExtractorFactory;
 import features.MaterialAdvantage;
-import features.UnitDistance;
-import java.io.File;
-import java.util.Arrays;
-import main.Runner;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import portfolio.PortfolioManager;
 import reward.RewardModel;
-import reward.VictoryOnly;
-import reward.WinLossDraw;
+import reward.RewardModelFactory;
 import reward.WinLossTiesBroken;
-import rts.GameSettings;
 import rts.GameState;
 import rts.PlayerAction;
 import rts.units.UnitTypeTable;
-import utils.AILoader;
 import utils.ForwardModel;
 
 public class SarsaSearch extends TDSearch {
@@ -94,6 +91,49 @@ public class SarsaSearch extends TDSearch {
 			weights.put(aiName, abstractionWeights);
 
 		}
+	}
+	
+	/**
+	 * Creates a new SarsaSearch object with the defined unit type table and random seed.
+	 * The other parameters are loaded from the received configuration (Properties) object
+	 * @param types
+	 * @param randomSeed
+	 * @param config
+	 * @return
+	 */
+	public static SarsaSearch fromConfig(UnitTypeTable types, int randomSeed, Properties config) {
+		int maxCycles = Integer.parseInt(config.getProperty("max_cycles"));
+		int timeBudget = Integer.parseInt(config.getProperty("search.timebudget"));
+        double epsilon = Double.parseDouble(config.getProperty("td.epsilon.initial"));
+        //epsilonDecayRate = Double.parseDouble(config.getProperty("td.epsilon.decay", "1.0"));
+        
+        double alpha = Double.parseDouble(config.getProperty("td.alpha.initial"));
+        //alphaDecayRate = Double.parseDouble(config.getProperty("td.alpha.decay", "1.0"));
+        
+        double gamma = Double.parseDouble(config.getProperty("td.gamma"));
+        double lambda = Double.parseDouble(config.getProperty("td.lambda"));
+        
+        String portfolioNames = config.getProperty("portfolio");
+		
+        // loads the reward model (default=victory-only)
+        RewardModel rewards = RewardModelFactory.getRewardModel(
+    		config.getProperty("rewards", "victory-only"), maxCycles
+    	);
+        
+        // loads the feature extractor (default=mapaware)
+        FeatureExtractor featureExtractor = FeatureExtractorFactory.getFeatureExtractor(
+    		config.getProperty("features", "mapaware"), types, maxCycles
+    	);
+        
+        // creates the player instance
+		return new SarsaSearch(
+			types, 
+			PortfolioManager.getPortfolio(types, Arrays.asList(portfolioNames.split(","))), 
+			rewards,
+			featureExtractor,
+			maxCycles,
+			timeBudget, alpha, epsilon, gamma, lambda, randomSeed
+		);
 	}
 
 	@Override

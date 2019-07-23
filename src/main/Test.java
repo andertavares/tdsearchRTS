@@ -98,6 +98,7 @@ public class Test {
 		int maxCycles = Integer.parseInt(config.getProperty("max_cycles"));
 		int timeBudget = Integer.parseInt(config.getProperty("search.timebudget"));
 		
+		//FIXME: planning tests are not possible with these values
         double epsilon = 0;
         double alpha = 0; //Double.parseDouble(config.getProperty("td.alpha.initial"));
         

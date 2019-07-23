@@ -2,7 +2,6 @@ package main;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.util.Arrays;
 import java.util.Properties;
 
 import org.apache.commons.cli.CommandLine;
@@ -17,11 +16,6 @@ import org.apache.logging.log4j.Logger;
 import ai.core.AI;
 import config.ConfigManager;
 import config.Parameters;
-import features.FeatureExtractor;
-import features.FeatureExtractorFactory;
-import portfolio.PortfolioManager;
-import reward.RewardModel;
-import reward.RewardModelFactory;
 import rts.GameSettings;
 import rts.units.UnitTypeTable;
 import tdsearch.SarsaSearch;
@@ -94,57 +88,19 @@ public class Train {
 		int trainMatches = Integer.parseInt(config.getProperty("train_matches"));
 		int testMatches = Integer.parseInt(config.getProperty("test_matches"));
 		
-		int maxCycles = Integer.parseInt(config.getProperty("max_cycles"));
-		
-		int timeBudget = Integer.parseInt(config.getProperty("search.timebudget"));
-		
-        double epsilon = Double.parseDouble(config.getProperty("td.epsilon.initial"));
-        //epsilonDecayRate = Double.parseDouble(config.getProperty("td.epsilon.decay", "1.0"));
-        
-        double alpha = Double.parseDouble(config.getProperty("td.alpha.initial"));
-        //alphaDecayRate = Double.parseDouble(config.getProperty("td.alpha.decay", "1.0"));
-        
-        double gamma = Double.parseDouble(config.getProperty("td.gamma"));
-        double lambda = Double.parseDouble(config.getProperty("td.lambda"));
-        
-        String portfolioNames = config.getProperty("portfolio");
-		
         // loads microRTS game settings
      	GameSettings settings = GameSettings.loadFromConfig(config);
      		
         // creates a UnitTypeTable that should be overwritten by the one in config
         UnitTypeTable types = new UnitTypeTable(settings.getUTTVersion(), settings.getConflictPolicy());
         
-        // loads the reward model (default=victory-only)
-        RewardModel rewards = RewardModelFactory.getRewardModel(
-    		config.getProperty("rewards", "victory-only"), maxCycles
-    	);
-        
-        FeatureExtractor featureExtractor = FeatureExtractorFactory.getFeatureExtractor(
-    		config.getProperty("features", "mapaware"), types, maxCycles
-    	);
-        
         // creates the player instance
-		TDSearch player = new SarsaSearch(
-			types, 
-			PortfolioManager.getPortfolio(types, Arrays.asList(portfolioNames.split(","))), 
-			rewards,
-			featureExtractor,
-			maxCycles,
-			timeBudget, alpha, epsilon, gamma, lambda, randomSeedP0
-		);
+		TDSearch player = SarsaSearch.fromConfig(types, randomSeedP0, config); 
 		
 		// creates the training opponent
 		AI trainingOpponent = null;
 		if("selfplay".equals(config.getProperty("train_opponent"))) {
-			trainingOpponent = new SarsaSearch(
-				types,
-				PortfolioManager.getPortfolio(types, Arrays.asList(portfolioNames.split(","))),
-				rewards,
-				featureExtractor,
-				Integer.parseInt(config.getProperty("max_cycles")),
-				timeBudget, alpha, epsilon, gamma, lambda, randomSeedP1
-			);
+			trainingOpponent = SarsaSearch.fromConfig(types, randomSeedP1, config); 
 		}
 		else {
 			trainingOpponent = AILoader.loadAI(config.getProperty("train_opponent"), types);
