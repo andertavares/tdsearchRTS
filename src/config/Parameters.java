@@ -25,7 +25,7 @@ public class Parameters {
         options.addOption(new Option("t", "train_opponent", true, "Full name of the AI to train against (overrides the one specified in file)."));
         options.addOption(new Option("p", "portfolio", true, "The type of portfolio to use: basic4 (4 rush), basic6 (rush+support), basic8 (default: 4 rush + 4 defense) or basic10 (rush+defense+support)"));
         options.addOption(new Option("r", "rewards", true, "The reward model:  winloss-tiebreak, winlossdraw or victory-only (default)"));
-        options.addOption(new Option("l", "features", true, "The feature model:  material, distance or mapaware (default)"));
+        options.addOption(new Option("e", "features", true, "The feature extractor:  material, distance, materialdistancehp or mapaware (default)"));
         options.addOption(new Option("o", "test_opponent", true, "Full name of the AI to test against (overrides the one specified in file)."));
         options.addOption(new Option("a", "activation", true, "Activation function for the value function approximator (default: identity)"));
         options.addOption(new Option(null, "train_matches", true, "Number of training matches."));

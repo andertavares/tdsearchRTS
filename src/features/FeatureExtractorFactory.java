@@ -13,7 +13,7 @@ public class FeatureExtractorFactory {
         else if (extractorName.equals("distance") || extractorName.equalsIgnoreCase("UnitDistance")) {
         	return new UnitDistance(types, maxGameCycles);
         }
-        else if (extractorName.equals("material-dist-hp") || extractorName.equalsIgnoreCase("UnitDistance")) {
+        else if (extractorName.equals("materialdisthp") || extractorName.equalsIgnoreCase("UnitDistance")) {
         	return new MaterialAdvantageDistancesHP(types, maxGameCycles);
         }
         else {
