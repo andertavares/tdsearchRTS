@@ -23,6 +23,7 @@ import features.MaterialAdvantage;
 import features.UnitDistance;
 import portfolio.PortfolioManager;
 import reward.RewardModel;
+import reward.RewardModelFactory;
 import reward.VictoryOnly;
 import reward.WinLossDraw;
 import reward.WinLossTiesBroken;
@@ -120,16 +121,9 @@ public class Train {
         UnitTypeTable types = new UnitTypeTable(settings.getUTTVersion(), settings.getConflictPolicy());
         
         // loads the reward model (default=victory-only)
-        RewardModel rewards = null;
-        if(config.getProperty("rewards", "victory-only").equals("victory-only")) {
-        	rewards = new VictoryOnly();
-        }
-        else if (config.getProperty("rewards", "victory-only").equals("winloss-tiebreak")) {
-        	 rewards = new WinLossTiesBroken(maxCycles);
-        }
-        else if (config.getProperty("rewards", "victory-only").equals("winlossdraw")) {
-        	rewards = new WinLossDraw(maxCycles);
-        }
+        RewardModel rewards = RewardModelFactory.getRewardModel(
+    		config.getProperty("rewards", "victory-only"), maxCycles
+    	);
         
         FeatureExtractor featureExtractor = null;
         if(config.getProperty("features", "mapaware").equals("mapaware")) {
