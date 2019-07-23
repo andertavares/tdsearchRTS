@@ -3,3 +3,11 @@
 /.classpath
 /.project
 /ddresults/
+/nbproject/private/
+/build/
+/dist/
+/nbproject/
+/manifest.mf
+/nbbuild.xml
+lib/nblibraries.properties
+lib/CopyLibs

@@ -27,7 +27,9 @@ import rts.units.UnitTypeTable;
 import utils.ForwardModel;
 
 public class CompetitionSarsaSearch extends TDSearch {
-
+	
+    String ioDirectory;
+        
 	/**
 	 * The weights are per action abstraction (indexed by their names)
 	 */
@@ -44,6 +46,8 @@ public class CompetitionSarsaSearch extends TDSearch {
 
 	private double planningEpsilon;
         
+        private UnitTypeTable types;
+        
         public CompetitionSarsaSearch(UnitTypeTable types){
             this(
                 types, 
@@ -58,6 +62,8 @@ public class CompetitionSarsaSearch extends TDSearch {
                 0.1,   //lambda
                 1      //random seed
             );
+            
+            this.types = types; //to use in clone method
         }
 	
 
@@ -107,70 +113,83 @@ public class CompetitionSarsaSearch extends TDSearch {
 
 	@Override
 	public PlayerAction getAction(int player, GameState gs) throws Exception {
-		//sanity check for player ID:
-		if(gs.getTime() == 0) {
-                    playerID = player; //assigns the ID on the initial state
+            
+            if(gs.getTime() == 0) {
+                playerID = player; //assigns the ID on the initial state
 
-                    //attempts to load the weights (io/WxH/weights_P.bin)
-                    String weightsPath = "io/" + gs.getPhysicalGameState().getWidth() 
-                            + "x" + gs.getPhysicalGameState().getHeight() + 
-                            "/weights_"+player + ".bin";
-                    logger.info("Attempting to load weights at " + weightsPath);
-                    try{
-                        loadWeights(weightsPath);
-                    }
-                    catch (Exception e){
-                        logger.error("Error while attempting to load weights... acting randomly.", e);
-                    }
+                //attempts to load the weights from io/WxH/weights_P.bin
+                logger.info("Attempting to load the weights for me as player {}", player);
+                loadWeights(player, gs);    
+                
+                // determines the matchDuration
+                matchDuration = 12000;
+                if (gs.getPhysicalGameState().getWidth() <= 64) {
+                    matchDuration = 8000;
+                }
+                if (gs.getPhysicalGameState().getWidth() <= 32) {
+                    matchDuration = 6000;
+                }
+                if (gs.getPhysicalGameState().getWidth() <= 24) {
+                    matchDuration = 5000;
+                }
+                if (gs.getPhysicalGameState().getWidth() <= 16) {
+                    matchDuration = 4000;
+                }
+                if (gs.getPhysicalGameState().getWidth() <= 8) {
+                    matchDuration = 3000;
+                } 
+                logger.info("Duration set to " + matchDuration);
+                //end (determine match duration)
 
-                    // determines the matchDuration
-                    matchDuration = 12000;
-                    if (gs.getPhysicalGameState().getWidth() <= 64) {
-                        matchDuration = 8000;
-                    }
-                    if (gs.getPhysicalGameState().getWidth() <= 32) {
-                        matchDuration = 6000;
-                    }
-                    if (gs.getPhysicalGameState().getWidth() <= 24) {
-                        matchDuration = 5000;
-                    }
-                    if (gs.getPhysicalGameState().getWidth() <= 16) {
-                        matchDuration = 4000;
-                    }
-                    if (gs.getPhysicalGameState().getWidth() <= 8) {
-                        matchDuration = 3000;
-                    } 
-                    logger.info("Duration set to " + matchDuration);
-                    //end (determine match duration)
-			
-		} else if (player != playerID) { // consistency check for other states
-			logger.error("Called to play with different ID! (mine={}, given={}", playerID, player);
-			logger.error("Will proceed, but behavior might be unpredictable");
-		}
-		
-		logger.debug("v({}) for player{} before planning: {}", gs.getTime(), player, stateValue(featureExtractor.extractFeatures(gs, player)));
-		sarsaPlanning(gs, player);
-		logger.debug("v({}) for player{} after planning: {}", gs.getTime(), player, stateValue(featureExtractor.extractFeatures(gs, player)));
-		
-		String currentChoiceName = epsilonGreedy(gs, player, weights, epsilon);
-		
-		if(previousState != null && previousChoiceName != null) {
-			// updates the 'long-term' memory from actual experience
-			sarsaUpdate(previousState, player, previousChoiceName, gs, currentChoiceName, weights, eligibility);
-		}
-		
-		// updates previous choices for the next sarsa learning update
-		previousChoiceName = currentChoiceName;
-		previousState = gs.clone(); //cloning fixes a subtle error where gs changes in the game engine and becomes the next state, which is undesired 
-		
-		//Date end = new Date(System.currentTimeMillis());
-		logger.debug("Player {} selected {}.",
-			player, currentChoiceName
-		);
-		
-		return abstractionToAction(currentChoiceName, gs, player);
+            } else if (player != playerID) { //sanity check for player ID
+                logger.error("Called to play with different ID! (mine={}, given={}", playerID, player);
+                logger.error("Will proceed, but behavior might be unpredictable");
+            }
+
+            logger.debug("v({}) for player{} before planning: {}", gs.getTime(), player, stateValue(featureExtractor.extractFeatures(gs, player)));
+            sarsaPlanning(gs, player);
+            logger.debug("v({}) for player{} after planning: {}", gs.getTime(), player, stateValue(featureExtractor.extractFeatures(gs, player)));
+
+            String currentChoiceName = epsilonGreedy(gs, player, weights, epsilon);
+
+            if(previousState != null && previousChoiceName != null) {
+                // updates the 'long-term' memory from actual experience
+                sarsaUpdate(previousState, player, previousChoiceName, gs, currentChoiceName, weights, eligibility);
+            }
+
+            // updates previous choices for the next sarsa learning update
+            previousChoiceName = currentChoiceName;
+            previousState = gs.clone(); //cloning fixes a subtle error where gs changes in the game engine and becomes the next state, which is undesired 
+
+            //Date end = new Date(System.currentTimeMillis());
+            logger.debug("Player {} selected {}.",
+                player, currentChoiceName
+            );
+
+            return abstractionToAction(currentChoiceName, gs, player);
 		
 	}
+        
+        public void loadWeights(int player, GameState gs){
+            String inputDir = ioDirectory;
+            if (inputDir == null){
+                logger.warn("No I/O directory set... attempting to read from 'io'");
+                inputDir = "io";
+            }
+            
+            String weightsPath = inputDir + "/" + gs.getPhysicalGameState().getWidth() 
+                    + "x" + gs.getPhysicalGameState().getHeight() + 
+                    "/weights_"+player + ".bin";
+            
+            logger.info("Attempting to load weights at " + weightsPath);
+            try{
+                loadWeights(weightsPath);
+                //weightsLoaded = true;
+            }
+            catch (Exception e){
+                logger.error("Error while attempting to load weights (ok if never trained here)... acting randomly.", e);
+            }
+        }
 	
 	@Override
 	public void gameOver(int winner) {
@@ -595,6 +614,8 @@ public class CompetitionSarsaSearch extends TDSearch {
 	@Override
     public void preGameAnalysis(GameState gs, long milliseconds, String readWriteFolder) throws Exception {
         
+        ioDirectory = readWriteFolder;
+        
         int maxCycles = 12000;
         if (gs.getPhysicalGameState().getWidth() <= 64) {
             maxCycles = 8000;
@@ -613,7 +634,7 @@ public class CompetitionSarsaSearch extends TDSearch {
         }
                 
         // creates the player instance
-        TDSearch player = new CompetitionSarsaSearch(
+        TDSearch player = new SarsaSearch(
             gs.getUnitTypeTable(), 
             abstractions,
             rewards,
@@ -623,7 +644,7 @@ public class CompetitionSarsaSearch extends TDSearch {
         );
 
 		// creates the training opponent
-        TDSearch trainingOpponent = new CompetitionSarsaSearch(
+        TDSearch trainingOpponent = new SarsaSearch(
             gs.getUnitTypeTable(),
             abstractions,
             rewards,
@@ -632,10 +653,10 @@ public class CompetitionSarsaSearch extends TDSearch {
             0, alpha, epsilon, gamma, lambda, 2
         );
 		
-	Logger logger = LogManager.getRootLogger();
+	//Logger logger = LogManager.getRootLogger();
 			
         // creates output directory if needed
-        String outputPrefix = readWriteFolder + "/" + gs.getPhysicalGameState().getWidth() + "x" + gs.getPhysicalGameState().getHeight();
+        String outputPrefix = ioDirectory + "/" + gs.getPhysicalGameState().getWidth() + "x" + gs.getPhysicalGameState().getHeight();
         File f = new File(outputPrefix);
         if (!f.exists()) {
                 logger.info("Creating directory " + outputPrefix);
@@ -645,6 +666,21 @@ public class CompetitionSarsaSearch extends TDSearch {
 		
         // training matches
         logger.info("Starting training...");
+        
+        // loads weights of the training partners (player is 0 and opponent is 1)
+        try {
+            player.loadWeights(outputPrefix + "/weights_0.bin");
+        }
+        catch (Exception e){
+            logger.warn("Unable to load weights for 1st training partner (ok if first training on this map)");
+        }
+        
+        try {
+            trainingOpponent.loadWeights(outputPrefix + "/weights_1.bin");
+        }
+        catch(Exception e){
+            logger.warn("Unable to load weights for 2nd training partner (ok if first training on this map)");
+        }
         
         Date begin = new Date(System.currentTimeMillis());
         Date end = begin;
@@ -695,18 +731,23 @@ public class CompetitionSarsaSearch extends TDSearch {
 
         }
         
-        logger.info("Taining finished...");
+        logger.info("Training finished... preventively using the weights of player 0 (but I'll try to load when the match begins)");
+        
+        //preventively loads weights for me as player 0
+        loadWeights(0, gs);
         
     }
 	
 	/**
      * Resets the portfolio with the new unit type table
+     * @param utt
      */
+    @Override
     public void reset(UnitTypeTable utt) {
     	for(AI ai : abstractions.values()){
     		ai.reset(utt);
     	}
-    	
+    	types = utt;
     	reset();
     	
     }
@@ -720,5 +761,10 @@ public class CompetitionSarsaSearch extends TDSearch {
     		ai.reset();
     	}
     }
+    
+	@Override
+	public AI clone() {
+            return new CompetitionSarsaSearch(types);
+	}
 
 }

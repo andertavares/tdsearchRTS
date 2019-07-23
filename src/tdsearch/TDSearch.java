@@ -38,8 +38,8 @@ public class TDSearch extends AI {
 	protected double alpha;
 	
 	/**
-     * Probability of exploration
-     */
+        * Probability of exploration
+        */
 	protected double epsilon;
 	
 	/**
