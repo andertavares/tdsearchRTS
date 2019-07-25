@@ -1,5 +1,7 @@
 package features;
 
+import java.util.List;
+
 import rts.GameState;
 import rts.units.Unit;
 import rts.units.UnitTypeTable;
@@ -109,7 +111,10 @@ public class MaterialAdvantageDistancesHP extends MaterialAdvantage {
 	 * @return
 	 */
 	public int shortestManhattanDistanceToEnemyUnit(GameState state) {
-		int shortestDistance = Integer.MAX_VALUE;
+		// initializes the shortest distance to a sensible value (width+height)
+		int width = state.getPhysicalGameState().getWidth();
+		int height = state.getPhysicalGameState().getHeight();
+		int shortestDistance = width + height;
 		
 		// inefficient way to determine the distance...
 		for(Unit u : state.getUnits()) {
@@ -135,7 +140,7 @@ public class MaterialAdvantageDistancesHP extends MaterialAdvantage {
 	 * @return
 	 */
 	public int largestManhattanDistanceToEnemyUnit(GameState state) {
-		int largestDistance = Integer.MIN_VALUE;
+		int largestDistance = 0;
 		
 		// inefficient way to determine the distance...
 		for(Unit u : state.getUnits()) {
@@ -163,7 +168,10 @@ public class MaterialAdvantageDistancesHP extends MaterialAdvantage {
 	 * @return
 	 */
 	public int shortestManhattanDistanceFromUnitToBase(GameState state, int player, int enemy) {
-		int shortestDistance = Integer.MAX_VALUE;
+		// initializes the shortest distance to a sensible value (width+height)
+		int width = state.getPhysicalGameState().getWidth();
+		int height = state.getPhysicalGameState().getHeight();
+		int shortestDistance = width + height;
 		
 		// inefficient way to determine the distance...
 		for(Unit playerUnit : state.getUnits()) {
@@ -180,29 +188,6 @@ public class MaterialAdvantageDistancesHP extends MaterialAdvantage {
 		}
 		return shortestDistance;
 	}
-	
-	/*
-	public int largestManhattanDistanceToEnemyBase(GameState state, int player) {
-		int largestDistance = Integer.MIN_VALUE;
-		
-		// inefficient way to determine the distance...
-		for(Unit myUnit : state.getUnits()) {
-			for(Unit enemyUnit : state.getUnits()) {
-				// considers only my mobile units and enemy bases (stockpiles)
-				if(myUnit.getPlayer() != player || enemyUnit.getPlayer() != 1-player 
-						|| !myUnit.getType().canMove || !enemyUnit.getType().isStockpile) continue;
-				
-				int distance = Math.abs(myUnit.getX() - enemyUnit.getX()) + Math.abs(myUnit.getY() - enemyUnit.getY());
-				if (distance > largestDistance) {
-					largestDistance = distance;
-				}
-				
-			}
-		}
-		
-		return largestDistance;
-	}
-	*/
 	
 	/**
 	 * Returns the remaining HP ratio (currHP / maxHP) of the player's 
@@ -242,5 +227,20 @@ public class MaterialAdvantageDistancesHP extends MaterialAdvantage {
 			}
 		}
 		return lowestHPRatio;
+	}
+	
+	public List<String> featureNames(){
+		List<String> names = super.featureNames();
+		names.add("shortestDistanceMobileUnits");
+		names.add("longestDistanceMobileUnits");
+		names.add("shortestDistanceFromMyUnitToEnemyBase");
+		names.add("shortestDistanceFromEnemyUnitToMyBase");
+		names.add("lowestRemainingHPRatioMy");
+		names.add("lowestRemainingHPRatioEnemy");
+		names.add("highestRemainingHPRatioMy");
+		names.add("highestRemainingHPRatioEnemy");
+
+		return names;
+		
 	}
 }

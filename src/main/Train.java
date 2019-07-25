@@ -47,6 +47,9 @@ public class Train {
         
         // overrides config with command line parameters
         Parameters.mergeCommandLineIntoProperties(cmd, config);
+        
+        // ensures non-specified parameters are set to default values
+        Parameters.ensureDefaults(config);
 		
 		// retrieves initial and final reps		
 		int initialRep = Integer.parseInt(config.getProperty("initial_rep", "0"));
@@ -86,7 +89,7 @@ public class Train {
 	public static void run(Properties config, String outputPrefix, int randomSeedP0, int randomSeedP1) throws Exception {
 		
 		int trainMatches = Integer.parseInt(config.getProperty("train_matches"));
-		int testMatches = Integer.parseInt(config.getProperty("test_matches"));
+		//int testMatches = Integer.parseInt(config.getProperty("test_matches"));
 		
         // loads microRTS game settings
      	GameSettings settings = GameSettings.loadFromConfig(config);
@@ -138,13 +141,14 @@ public class Train {
 			((TDSearch) trainingOpponent).saveWeights(outputPrefix + "/weights_1.bin");
 		}
 		
-		// test matches
+		/*// test matches
 		logger.info("Starting test...");
 		boolean visualizeTest = Boolean.parseBoolean(config.getProperty("visualize_test", "false"));
 		AI testOpponent = AILoader.loadAI(config.getProperty("test_opponent"), types);
 		player.prepareForTest();
 		Runner.repeatedMatches(types, testMatches, outputPrefix + "/test.csv", player, testOpponent, visualizeTest, settings, null);
 		logger.info("Test finished.");
+		*/
 	}
 
 }

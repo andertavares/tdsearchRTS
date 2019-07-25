@@ -1,6 +1,8 @@
 package features;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import rts.GameState;
@@ -27,6 +29,25 @@ public class MaterialAdvantage implements FeatureExtractor {
 	
 	private int initialUnitIndex;
 	private int numberTypes;
+	
+	List<String> featureNames = new ArrayList<>() {{
+		add("bias");
+		add("resources_p0");
+		add("resources_p1");
+		add("time");
+		add("workers_p0");
+		add("workers_p1");
+		add("light_p0");
+		add("light_p1");
+		add("heavy_p0");
+		add("heavy_p1");
+		add("ranged_p0");
+		add("ranged_p1");
+		add("bases_p0");
+		add("ranged_p1");
+		add("barracks_p0");
+		add("barracks_p1");
+    }};
 	
 	/**
 	 * Initializes a FeatureExtractor with specified maximum values for some entities for normalizing.
@@ -130,6 +151,11 @@ public class MaterialAdvantage implements FeatureExtractor {
 		// END: normalize features
 		
 		return features;
+	}
+
+	@Override
+	public List<String> featureNames() {
+		return featureNames;
 	}
 	
 }

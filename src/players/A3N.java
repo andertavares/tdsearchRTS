@@ -16,7 +16,13 @@ import rts.units.UnitTypeTable;
  *
  */
 public class A3N extends CmabAssymetricMCTS {
-
+	
+	
+	/**
+	 * Instantiates A3N by calling the superclass constructor
+	 * with appropriate parameters
+	 * @param types
+	 */
 	public A3N (UnitTypeTable types) {
 		super(
 			100, -1, 100, 8, 0.3f, 0.0f, 0.4f, 0, new RandomBiasedAI(types),

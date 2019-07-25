@@ -1,17 +1,47 @@
 package features;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import rts.GameState;
 import rts.units.Unit;
+import rts.units.UnitType;
 import rts.units.UnitTypeTable;
 
-
-/**
- * Accounts for Material advantage + the closest distance between enemy units
- * @author artavares
- *
- */
-public class UnitDistance extends MaterialAdvantage {
+public class UnitDistance implements FeatureExtractor {
+	private int numFeatures;
 	
+	private int maxUnits;
+	private int maxResources;
+	
+	private int maxTime;
+	
+	Map<UnitType, Integer> baseIndexes;
+	
+	private int initialUnitIndex;
+	private int numberTypes;
+	
+	List<String> featureNames = new ArrayList<>() {{
+		add("bias");
+		add("shortestDistanceMobileUnits");
+		add("resources_p0");
+		add("resources_p1");
+		add("time");
+		add("workers_p0");
+		add("workers_p1");
+		add("light_p0");
+		add("light_p1");
+		add("heavy_p0");
+		add("heavy_p1");
+		add("ranged_p0");
+		add("ranged_p1");
+		add("bases_p0");
+		add("ranged_p1");
+		add("barracks_p0");
+		add("barracks_p1");
+    }};
 	
 	/**
 	 * Initializes a FeatureExtractor with specified maximum values for some entities for normalizing.
@@ -24,9 +54,33 @@ public class UnitDistance extends MaterialAdvantage {
 	 */
 	public UnitDistance(UnitTypeTable unitTypeTable, int maxTime, int maxUnits, int maxResources) {
 		
-		super(unitTypeTable, maxTime, maxUnits, maxResources);
+		this.maxTime = maxTime;
+		this.maxUnits = maxUnits;
+		this.maxResources = maxResources;
 		
-		// we add one feature (distance between closest enemy unit) to the material advantage
+		/**
+		 * 1 bias, 1 distance, 2 resources, 1 time, 12 unit counts 
+		 */
+		numFeatures = 17;
+		
+		baseIndexes = new HashMap<UnitType, Integer>();
+		
+		initialUnitIndex = 5; //features regarding units start at this index in the feature vector
+		numberTypes = 6; // there are 6 unit types (resources are not regarded)
+		
+		//TODO do as the line commented below and initialize base index by traversing the list of types
+		//numberTypes = unitTypeTable.getUnitTypes().size() - 1; 
+		
+		// baseIndexes will help to locate unit features in the array
+		// there are two features per unit type: the count for player 0 and 1
+		// hence, each unit type occupies two positions in the array and the offset increases by two 
+		// at each line below
+		baseIndexes.put(unitTypeTable.getUnitType("Worker"), initialUnitIndex);	
+		baseIndexes.put(unitTypeTable.getUnitType("Light"), initialUnitIndex + 2);
+		baseIndexes.put(unitTypeTable.getUnitType("Heavy"), initialUnitIndex + 4);
+		baseIndexes.put(unitTypeTable.getUnitType("Ranged"), initialUnitIndex + 6);
+		baseIndexes.put(unitTypeTable.getUnitType("Base"), initialUnitIndex + 8);
+		baseIndexes.put(unitTypeTable.getUnitType("Barracks"), initialUnitIndex + 10);
 	}
 	
 	/**
@@ -36,6 +90,7 @@ public class UnitDistance extends MaterialAdvantage {
 	 */
 	public UnitDistance(UnitTypeTable unitTypeTable) {
 		this(unitTypeTable, 15000, 50, 50);
+		
 	}
 	
 	/**
@@ -49,47 +104,67 @@ public class UnitDistance extends MaterialAdvantage {
 		this(types, maxTime, 50, 50);
 	}
 	
-	/**
-	 * UnitDistance adds one feature to MaterialAdvantage
-	 */
 	public int getNumFeatures() {
-		return super.getNumFeatures() + 1;
+		return numFeatures;
 	}
 	
 	public double[] extractFeatures(GameState s, int player) {
-		//copies the features extracted by the superclass
-		//TODO change the returned type to Vector or ArrayList?
-		double[] features = new double[getNumFeatures()];
-		double[] materialAdvFeatures = super.extractFeatures(s, player);
+		//count: resources, bases, barracks, workers, heavy, light, ranged for both players
+		double[] features = new double[numFeatures];
 		
-		int finalParentIndex = super.getNumFeatures();
+		int mapSize = Math.max(s.getPhysicalGameState().getHeight(), s.getPhysicalGameState().getWidth());
 		
-		for (int i = 0; i < finalParentIndex; i++) {
-			features[i] = materialAdvFeatures[i];
+		features[0] = 1; //bias, always 1
+		
+		// shortest manhattan distance between ally and enemy units, capped at a maximum value
+		features[1] = shortestDistanceBetweenEnemies(s, mapSize);
+		
+		// resources
+		features[2] = Math.min(s.getPlayer(player).getResources(), maxResources);	//player's resources
+		features[3] = Math.min(s.getPlayer(1-player).getResources(), maxResources);	//opponent's resources
+		
+		// time
+		features[4] = Math.min(s.getTime(), maxTime);
+		
+		for (Unit u : s.getPhysicalGameState().getUnits()) {
+			if (u.getType().isResource) continue; //map resources are not interesting
+			
+			//gets the base index from unit type, adds 0 if the unit is ally and 1 if it is enemy
+			int index = baseIndexes.get(u.getType()) + (u.getPlayer() == player ? 0 : 1);
+			
+			// increments the unit count, capping the maximum number of units to aid normalization
+			features[index] = Math.min(features[index] + 1, maxUnits);
 		}
 		
-		int mapWidth = s.getPhysicalGameState().getWidth();
-		int mapHeight = s.getPhysicalGameState().getHeight();
+		// BEGIN: normalize features
+		// 1 is normalized by the largest possible manhattan distance
+		features[1] /= (mapSize + mapSize);
 		
-		// retrieves the shortest Manhattan distance between enemy units and normalizes 
-		features[finalParentIndex] = shortestManhattanDistanceBetweenEnemies(s) / (double)(mapWidth + mapHeight);
+		// 3 and 4 are normalized at MAX_RESOURCES
+		features[3] /= maxResources;
+		features[4] /= maxResources;
+		
+		// 5 is normalized at maxTime
+		features[5] /= maxTime;
+		
+		// from initial unit index to 2*the number of types (inclusive) are normalized at MAX_UNITS
+		// 2*number of types is used because the count is done for each player
+		for(int i = initialUnitIndex; i < numFeatures; i++) {
+			features[i] /= maxUnits;
+		}
+		// END: normalize features
 		
 		return features;
 	}
 	
-	/**
-	 * Retrieves the shortest Manhattan distance between units belonging to different players
-	 * @param state
-	 * @return
-	 */
-	public int shortestManhattanDistanceBetweenEnemies(GameState state) {
-		int shortestDistance = Integer.MAX_VALUE;
+	public int shortestDistanceBetweenEnemies(GameState state, int mapSize) {
+		int shortestDistance = mapSize + mapSize; //this is the largest manhattan distance possible in the map
 		
 		// inefficient way to determine the distance...
 		for(Unit u : state.getUnits()) {
 			for(Unit v : state.getUnits()) {
-				// skips resources and units from the same player
-				if(u.getPlayer() == v.getPlayer() || u.getType().isResource || v.getType().isResource) continue;
+				// skips units from the same player
+				if(u.getPlayer() == v.getPlayer()) continue;
 				
 				int distance = Math.abs(u.getX() - v.getX()) + Math.abs(u.getY() - v.getY());
 				if (distance < shortestDistance) {
@@ -100,5 +175,10 @@ public class UnitDistance extends MaterialAdvantage {
 		}
 		
 		return shortestDistance;
+	}
+
+	@Override
+	public List<String> featureNames() {
+		return featureNames;
 	}
 }

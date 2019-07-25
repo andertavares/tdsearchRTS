@@ -729,4 +729,8 @@ public class SarsaSearch extends TDSearch {
     	}
     }
 
+	public Map<String, double[]> getWeights() {
+		return weights;
+	}
+
 }

@@ -1,20 +1,15 @@
 package test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.io.File;
 import java.io.IOException;
 
-import org.jdom.Document;
-import org.jdom.Element;
 import org.jdom.JDOMException;
-import org.jdom.input.SAXBuilder;
 import org.junit.jupiter.api.Test;
 
 import features.MapAware;
 import rts.GameState;
 import rts.PhysicalGameState;
-import rts.units.Unit;
 import rts.units.UnitTypeTable;
 
 class TestMapAwareFeatureExtractor {
@@ -56,7 +51,6 @@ class TestMapAwareFeatureExtractor {
 	@Test
 	void testErrorState() throws JDOMException, IOException, Exception {
 		UnitTypeTable types = new UnitTypeTable(UnitTypeTable.VERSION_ORIGINAL_FINETUNED, UnitTypeTable.MOVE_CONFLICT_RESOLUTION_CANCEL_BOTH); 
-		PhysicalGameState map = PhysicalGameState.load("maps/8x8/basesWorkers8x8.xml", types);
 		
 		// loads errorState.xml 
 		GameState state = GameState.fromXML("src/test/errorState.xml", types);

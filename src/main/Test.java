@@ -51,6 +51,9 @@ public class Test {
         
         // overrides config with command line parameters
         Parameters.mergeCommandLineIntoProperties(cmd, config);
+        
+        // ensures non-specified parameters get default values
+        Parameters.ensureDefaults(config);
 		
 		// retrieves initial and final reps		
 		int initialRep = Integer.parseInt(config.getProperty("initial_rep", "0"));
@@ -92,6 +95,7 @@ public class Test {
 	 * @throws Exception
 	 */
 	public static void runTestMatches(Properties config, String testPartnerName, String workingDir, int randomSeedP0, int randomSeedP1, boolean writeReplay) throws Exception {
+		Logger logger = LogManager.getRootLogger();
 		
 		int testMatches = Integer.parseInt(config.getProperty("test_matches"));
 		
@@ -113,16 +117,19 @@ public class Test {
         // creates a UnitTypeTable that should be overwritten by the one in config
         UnitTypeTable types = new UnitTypeTable(settings.getUTTVersion(), settings.getConflictPolicy());
         
-        // loads the reward model (default=victory-only)
+        // loads the reward model (default=winlossdraw)
         RewardModel rewards = RewardModelFactory.getRewardModel(
-    		config.getProperty("rewards", "victory-only"), maxCycles
-    	);
+ 		   config.getProperty("rewards", "winlossdraw"), maxCycles
+        );
+        logger.debug("Reward model: {}", rewards.getClass().getSimpleName());
         
         FeatureExtractor featureExtractor = FeatureExtractorFactory.getFeatureExtractor(
-    		config.getProperty("features", "mapaware"), types, maxCycles
-    	);
+ 		   config.getProperty("features", "materialdistancehp"), types, maxCycles
+        );
+        logger.debug("Feature extractor: {}", featureExtractor.getClass().getSimpleName());
         
-        // creates the player instance and loads weights
+        // creates the player instance and loads weights according to its position
+        int testPosition = Integer.parseInt(config.getProperty("test_position", "0"));
 		TDSearch player = new SarsaSearch(
 			types, 
 			PortfolioManager.getPortfolio(types, Arrays.asList(portfolioNames.split(","))),
@@ -131,14 +138,14 @@ public class Test {
 			maxCycles,
 			timeBudget, alpha, epsilon, gamma, lambda, randomSeedP0
 		);
-		player.loadWeights(workingDir + "/weights_0.bin");
+        String weightsFile = String.format("%s/weights_%d.bin", workingDir, testPosition);
+        logger.info("Loading weights from {}", weightsFile);
+		player.loadWeights(weightsFile);
 		
 		// updates the config with the overwritten parameters
 		config.setProperty("random.seed.p0", Integer.toString(randomSeedP0));
 		config.setProperty("random.seed.p1", Integer.toString(randomSeedP1));
-		config.setProperty("portfolio", portfolioNames);
-		
-		Logger logger = LogManager.getRootLogger();
+		config.setProperty("portfolio", portfolioNames); //TODO isn't this handled in Parameters class?
 		
 		logger.info("This experiment's config: ");
 		logger.info(config.toString());
@@ -155,9 +162,18 @@ public class Test {
 		// if write replay (trace) is activated, sets the prefix to write files
 		String tracePrefix = writeReplay ? workingDir + "/test-trace-vs-" + testOpponent.getClass().getSimpleName() : null;
 		
+		AI p0 = player, p1 = testOpponent;
+		if(testPosition == 1) { //swaps the player and opponent if testPosition is activated
+			p0 = testOpponent;
+			p1 = player;
+		}
+		
+		logger.info("Player0={}, Player1={}", p0.getClass().getSimpleName(), p1.getClass().getSimpleName());
+		
 		Runner.repeatedMatches(
-			types, testMatches, workingDir + "/test-vs-" + testOpponent.getClass().getSimpleName() + ".csv", 
-			player, testOpponent, visualizeTest, settings, tracePrefix
+			types, testMatches, 
+			String.format("%s/test-vs-%s_p%d.csv", workingDir, testOpponent.getClass().getSimpleName(), testPosition), 
+			p0, p1, visualizeTest, settings, tracePrefix
 		);
 		logger.info("Test finished.");
 	}
