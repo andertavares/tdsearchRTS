@@ -4,8 +4,10 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Date;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.List;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import ai.core.AI;
 import gui.PhysicalGameStateJFrame;
@@ -22,7 +24,7 @@ import util.XMLWriter;
 import utils.FileNameUtil;
 
 /**
- * A class to run microRTS games to train and test MetaBot
+ * A class to run microRTS games to train and test RL agents
  * @author anderson
  */
 public class Runner {
@@ -45,7 +47,7 @@ public class Runner {
 	 * @throws Exception
 	 */
 	public static int match(UnitTypeTable types, AI ai1, AI ai2, boolean visualize, GameSettings config, String traceOutput) throws Exception{
-		Logger logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
+		Logger logger = LogManager.getRootLogger();
 		
 		//UnitTypeTable types = new UnitTypeTable(config.getUTTVersion(), config.getConflictPolicy());
 		
@@ -60,8 +62,8 @@ public class Runner {
 		try {
 			pgs = PhysicalGameState.load(config.getMapLocation(), types);
 		} catch (Exception e) {
-			logger.log(Level.SEVERE, "Error while loading map from file: " + config.getMapLocation(), e);
-			logger.severe("Aborting match execution...");
+			logger.error("Error while loading map from file: " + config.getMapLocation(), e);
+			logger.error("Aborting match execution...");
 			return MATCH_ERROR;
 		}
 		
@@ -151,19 +153,30 @@ public class Runner {
 	 * Runs the specified number of matches, without the GUI, saving the summary to the specified file.
 	 * Saves the trace of each match sequentially according to the tracePrefix is not null
 	 * @param types
+	 * @param workingDir
 	 * @param numMatches
 	 * @param summaryOutput
+	 * @param choicesPrefix
 	 * @param ai1
 	 * @param ai2
 	 * @param visualize
-	 * @param config
-	 * @param traceOutput
+	 * @param gameSettings
+	 * @param tracePrefix
+	 * @param checkpoint
 	 * @throws Exception
 	 */
-	public static void repeatedMatches(UnitTypeTable types, int numMatches, String summaryOutput, AI ai1, AI ai2, boolean visualize, GameSettings config, String tracePrefix) throws Exception{
-		Logger logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
+	public static void repeatedMatches(
+			UnitTypeTable types, 
+			String workingDir, 
+			int numMatches, String summaryOutput, String choicesPrefix, 
+			AI ai1, AI ai2, 
+			boolean visualize, GameSettings gameSettings, String tracePrefix, 
+			int checkpoint
+	) throws Exception {
 		
-		for(int i = 0; i < numMatches; i++){
+		Logger logger = LogManager.getRootLogger();
+		
+		for(int matchNumber = 0; matchNumber < numMatches; matchNumber++){
         	
         	//determines the trace output file. It is either null or the one calculated from the specified prefix
     		String traceOutput = null;
@@ -176,20 +189,42 @@ public class Runner {
     		}
         	
         	Date begin = new Date(System.currentTimeMillis());
-        	int result = match(types, ai1, ai2, visualize, config, traceOutput);
+        	int result = match(types, ai1, ai2, visualize, gameSettings, traceOutput);
         	Date end = new Date(System.currentTimeMillis());
         	
-        	System.out.print(String.format("\rMatch %8d finished with result %3d.", i+1, result));
-        	//logger.info(String.format("Match %8d finished.", i+1));
+        	System.out.print(String.format("\rMatch %8d finished with result %3d.", matchNumber+1, result));
         	
+        	// saves weights every 'checkpoint' matches (adds 1 to matchNumber because it is starts at 0
+        	if (checkpoint > 0 && (matchNumber+1) % checkpoint == 0) {
+        		checkpoint(ai1, ai2, workingDir, matchNumber+1);
+        	}
+        	
+        	
+        	// writes summary
         	long duration = end.getTime() - begin.getTime();
-        	
         	if (summaryOutput != null){
         		try{
         			outputSummary(summaryOutput, result, duration, begin, end);
         		}
         		catch(IOException ioe){
-        			logger.log(Level.SEVERE, "Error while trying to write summary to '" + summaryOutput + "'", ioe);
+        			logger.error("Error while trying to write summary to '" + summaryOutput + "'", ioe);
+        		}
+        	}
+        	
+        	// appends choices
+        	if (choicesPrefix != null) {
+        		try{
+        			//outputs choices for both players
+        			if(ai1 instanceof UnrestrictedPolicySelectionLearner) {
+	        			outputChoices(choicesPrefix + "_p0.choices", matchNumber, ((UnrestrictedPolicySelectionLearner)ai1).getChoices());
+        			}
+        			
+        			if(ai2 instanceof UnrestrictedPolicySelectionLearner) {
+	        			outputChoices(choicesPrefix + "_p1.choices", matchNumber, ((UnrestrictedPolicySelectionLearner)ai2).getChoices());
+        			}
+        		}
+        		catch(IOException ioe){
+        			logger.error("Error while trying to write summary to '" + summaryOutput + "'", ioe);
         		}
         	}
         	
@@ -201,19 +236,82 @@ public class Runner {
         logger.info("Executed " + numMatches + " matches.");
 	}
 	
-    
-    public static void outputSummary(String path, int result, long duration, Date start, Date finish) throws IOException{
-    	File f = new File(path);
+	/**
+	 * Writes the weights of the AIs if they're able to save weights
+	 * @param ai1
+	 * @param ai2
+	 * @param workingDir
+	 */
+	private static void checkpoint(AI ai1, AI ai2, String workingDir, int matchNumber) {
+		
+		Logger logger = LogManager.getRootLogger();
+		
+		// casts and save the weights
+		if(ai1 instanceof UnrestrictedPolicySelectionLearner) {
+			try {
+				((UnrestrictedPolicySelectionLearner) ai1).saveWeights(
+					String.format("%s/weights_0-m%d.bin", workingDir, matchNumber)
+				);
+			} catch (IOException e) {
+				logger.error("Unable to save weights for player 0", e);
+			}
+			
+		}
+		
+		if(ai2 instanceof UnrestrictedPolicySelectionLearner) {
+			try {
+				((UnrestrictedPolicySelectionLearner) ai1).saveWeights(
+					String.format("%s/weights_1-m%d.bin", workingDir, matchNumber)
+				);
+			} catch (IOException e) {
+				logger.error("Unable to save weights for player 1", e);
+			}
+		}
+	}
+
+	public static void outputChoices(String path, int matchNumber, List<String> choices) throws IOException{
+
+		// creates the choices file and required dirs if necessary
+		File f = new File(path);
 		FileWriter writer; 
-		Logger logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
-		logger.fine("Attempting to write the output summary to " + path);
+		Logger logger = LogManager.getRootLogger();
+		logger.debug("Attempting to write choices to " + path);
 		
     	if(!f.exists()){ // creates a new file and writes the header
     		// creates missing parent directories as well
     		if (f.getParentFile() != null) {
     			  f.getParentFile().mkdirs();
 			}
-    		logger.fine("File didn't exist, creating and writing header");
+    		logger.debug("File didn't exist, creating and writing header");
+    		writer = new FileWriter(f, false); //must be after the test, because it creates the file upon instantiation
+    		writer.write("#frame: choice\n");
+    		writer.close();
+    	}
+    	
+    	// appends one line with each choice separated by a \t\n
+    	writer = new FileWriter(f, true); 
+    	writer.write("Match " + matchNumber + ": \n");
+    	int frame = 0; //counts the frames
+    	for(String choice : choices) {
+    		writer.write(String.format("\t%d: %s\n", frame++, choice)); 
+    	}
+    	logger.debug("Successfully wrote to " + path); 
+    	
+    	writer.close();
+	}
+    
+    public static void outputSummary(String path, int result, long duration, Date start, Date finish) throws IOException{
+    	File f = new File(path);
+		FileWriter writer; 
+		Logger logger = LogManager.getRootLogger();
+		logger.debug("Attempting to write the output summary to " + path);
+		
+    	if(!f.exists()){ // creates a new file and writes the header
+    		// creates missing parent directories as well
+    		if (f.getParentFile() != null) {
+    			  f.getParentFile().mkdirs();
+			}
+    		logger.debug("File didn't exist, creating and writing header");
     		writer = new FileWriter(f, false); //must be after the test, because it creates the file upon instantiation
     		writer.write("#result,duration(ms),initial_time,final_time\n");
     		writer.close();
@@ -222,7 +320,7 @@ public class Runner {
     	// appends one line with each weight value separated by a comma
     	writer = new FileWriter(f, true); 
     	writer.write(String.format("%d,%d,%s,%s\n", result, duration, start, finish));
-    	logger.fine("Successfully wrote to " + path); 
+    	logger.debug("Successfully wrote to " + path); 
     	
     	writer.close();
 	}

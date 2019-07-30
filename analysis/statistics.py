@@ -77,6 +77,6 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    print("wins, draws, losses, score, %score")
+    print("wins, draws, losses, #matches, score, %score")
     print(", ".join([str(x) for x in average_score(args.directories, args.opponent, args.position)] ))
 

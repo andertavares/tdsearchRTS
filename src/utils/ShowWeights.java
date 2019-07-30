@@ -7,8 +7,8 @@ import config.ConfigManager;
 import config.Parameters;
 import features.FeatureExtractor;
 import features.FeatureExtractorFactory;
+import learner.UnrestrictedPolicySelectionLearner;
 import rts.units.UnitTypeTable;
-import tdsearch.SarsaSearch;
 
 public class ShowWeights {
 
@@ -28,7 +28,7 @@ public class ShowWeights {
 		
 		FeatureExtractor extractor = FeatureExtractorFactory.getFeatureExtractor(config.getProperty("features"), types, 0);
 		
-		SarsaSearch learner = SarsaSearch.fromConfig(types, 0, config);
+		UnrestrictedPolicySelectionLearner learner = UnrestrictedPolicySelectionLearner.fromConfig(types, 0, config);
 		
 		//loads the weights
 		learner.loadWeights(args[1]);

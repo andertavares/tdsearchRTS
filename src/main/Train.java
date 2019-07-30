@@ -27,66 +27,28 @@ public class Train {
 	public static void main(String[] args) throws Exception {
 		Logger logger = LogManager.getRootLogger();
 		
-        Options options = Parameters.trainCommandLineOptions();
-        CommandLineParser parser = new DefaultParser();
-        CommandLine cmd = null;
-
-        try {
-            cmd = parser.parse(options, args);
-        } catch (ParseException e) {
-            System.out.println(e.getMessage());
-            new HelpFormatter().printHelp("utility-name", options);
-
-            System.exit(1);
-        }
-
-        String configFile = cmd.getOptionValue("config_input");
-        String outputPrefix = cmd.getOptionValue("working_dir");
+        Properties config = Parameters.parseParameters(args); //ConfigManager.loadConfig(configFile);
         
-        Properties config = ConfigManager.loadConfig(configFile);
+        String experimentDir = FileNameUtil.getExperimentDir(config);
+       
+        int repNumber = FileNameUtil.nextAvailableRepNumber(
+    		experimentDir, "true".equals(config.getProperty("restart"))
+    	);
         
-        // overrides config with command line parameters
-        Parameters.mergeCommandLineIntoProperties(cmd, config);
-        
-        // ensures non-specified parameters are set to default values
-        Parameters.ensureDefaults(config);
+        String fullDir = String.format("%s/rep%d", experimentDir, repNumber);
+       		
+		// runs one repetition
+		// p0's random seed is the rep number, p1's is 5000 + repNumber  
+		run(config, fullDir, repNumber, repNumber + 5000);
 		
-		// retrieves initial and final reps		
-		int initialRep = Integer.parseInt(config.getProperty("initial_rep", "0"));
-		int finalRep = Integer.parseInt(config.getProperty("final_rep", "0"));
-			
-		// repCount counts the actual number of repetitions
-		for (int rep = initialRep, repCount = 0; rep <= finalRep; rep++, repCount++) {
-			// determines the output dir according to the current rep
-			String outDir = outputPrefix + "/rep" + rep;
-			
-			// checks if that repetition has been played
-			File repDir = new File(outDir);
-			if(repDir.exists()) {
-				File repFinished = new File(outDir + "/finished");
-				if(repFinished.exists()) {
-					logger.info("Repetition {} already finished, skipping...", rep);
-					continue;
-				}
-				else {
-					logger.info("Repetition {} started, but not finished. Overwriting and continuing from there.", rep);
-					repDir.delete();
-				}
-			}
-			
-			// finally runs one repetition
-			// player 0's random seed increases whereas player 1's decreases with the repetitions  
-			run(config, outDir, rep, finalRep - repCount + 1);
-			
-			// writes a flag file named 'finished' to indicate this repetition ended
-			File repFinished = new File(outDir + "/finished");
-			if (!repFinished.createNewFile()) {
-				logger.error("Unable to create file to indicate that repetition {} has finished!", rep);
-			};
-		}
+		// writes a flag file named 'finished' to indicate that this repetition ended
+		File repFinished = new File(fullDir + "/finished");
+		if (!repFinished.createNewFile()) {
+			logger.error("Unable to create file to indicate that repetition {} has finished!", repNumber);
+		};
 	}
 	
-	public static void run(Properties config, String outputPrefix, int randomSeedP0, int randomSeedP1) throws Exception {
+	public static void run(Properties config, String workingDir, int randomSeedP0, int randomSeedP1) throws Exception {
 		
 		int trainMatches = Integer.parseInt(config.getProperty("train_matches"));
 		//int testMatches = Integer.parseInt(config.getProperty("test_matches"));
@@ -115,30 +77,41 @@ public class Train {
 		
 		Logger logger = LogManager.getRootLogger();
 		
-		logger.info("This experiment's config (to be copied to "+ outputPrefix + "/settings.properties): ");
+		logger.info("This experiment's config (to be copied to "+ workingDir + "/settings.properties): ");
 		logger.info(config.toString());
 		
 		// creates output directory if needed
-		File f = new File(outputPrefix);
+		File f = new File(workingDir);
 		if (!f.exists()) {
-			logger.info("Creating directory " + outputPrefix);
+			logger.info("Creating directory " + workingDir);
 			System.out.println();
 			f.mkdirs();
 		}
 		
-		config.store(new FileOutputStream(outputPrefix + "/settings.properties"), null);
+		config.store(new FileOutputStream(workingDir + "/settings.properties"), null);
 		
 		// training matches
 		logger.info("Starting training...");
 		boolean visualizeTraining = Boolean.parseBoolean(config.getProperty("visualize_training", "false"));
-		Runner.repeatedMatches(types, trainMatches, outputPrefix + "/train.csv", player, trainingOpponent, visualizeTraining, settings, null);
-		logger.info("Training finished. Saving weights to " + outputPrefix + "/weights_0.bin (and weights_1.bin if selfplay).");
+		
+		
+		
+		Runner.repeatedMatches(
+			types, workingDir, 
+			trainMatches, 
+			workingDir + "/train.csv", 
+			null, //won't record choices at training time 
+			player, trainingOpponent, visualizeTraining, settings, null,
+			Integer.parseInt(config.getProperty("checkpoint"))
+		);
+		
+		logger.info("Training finished. Saving weights to " + workingDir + "/weights_0.bin (and weights_1.bin if selfplay).");
 		// save player weights
-		player.saveWeights(outputPrefix + "/weights_0.bin");
+		player.saveWeights(workingDir + "/weights_0.bin");
 		
 		//save opponent weights if selfplay
 		if (trainingOpponent instanceof TDSearch) {
-			((TDSearch) trainingOpponent).saveWeights(outputPrefix + "/weights_1.bin");
+			((TDSearch) trainingOpponent).saveWeights(workingDir + "/weights_1.bin");
 		}
 		
 		/*// test matches
