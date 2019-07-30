@@ -26,6 +26,11 @@ import rts.PlayerAction;
 import rts.units.UnitTypeTable;
 import utils.ForwardModel;
 
+/**
+ * 2018 microRTS Tournament version of SarsaSearch
+ * @author anderson
+ *
+ */
 public class CompetitionSarsaSearch extends TDSearch {
 	
     String ioDirectory;
