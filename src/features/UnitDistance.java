@@ -112,12 +112,10 @@ public class UnitDistance implements FeatureExtractor {
 		//count: resources, bases, barracks, workers, heavy, light, ranged for both players
 		double[] features = new double[numFeatures];
 		
-		int mapSize = Math.max(s.getPhysicalGameState().getHeight(), s.getPhysicalGameState().getWidth());
-		
 		features[0] = 1; //bias, always 1
 		
 		// shortest manhattan distance between ally and enemy units, capped at a maximum value
-		features[1] = shortestDistanceBetweenEnemies(s, mapSize);
+		features[1] = shortestDistanceBetweenEnemies(s);
 		
 		// resources
 		features[2] = Math.min(s.getPlayer(player).getResources(), maxResources);	//player's resources
@@ -138,14 +136,14 @@ public class UnitDistance implements FeatureExtractor {
 		
 		// BEGIN: normalize features
 		// 1 is normalized by the largest possible manhattan distance
-		features[1] /= (mapSize + mapSize);
+		features[1] /= (double) s.getPhysicalGameState().getHeight() + s.getPhysicalGameState().getWidth();
 		
 		// 3 and 4 are normalized at MAX_RESOURCES
+		features[2] /= maxResources;
 		features[3] /= maxResources;
-		features[4] /= maxResources;
 		
 		// 5 is normalized at maxTime
-		features[5] /= maxTime;
+		features[4] /= maxTime;
 		
 		// from initial unit index to 2*the number of types (inclusive) are normalized at MAX_UNITS
 		// 2*number of types is used because the count is done for each player
@@ -157,14 +155,18 @@ public class UnitDistance implements FeatureExtractor {
 		return features;
 	}
 	
-	public int shortestDistanceBetweenEnemies(GameState state, int mapSize) {
-		int shortestDistance = mapSize + mapSize; //this is the largest manhattan distance possible in the map
+	public int shortestDistanceBetweenEnemies(GameState state) {
+		// initializes the shortest distance to a sensible value (width+height)
+		int width = state.getPhysicalGameState().getWidth();
+		int height = state.getPhysicalGameState().getHeight();
+		int shortestDistance = width + height;
 		
 		// inefficient way to determine the distance...
 		for(Unit u : state.getUnits()) {
 			for(Unit v : state.getUnits()) {
-				// skips units from the same player
-				if(u.getPlayer() == v.getPlayer()) continue;
+				// skips units from the same player and resources
+				if( u.getPlayer() == v.getPlayer() || 
+						u.getType().isResource || v.getType().isResource ) continue;
 				
 				int distance = Math.abs(u.getX() - v.getX()) + Math.abs(u.getY() - v.getY());
 				if (distance < shortestDistance) {

@@ -4,23 +4,17 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.util.Properties;
 
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.DefaultParser;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import ai.core.AI;
-import config.ConfigManager;
 import config.Parameters;
 import rts.GameSettings;
 import rts.units.UnitTypeTable;
 import tdsearch.SarsaSearch;
 import tdsearch.TDSearch;
 import utils.AILoader;
+import utils.FileNameUtil;
 
 public class Train {
 	
