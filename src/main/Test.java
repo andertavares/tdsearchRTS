@@ -1,5 +1,7 @@
 package main;
 
+import java.io.File;
+import java.util.Arrays;
 import java.util.Properties;
 
 import org.apache.logging.log4j.LogManager;
@@ -8,9 +10,15 @@ import org.apache.logging.log4j.Logger;
 import ai.core.AI;
 import config.ConfigManager;
 import config.Parameters;
-import policyselection.UnrestrictedPolicySelectionLearner;
+import features.FeatureExtractor;
+import features.FeatureExtractorFactory;
+import portfolio.PortfolioManager;
+import reward.RewardModel;
+import reward.RewardModelFactory;
 import rts.GameSettings;
 import rts.units.UnitTypeTable;
+import tdsearch.SarsaSearch;
+import tdsearch.TDSearch;
 import utils.AILoader;
 
 public class Test {
@@ -31,7 +39,7 @@ public class Test {
 				
 		String testPartnerName = config.getProperty("test_opponent");
 						
-		boolean writeReplay = "true".equals(saveReplay);
+		boolean writeReplay = "true".equals(config.getProperty("save_replay"));
 		logger.info("Will {}save replays (.trace files).", writeReplay ? "" : "NOT ");
 		
 		
@@ -74,6 +82,15 @@ public class Test {
 		config.setProperty("td.alpha.initial", "0");
 		config.setProperty("td.epsilon.initial", "0");
 		
+		//FIXME: planning tests are not possible with these values
+        double epsilon = 0;
+        double alpha = 0; //Double.parseDouble(config.getProperty("td.alpha.initial"));
+        
+        double gamma = Double.parseDouble(config.getProperty("td.gamma"));
+        double lambda = Double.parseDouble(config.getProperty("td.lambda"));
+
+        String portfolioNames = config.getProperty("portfolio");
+        
         // loads microRTS game settings
      	GameSettings settings = GameSettings.loadFromConfig(config);
      		
@@ -83,13 +100,16 @@ public class Test {
         logger.info("This experiment's config: ");
 		logger.info(config.toString());
 		
+		//config.store(new FileOutputStream(workingDir + "/settings.properties"), null);
+		
+		// test matches
+		logger.info("Starting test...");
 		boolean visualizeTest = Boolean.parseBoolean(config.getProperty("visualize_test", "false"));
         
 		logger.info("{} write replay.", writeReplay ? "Will" : "Will not");
 		
-		UnrestrictedPolicySelectionLearner player = new UnrestrictedPolicySelectionLearner(
-    		types, randomSeedP0, config
-        );
+		// if write replay (trace) is activated, sets the prefix to write files
+		String tracePrefix = writeReplay ? workingDir + "/test-trace-vs-" + testOpponent.getClass().getSimpleName() : null;
 		
 		AI testOpponent = AILoader.loadAI(testPartnerName, types);
 		

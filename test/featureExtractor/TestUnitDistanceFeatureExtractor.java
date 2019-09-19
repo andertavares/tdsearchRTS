@@ -1,4 +1,4 @@
-package test;
+package featureExtractor;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -28,22 +28,23 @@ class TestUnitDistanceFeatureExtractor {
 		assertEquals(17, extractor.getNumFeatures());
 		
 		assertEquals(1, features[0]);	//bias
-		assertEquals(5 / 50.0, features[1]);	//resources p0
-		assertEquals(5 / 50.0, features[2]);	//resources p1
-		assertEquals(0., features[3]);			//time
-		assertEquals(1.0 / 64, features[4]);	//worker
-		assertEquals(1.0 / 64, features[5]);	//
-		assertEquals(0, features[6]);	//light
-		assertEquals(0, features[7]);	//
-		assertEquals(0, features[8]);	//heavy
-		assertEquals(0, features[9]);	//
-		assertEquals(0, features[10]);	//ranged
-		assertEquals(0, features[11]);	//
-		assertEquals(1.0 / 64, features[12]);	//base
-		assertEquals(1.0 / 64, features[13]);	//
-		assertEquals(0, features[14]);	//barracks
-		assertEquals(0, features[15]);	//
-		assertEquals(8 / 16.0, features[16]);	//shortest distance
+		assertEquals(8 / 16.0, features[1]);	//shortestDistanceBetweenEnemies
+		assertEquals(5 / 50.0, features[2]);	//resources p0
+		assertEquals(5 / 50.0, features[3]);	//resources p1
+		assertEquals(0., features[4]);			//time
+		assertEquals(1.0 / 64, features[5]);	//worker
+		assertEquals(1.0 / 64, features[6]);	//
+		assertEquals(0, features[7]);	//light
+		assertEquals(0, features[8]);	//
+		assertEquals(0, features[9]);	//heavy
+		assertEquals(0, features[10]);	//
+		assertEquals(0, features[11]);	//ranged
+		assertEquals(0, features[12]);	//
+		assertEquals(1.0 / 64, features[13]);	//base
+		assertEquals(1.0 / 64, features[14]);	//
+		assertEquals(0, features[15]);	//barracks
+		assertEquals(0, features[16]);	//
+		//assertEquals(8 / 16.0, features[17]);	//shortest distance
 		
 	}
 	/*

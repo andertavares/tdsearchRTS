@@ -1,4 +1,4 @@
-package test;
+package featureExtractor;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 

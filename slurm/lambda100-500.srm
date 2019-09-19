@@ -1,0 +1,68 @@
+#!/bin/bash
+#SBATCH --nodes=21            #Numero de Nós
+#SBATCH --ntasks-per-node=24 #Numero de tarefas por Nó
+#SBATCH --ntasks=504           #Numero total de tarefas MPI
+#SBATCH -p cpu 	      		#min 21 max 50 nós, 48h (lista: https://sdumont.lncc.br/support_manual.php?pg=support#5)
+#SBATCH -J lambdas100-500         #Nome job
+#SBATCH --exclusive          #Utilização exclusiva dos nós durante a execução do job
+
+#SBATCH --mail-type=BEGIN,END,FAIL,TIME_LIMIT
+#SBATCH --mail-user=andersonrochatavares@gmail.com
+
+#IGNORE_SBATCH --time=00:40:00
+
+#Exibe os nós alocados para o Job
+echo $SLURM_JOB_NODELIST
+nodeset -e $SLURM_JOB_NODELIST
+
+cd $SLURM_SUBMIT_DIR
+
+#Configura o script intermediario
+SCRIPT=${PWD}/slurm/startjobs.sh
+
+QUEUEDIR="lambdaqueue100-500"
+
+# carrega o java 11 e o python3
+module load java/jdk-11
+module load python/3.7.2
+
+# creates the queue directory (ignores if already exists)
+mkdir -p $QUEUEDIR
+
+# resets the old queue (if it exists)
+rm -f $QUEUEDIR/todo.txt # -f fails silently if the file does not exist
+
+# creates all train jobs
+for s in {all,"HP-,CE,FC,R"}; do 
+	for o in {selfplay,players.A3N}; do 
+		for t in {100,500}; do 
+			python3 scripts/generate-lambda-train.py results/lambda_train-vs-$o -t $t -r 5 -s $s --train-opponent=$o >> $QUEUEDIR/todo.txt
+		done
+	done
+done
+
+# creates all test jobs
+for s in {all,"HP-,CE,FC,R"}; do 
+	for o in {selfplay,players.A3N}; do 
+		for t in {100,500}; do 
+			for r in {0..4}; do
+				python3 scripts/generate-lambda-test.py results/lambda_train-vs-$o -t $t -i $r -f $r -s $s >> $QUEUEDIR/todo.txt
+			done
+		done
+	done
+done
+
+# should be 1200 jobs in total
+
+echo "Finished generating the job list (`wc -l $QUEUEDIR/todo.txt` jobs)"
+
+# runs 21 times the script that launches 24 file job clients each
+for i in {1..21}; do 
+	initial=$(( (($i - 1)) * 24 + 1)) 	# (i-1)*24 + 1
+	final=$(( $i * 24 ))				# i*24
+	srun --resv-ports  --nodes 1 --ntasks=1 -c 24 $SCRIPT $initial $final $QUEUEDIR & 
+done
+
+echo "Jobs submitted."
+
+wait

@@ -112,7 +112,7 @@ public class LearningCurve extends Test {
         
 		logger.info("{} write replay.", writeReplay ? "Will" : "Will not");
 		
-		UnrestrictedPolicySelectionLearner player = new UnrestrictedPolicySelectionLearner (
+		UnrestrictedPolicySelectionLearner player = UnrestrictedPolicySelectionLearner.fromConfig(
     		types, randomSeedP0, config
         );
 		

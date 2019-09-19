@@ -85,7 +85,7 @@ public class Parameters {
         options.addOption(new Option(null, "td_gamma", true, "Discount factor"));
         options.addOption(new Option(null, "td_lambda", true, "Eligibility trace parameter"));
         options.addOption(new Option(null, "decision_interval", true, "Number of frames to decision_interval a selection (this will be the interval between decision points)."));
-		options.addOption(new Option(null, "save_replay", false, "If omitted, does not generate replay (trace) files."));
+		options.addOption(new Option(null, "save_replay", true, "(true or false) Generate replay (trace) files ."));
 		options.addOption(new Option(null, "test_matches", true, "Number of test matches."));
 		//options.addOption(new Option(null, "test_position", true, "0 or 1 (the player index of the agent under test)"));
 		options.addOption(new Option(null, "checkpoint", true, "Saves the weights every 'checkpoint' matches. If used on learning curve generation: which checkpoint to test."));
@@ -246,7 +246,7 @@ public class Parameters {
 			}
 		}
 		
-		
+		return prop;
 	}
 	
 }
