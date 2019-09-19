@@ -9,9 +9,9 @@ import org.apache.logging.log4j.Logger;
 
 import ai.core.AI;
 import config.Parameters;
-import policyselection.UnrestrictedPolicySelectionLearner;
 import rts.GameSettings;
 import rts.units.UnitTypeTable;
+import tdsearch.SarsaSearch;
 import utils.AILoader;
 import utils.FileNameUtil;
 
@@ -58,14 +58,14 @@ public class Train {
         UnitTypeTable types = new UnitTypeTable(settings.getUTTVersion(), settings.getConflictPolicy());
         
         // creates the player instance
-		UnrestrictedPolicySelectionLearner player = new UnrestrictedPolicySelectionLearner (
+        SarsaSearch player = new SarsaSearch (
 			types, randomSeedP0, config
 		);
 		
 		// creates the training opponent
 		AI trainingOpponent = null;
 		if("selfplay".equals(config.getProperty("train_opponent"))) {
-			trainingOpponent = new UnrestrictedPolicySelectionLearner(types, randomSeedP1, config);
+			trainingOpponent = new SarsaSearch(types, randomSeedP1, config);
 		}
 		else {
 			trainingOpponent = AILoader.loadAI(config.getProperty("train_opponent"), types);
@@ -94,8 +94,6 @@ public class Train {
 		logger.info("Starting training...");
 		boolean visualizeTraining = Boolean.parseBoolean(config.getProperty("visualize_training", "false"));
 		
-		
-		
 		Runner.repeatedMatches(
 			types, workingDir, 
 			trainMatches, 
@@ -110,8 +108,8 @@ public class Train {
 		player.saveWeights(workingDir + "/weights_0.bin");
 		
 		//save opponent weights if selfplay
-		if (trainingOpponent instanceof UnrestrictedPolicySelectionLearner) {
-			((UnrestrictedPolicySelectionLearner) trainingOpponent).saveWeights(workingDir + "/weights_1.bin");
+		if (trainingOpponent instanceof SarsaSearch) {
+			((SarsaSearch) trainingOpponent).saveWeights(workingDir + "/weights_1.bin");
 		}
 		
 	}
