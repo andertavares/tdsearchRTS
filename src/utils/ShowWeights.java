@@ -7,7 +7,7 @@ import config.ConfigManager;
 import config.Parameters;
 import features.FeatureExtractor;
 import features.FeatureExtractorFactory;
-import learner.UnrestrictedPolicySelectionLearner;
+import learning.LinearSarsaLambda;
 import rts.units.UnitTypeTable;
 
 public class ShowWeights {
@@ -28,10 +28,10 @@ public class ShowWeights {
 		
 		FeatureExtractor extractor = FeatureExtractorFactory.getFeatureExtractor(config.getProperty("features"), types, 0);
 		
-		UnrestrictedPolicySelectionLearner learner = UnrestrictedPolicySelectionLearner.fromConfig(types, 0, config);
+		LinearSarsaLambda learner = new LinearSarsaLambda(types, config, 0);
 		
 		//loads the weights
-		learner.loadWeights(args[1]);
+		learner.load(args[1]);
 		Map<String, double[]> weights = learner.getWeights();
 		
 		//outputs the feature and its value for each strategy

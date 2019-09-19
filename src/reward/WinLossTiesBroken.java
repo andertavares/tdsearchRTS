@@ -40,7 +40,7 @@ public class WinLossTiesBroken implements RewardModel {
 
 	@Override
 	/**
-	 * Returns 1 for victory, 0 otherwise (we're unable to break ties here)
+	 * Returns 1 for victory, 0 otherwise (this class does not break ties by in-game score in case of draw)
 	 */
 	public double gameOverReward(int player, int winner) {
 		return winner == player ? 1 : 0;

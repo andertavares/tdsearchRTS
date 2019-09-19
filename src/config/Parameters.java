@@ -34,9 +34,14 @@ public class Parameters {
             System.exit(1);
         }
         
-        // opens the configuration file
-        String configFile = cmd.getOptionValue("config_input");
-        Properties config = ConfigManager.loadConfig(configFile);
+        // opens the configuration file, if the user has specified it..
+        Properties config;
+        if (cmd.hasOption("config_input")) {
+        	config = ConfigManager.loadConfig(cmd.getOptionValue("config_input"));
+        }
+        else { //... otherwise starts with an empty config
+        	config = new Properties();
+        }
         
         // overrides config with command line parameters
         mergeCommandLineIntoProperties(cmd, config);
@@ -70,17 +75,20 @@ public class Parameters {
         options.addOption(new Option("e", "features", true, "The feature model:  material, distance, materialdistancehp or mapaware"));
         options.addOption(new Option("o", "test_opponent", true, "Full name of the AI to test against (overrides the one specified in file)."));
         options.addOption(new Option("a", "activation", true, "Activation function for the value function approximator (default: identity)"));
+        options.addOption(new Option("l", "learner", true, "Learning algorithm"));
         options.addOption(new Option("s", "strategies", true, "Strategies to consider for selecting the unrestricted unit"));
         options.addOption(new Option("g", "gui", false, "Activate GUI to visualize matches (if omitted, no GUI)."));
         options.addOption(new Option(null, "train_matches", true, "Number of training matches."));
         options.addOption(new Option(null, "search_timebudget", true, "Milisseconds of planning time."));
         options.addOption(new Option(null, "td_alpha_initial", true, "Initial learning rate (held constant throughout experiment by now)"));
+        options.addOption(new Option(null, "td_epsilon_initial", true, "Initial exploration rate (held constant throughout experiment by now)"));
+        options.addOption(new Option(null, "td_gamma", true, "Discount factor"));
         options.addOption(new Option(null, "td_lambda", true, "Eligibility trace parameter"));
         options.addOption(new Option(null, "decision_interval", true, "Number of frames to decision_interval a selection (this will be the interval between decision points)."));
 		options.addOption(new Option(null, "save_replay", false, "If omitted, does not generate replay (trace) files."));
 		options.addOption(new Option(null, "test_matches", true, "Number of test matches."));
-		options.addOption(new Option(null, "test_position", true, "0 or 1 (the player index of the agent under test)"));
-		options.addOption(new Option(null, "checkpoint", true, "Saves the weights every 'checkpoint' matches."));
+		//options.addOption(new Option(null, "test_position", true, "0 or 1 (the player index of the agent under test)"));
+		options.addOption(new Option(null, "checkpoint", true, "Saves the weights every 'checkpoint' matches. If used on learning curve generation: which checkpoint to test."));
 		
 		options.addOption(new Option(null, "restart", true, "(must indicate true or false) Restart an unfinished experiment (make sure it is not running in another program instance!)"));
         
@@ -100,7 +108,9 @@ public class Parameters {
 		List<String> overrideList = Arrays.asList(
 				"working_dir", "initial_rep", "final_rep", "train_opponent", "test_opponent", 
 				"test_matches", "rewards", "features", "train_matches", "strategies",
-				"test_position", "decision_interval", "restart", "checkpoint"
+				"save_replay", "learner",
+				//"test_position", 
+				"decision_interval", "restart", "checkpoint"
 		);
 		
 		for(String paramName : overrideList) {
@@ -118,7 +128,8 @@ public class Parameters {
 		
 		//parameters whose _ must be replaced by .
 		List<String> underscoreToDot = Arrays.asList(
-				"td_alpha_initial", "td_lambda", "search_timebudget"
+				"td_alpha_initial", "td_epsilon_initial", "td_gamma",
+				"td_lambda", "search_timebudget" 
 		);
 		for(String paramName : underscoreToDot) {
 			if(cmd.hasOption(paramName)) {
@@ -191,7 +202,7 @@ public class Parameters {
 	 * Only config_input and working_dir are not set
 	 * @param prop
 	 */
-	public static void ensureDefaults(Properties prop) {
+	public static Properties ensureDefaults(Properties prop) {
 		Logger logger = LogManager.getRootLogger();
 		/**
 		 * Maps a parameter name to its default value
@@ -217,6 +228,8 @@ public class Parameters {
 			put("test_position", "0");
 			
 			put("search.timebudget", "100" );
+			
+			put("learner", "sarsa");
 			put("td.alpha.initial",  "0.01");
 			put("td.lambda",  "0.1");
 			

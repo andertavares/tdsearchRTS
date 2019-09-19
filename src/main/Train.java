@@ -4,25 +4,22 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.util.Properties;
 
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.DefaultParser;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import ai.core.AI;
-import config.ConfigManager;
 import config.Parameters;
+import policyselection.UnrestrictedPolicySelectionLearner;
 import rts.GameSettings;
 import rts.units.UnitTypeTable;
-import tdsearch.SarsaSearch;
-import tdsearch.TDSearch;
 import utils.AILoader;
+import utils.FileNameUtil;
 
 public class Train {
+	
+	public Train() {
+		// empty public constructor
+	}
 	
 	public static void main(String[] args) throws Exception {
 		Logger logger = LogManager.getRootLogger();
@@ -38,8 +35,10 @@ public class Train {
         String fullDir = String.format("%s/rep%d", experimentDir, repNumber);
        		
 		// runs one repetition
-		// p0's random seed is the rep number, p1's is 5000 + repNumber  
-		run(config, fullDir, repNumber, repNumber + 5000);
+		// p0's random seed is the rep number, p1's is 5000 + repNumber 
+        // TODO restore the experiment if the user requested so
+        Train experiment = new Train();
+		experiment.run(config, fullDir, repNumber, repNumber + 5000);
 		
 		// writes a flag file named 'finished' to indicate that this repetition ended
 		File repFinished = new File(fullDir + "/finished");
@@ -48,10 +47,9 @@ public class Train {
 		};
 	}
 	
-	public static void run(Properties config, String workingDir, int randomSeedP0, int randomSeedP1) throws Exception {
+	public void run(Properties config, String workingDir, int randomSeedP0, int randomSeedP1) throws Exception {
 		
 		int trainMatches = Integer.parseInt(config.getProperty("train_matches"));
-		//int testMatches = Integer.parseInt(config.getProperty("test_matches"));
 		
         // loads microRTS game settings
      	GameSettings settings = GameSettings.loadFromConfig(config);
@@ -60,12 +58,14 @@ public class Train {
         UnitTypeTable types = new UnitTypeTable(settings.getUTTVersion(), settings.getConflictPolicy());
         
         // creates the player instance
-		TDSearch player = SarsaSearch.fromConfig(types, randomSeedP0, config); 
+		UnrestrictedPolicySelectionLearner player = new UnrestrictedPolicySelectionLearner (
+			types, randomSeedP0, config
+		);
 		
 		// creates the training opponent
 		AI trainingOpponent = null;
 		if("selfplay".equals(config.getProperty("train_opponent"))) {
-			trainingOpponent = SarsaSearch.fromConfig(types, randomSeedP1, config); 
+			trainingOpponent = new UnrestrictedPolicySelectionLearner(types, randomSeedP1, config);
 		}
 		else {
 			trainingOpponent = AILoader.loadAI(config.getProperty("train_opponent"), types);
@@ -110,18 +110,10 @@ public class Train {
 		player.saveWeights(workingDir + "/weights_0.bin");
 		
 		//save opponent weights if selfplay
-		if (trainingOpponent instanceof TDSearch) {
-			((TDSearch) trainingOpponent).saveWeights(workingDir + "/weights_1.bin");
+		if (trainingOpponent instanceof UnrestrictedPolicySelectionLearner) {
+			((UnrestrictedPolicySelectionLearner) trainingOpponent).saveWeights(workingDir + "/weights_1.bin");
 		}
 		
-		/*// test matches
-		logger.info("Starting test...");
-		boolean visualizeTest = Boolean.parseBoolean(config.getProperty("visualize_test", "false"));
-		AI testOpponent = AILoader.loadAI(config.getProperty("test_opponent"), types);
-		player.prepareForTest();
-		Runner.repeatedMatches(types, testMatches, outputPrefix + "/test.csv", player, testOpponent, visualizeTest, settings, null);
-		logger.info("Test finished.");
-		*/
 	}
 
 }
