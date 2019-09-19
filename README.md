@@ -1,2 +1,2 @@
-# learningeval
-Learning to evaluate game states in real-time strategy games
+# TD search
+Temporal-difference search in real-time strategy games
