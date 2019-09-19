@@ -14,10 +14,6 @@ import java.util.Map;
 import ai.core.AI;
 import features.FeatureExtractor;
 import features.MaterialAdvantage;
-import java.io.File;
-import java.util.Arrays;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import portfolio.PortfolioManager;
 import reward.RewardModel;
 import reward.WinLossTiesBroken;
@@ -637,9 +633,9 @@ public class CompetitionSarsaSearch extends TDSearch {
         if (gs.getPhysicalGameState().getWidth() <= 8) {
             maxCycles = 3000;
         }
-                
+                /*
         // creates the player instance
-        TDSearch player = new SarsaSearch(
+        SarsaSearch player = new SarsaSearch(
             gs.getUnitTypeTable(), 
             abstractions,
             rewards,
@@ -740,6 +736,7 @@ public class CompetitionSarsaSearch extends TDSearch {
         
         //preventively loads weights for me as player 0
         loadWeights(0, gs);
+        */
         
     }
 	
