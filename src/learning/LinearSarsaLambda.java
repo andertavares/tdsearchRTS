@@ -23,7 +23,6 @@ import reward.RewardModelFactory;
 import rts.GameState;
 import rts.units.UnitTypeTable;
 import utils.MathHelper;
-import utils.StrategyNames;
 
 public class LinearSarsaLambda implements LearningAgent {
 	
@@ -114,9 +113,7 @@ public class LinearSarsaLambda implements LearningAgent {
  		   config.getProperty("features"), types, maxCycles
  	    );
         
-        actions = StrategyNames.acronymsToNames(Arrays.asList(
- 		   config.getProperty("strategies").split(",") 
- 	    ));
+        actions = Arrays.asList(config.getProperty("portfolio").split(","));
         
         alpha = Double.parseDouble(config.getProperty("td.alpha.initial")); 
         epsilon = Double.parseDouble(config.getProperty("td.epsilon.initial"));
