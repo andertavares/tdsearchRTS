@@ -5,7 +5,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.LineNumberReader;
 import java.util.Properties;
 
 import org.apache.logging.log4j.LogManager;
@@ -14,9 +13,9 @@ import org.apache.logging.log4j.Logger;
 import ai.core.AI;
 import config.ConfigManager;
 import config.Parameters;
-import policyselection.UnrestrictedPolicySelectionLearner;
 import rts.GameSettings;
 import rts.units.UnitTypeTable;
+import tdsearch.SarsaSearch;
 import utils.AILoader;
 
 /**
@@ -112,9 +111,7 @@ public class LearningCurve extends Test {
         
 		logger.info("{} write replay.", writeReplay ? "Will" : "Will not");
 		
-		UnrestrictedPolicySelectionLearner player = UnrestrictedPolicySelectionLearner.fromConfig(
-    		types, randomSeedP0, config
-        );
+		SarsaSearch player = new SarsaSearch(types, randomSeedP0, config);
 		
 		AI testOpponent = AILoader.loadAI(testPartnerName, types);
 		
