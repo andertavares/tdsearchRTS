@@ -42,19 +42,4 @@ public class A3N extends CmabAssymetricMCTS {
         );
 	}
 	
-	
-	/**
-	 * Sets a new policy to select the unterstricted units. 
-	 * The policy consists on the strategy to select the unrestricted units
-	 * and the number of unrestricted units to select.
-	 * @param strategyName must be one of ManagerClosest, ManagerClosestEnemy, 
-	 * ManagerFartherEnemy, ManagerFather, ManagerLessDPS, ManagerLessLife, ManagerMoreDPS, 
-	 * ManagerMorelife, ManagerRandom, ManagerUnitsMelee
-	 * @param numUnits
-	 */
-	public void setUnrestrictedSelectionPolicy(String strategyName, int numUnits) {
-		this.behavior = strategyName;
-		this.qtdUnits = numUnits;
-	}
-	
 }
