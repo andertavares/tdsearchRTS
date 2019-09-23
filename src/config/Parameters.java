@@ -76,7 +76,7 @@ public class Parameters {
         options.addOption(new Option("o", "test_opponent", true, "Full name of the AI to test against (overrides the one specified in file)."));
         options.addOption(new Option("a", "activation", true, "Activation function for the value function approximator (default: identity)"));
         options.addOption(new Option("l", "learner", true, "Learning algorithm"));
-        options.addOption(new Option("s", "strategies", true, "Strategies to consider for selecting the unrestricted unit"));
+        //options.addOption(new Option("s", "strategies", true, "Strategies to consider for selecting the unrestricted unit"));
         options.addOption(new Option("g", "gui", false, "Activate GUI to visualize matches (if omitted, no GUI)."));
         options.addOption(new Option(null, "train_matches", true, "Number of training matches."));
         options.addOption(new Option(null, "search_timebudget", true, "Milisseconds of planning time."));
@@ -149,7 +149,7 @@ public class Parameters {
 		Logger logger = LogManager.getRootLogger();
 		
 		// the strategies parameters requires a special treatment if the user specified some key words
-		String csvStrategies = null;
+		/*String csvStrategies = null;
 		if("all".equals(prop.getProperty("strategies"))) {
 			csvStrategies = "CC,CE,FC,FE,AV-,AV+,HP-,HP+,R,M"; 
 		}
@@ -161,7 +161,7 @@ public class Parameters {
 		if(csvStrategies != null) { // detects and effects the change in the parameter
 			logger.info("Parameter 'strategies' set to '{}'", csvStrategies);
 			prop.setProperty("strategies", csvStrategies);
-		}
+		}*/
 		
 		
 		// the portfolio parameter requires a special treatment:
@@ -169,22 +169,22 @@ public class Parameters {
 		String csvPortfolio = null; //prop.getProperty("portfolio", "WorkerRush, LightRush, RangedRush, HeavyRush, WorkerDefense, LightDefense, RangedDefense, HeavyDefense");
 		if("basic4".equals(prop.getProperty("portfolio"))) {
 			logger.info("Using basic4 portfolio (only rush scripts)");
-			csvPortfolio = "WorkerRush, LightRush, RangedRush, HeavyRush";
+			csvPortfolio = "WR,LR,RR,HR";
 		}
 	
 		else if ("basic6".equals(prop.getProperty("portfolio"))){
 			logger.info("Using basic6 portfolio (rush+support scripts).");
-			csvPortfolio = "WorkerRush, LightRush, RangedRush, HeavyRush, BuildBase, BuildBarracks";
+			csvPortfolio = "WR,LR,RR,HR,BB,BK";
 		}
 		
 		else if ("basic8".equals(prop.getProperty("portfolio"))){
 			logger.info("Using basic8 portfolio (rush+defense scripts).");
-			csvPortfolio = "WorkerRush, LightRush, RangedRush, HeavyRush, WorkerDefense, LightDefense, RangedDefense, HeavyDefense";
+			csvPortfolio = "WR,LR,RR,HR,WD,LD,RD,HD";
 		}
 		
 		else if ("basic10".equals(prop.getProperty("portfolio"))){
 			logger.info("Using basic10 portfolio (rush+defense+support scripts).");
-			csvPortfolio = "WorkerRush, LightRush, RangedRush, HeavyRush, WorkerDefense, LightDefense, RangedDefense, HeavyDefense, BuildBase, BuildBarracks";
+			csvPortfolio = "WR,LR,RR,HR,WD,LD,RD,HD,BB,BK";
 		} 
 		
 		if (csvPortfolio != null) { // detects and effects the change in the parameter
@@ -217,7 +217,7 @@ public class Parameters {
 			put("train_opponent", "selfplay");
 			put("train_matches", "100" );
 			
-			put("portfolio",  "basic4");
+			put("portfolio",  "WR,LR,RR,HR");
 			put("rewards",  "winlossdraw");
 			put("features",  "materialdistancehp");
 			put("activation",  "identity");

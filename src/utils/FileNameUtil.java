@@ -39,11 +39,11 @@ public class FileNameUtil {
 	public static String getExperimentDir(Properties config) {
 		String workingDir = config.getProperty("working_dir");
         
-        String dirName = String.format("%s/%s/f%s_s%s_r%s/m%s/d%s/a%s_e%s_g%s_l%s", //all strings because they're retrieved from Property object 
+        String dirName = String.format("%s/%s/f%s_p%s_r%s/m%s/d%s/a%s_e%s_g%s_l%s", //all strings because they're retrieved from Property object 
     		workingDir, 
     		new File(config.getProperty("map_location")).getName().replaceFirst("[.][^.]+$", ""),  //map name without extension
     		config.getProperty("features"),
-    		config.getProperty("strategies"),
+    		config.getProperty("portfolio"),
     		config.getProperty("rewards"),
     		config.getProperty("train_matches"),
     		config.getProperty("decision_interval"),

@@ -4,6 +4,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.logging.log4j.LogManager;
+
 import ai.abstraction.HeavyDefense;
 import ai.abstraction.HeavyRush;
 import ai.abstraction.LightDefense;
@@ -29,20 +31,20 @@ public class PortfolioManager {
 	public static Map<String,AI> basicPortfolio(UnitTypeTable types){
 		Map<String,AI> basicPortfolio = new HashMap<String, AI>();
 		// rush scripts
-		basicPortfolio.put("WorkerRush", new WorkerRush(types));
-		basicPortfolio.put("LightRush", new LightRush(types));
-		basicPortfolio.put("RangedRush", new RangedRush(types));
-		basicPortfolio.put("HeavyRush", new HeavyRush(types));
+		basicPortfolio.put("WR", new WorkerRush(types));
+		basicPortfolio.put("LR", new LightRush(types));
+		basicPortfolio.put("RR", new RangedRush(types));
+		basicPortfolio.put("HR", new HeavyRush(types));
 		
 		// defense scripts
-		basicPortfolio.put("WorkerDefense", new WorkerDefense(types));
-		basicPortfolio.put("LightDefense", new LightDefense(types));
-		basicPortfolio.put("RangedDefense", new RangedDefense(types));
-		basicPortfolio.put("HeavyDefense", new HeavyDefense(types));
+		basicPortfolio.put("WD", new WorkerDefense(types));
+		basicPortfolio.put("LD", new LightDefense(types));
+		basicPortfolio.put("RD", new RangedDefense(types));
+		basicPortfolio.put("HD", new HeavyDefense(types));
 		
 		// support scripts
-		basicPortfolio.put("BuildBase", new BuildBase(types));
-		basicPortfolio.put("BuildBarracks", new BuildBarracks(types));
+		basicPortfolio.put("BB", new BuildBase(types));
+		basicPortfolio.put("BK", new BuildBarracks(types));
 		//fullPortfolio.put("EconomyRush", new EconomyRush(types));
 		
 		return basicPortfolio;
@@ -62,7 +64,12 @@ public class PortfolioManager {
 		// adds the members found in memberNames from the basicPortfolio to the returned portfolio
 		for(String name : memberNames) {
 			name = name.trim(); // removes leading and trailing whitespaces 
-			portfolio.put(name, basicPortfolio.get(name));
+			try {
+				portfolio.put(name, basicPortfolio.get(name));
+			}
+			catch (NullPointerException e) { //tried to get non-existing portfolio member
+				LogManager.getRootLogger().error("Unrecognized portfolio member {}", name, e);
+			}
 		}
 		
 		return portfolio;
