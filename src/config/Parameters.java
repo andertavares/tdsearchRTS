@@ -107,8 +107,8 @@ public class Parameters {
 		// overrides 'direct' parameters
 		List<String> overrideList = Arrays.asList(
 				"working_dir", "initial_rep", "final_rep", "train_opponent", "test_opponent", 
-				"test_matches", "rewards", "features", "train_matches", "strategies",
-				"save_replay", "learner",
+				"test_matches", "rewards", "features", "train_matches", "portfolio",
+				"save_replay", "learner", 
 				//"test_position", 
 				"decision_interval", "restart", "checkpoint"
 		);
