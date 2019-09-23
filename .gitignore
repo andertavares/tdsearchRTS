@@ -11,3 +11,5 @@
 /nbbuild.xml
 lib/nblibraries.properties
 lib/CopyLibs
+/logs/
+__pycache__
