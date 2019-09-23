@@ -28,26 +28,26 @@ public class PortfolioManager {
 	 * Returns the portfolio with 10 basic AIs
 	 * @return
 	 */
-	public static Map<String,AI> basicPortfolio(UnitTypeTable types){
-		Map<String,AI> basicPortfolio = new HashMap<String, AI>();
+	public static Map<String,AI> fullPortfolio(UnitTypeTable types){
+		Map<String,AI> portfolio = new HashMap<String, AI>();
 		// rush scripts
-		basicPortfolio.put("WR", new WorkerRush(types));
-		basicPortfolio.put("LR", new LightRush(types));
-		basicPortfolio.put("RR", new RangedRush(types));
-		basicPortfolio.put("HR", new HeavyRush(types));
+		portfolio.put("WR", new WorkerRush(types));
+		portfolio.put("LR", new LightRush(types));
+		portfolio.put("RR", new RangedRush(types));
+		portfolio.put("HR", new HeavyRush(types));
 		
 		// defense scripts
-		basicPortfolio.put("WD", new WorkerDefense(types));
-		basicPortfolio.put("LD", new LightDefense(types));
-		basicPortfolio.put("RD", new RangedDefense(types));
-		basicPortfolio.put("HD", new HeavyDefense(types));
+		portfolio.put("WD", new WorkerDefense(types));
+		portfolio.put("LD", new LightDefense(types));
+		portfolio.put("RD", new RangedDefense(types));
+		portfolio.put("HD", new HeavyDefense(types));
 		
 		// support scripts
-		basicPortfolio.put("BB", new BuildBase(types));
-		basicPortfolio.put("BK", new BuildBarracks(types));
-		//fullPortfolio.put("EconomyRush", new EconomyRush(types));
+		portfolio.put("BB", new BuildBase(types));
+		portfolio.put("BK", new BuildBarracks(types));
+		//portfolio.put("EconomyRush", new EconomyRush(types));
 		
-		return basicPortfolio;
+		return portfolio;
 	}
 	
 	/**
@@ -59,7 +59,7 @@ public class PortfolioManager {
 	 */
 	public static Map<String,AI> getPortfolio(UnitTypeTable types, List<String> memberNames){
 		Map<String,AI> portfolio = new HashMap<String, AI>();
-		Map<String,AI> basicPortfolio = basicPortfolio(types);
+		Map<String,AI> basicPortfolio = fullPortfolio(types);
 
 		// adds the members found in memberNames from the basicPortfolio to the returned portfolio
 		for(String name : memberNames) {

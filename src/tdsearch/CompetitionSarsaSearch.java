@@ -52,7 +52,7 @@ public class CompetitionSarsaSearch extends TDSearch {
         public CompetitionSarsaSearch(UnitTypeTable types){
             this(
                 types, 
-                PortfolioManager.basicPortfolio(types), 
+                PortfolioManager.fullPortfolio(types), 
                 new WinLossTiesBroken(12000), 
                 new MaterialAdvantage(types, 12000), 
                 12000, //duration

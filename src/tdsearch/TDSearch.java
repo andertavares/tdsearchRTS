@@ -98,7 +98,7 @@ public class TDSearch extends AI {
 	public TDSearch(UnitTypeTable types) {
 		this(
 			types, 
-			PortfolioManager.basicPortfolio(types),
+			PortfolioManager.fullPortfolio(types),
 			new VictoryOnly(),
 			new MapAware(types),
 			12000,
