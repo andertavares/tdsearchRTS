@@ -59,17 +59,20 @@ public class PortfolioManager {
 	 */
 	public static Map<String,AI> getPortfolio(UnitTypeTable types, List<String> memberNames){
 		Map<String,AI> portfolio = new HashMap<String, AI>();
-		Map<String,AI> basicPortfolio = fullPortfolio(types);
+		Map<String,AI> fullPortfolio = fullPortfolio(types);
 
 		// adds the members found in memberNames from the basicPortfolio to the returned portfolio
 		for(String name : memberNames) {
-			name = name.trim(); // removes leading and trailing whitespaces 
-			try {
-				portfolio.put(name, basicPortfolio.get(name));
+			name = name.trim(); // removes leading and trailing whitespaces
+			AI member = fullPortfolio.get(name);
+			if(member != null) {
+				portfolio.put(name, member);
 			}
-			catch (NullPointerException e) { //tried to get non-existing portfolio member
-				LogManager.getRootLogger().error("Unrecognized portfolio member {}", name, e);
+			else { // error: 'name' not found in fullportfolio
+				LogManager.getRootLogger().error("Unrecognized portfolio member {}. Skipping.", name);
 			}
+			
+				
 		}
 		
 		return portfolio;
