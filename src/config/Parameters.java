@@ -234,7 +234,7 @@ public class Parameters {
 			put("td.lambda",  "0.1");
 			
 			put("decision_interval", "1");
-			put("checkpoint", "10");
+			put("checkpoint", "100");
 			
 			put("restart", "false");
 		}};
