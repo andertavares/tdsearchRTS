@@ -13,3 +13,4 @@ lib/nblibraries.properties
 lib/CopyLibs
 /logs/
 __pycache__
+/queue*/
