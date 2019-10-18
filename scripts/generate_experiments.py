@@ -80,11 +80,11 @@ def arg_parser(description='Generates commands to run experiments: train, learni
         # default=[0.0, 0.05, 0.1, 0.15, 0.2, 0.3]
     )
 
-    parser.add_argument(
+    '''parser.add_argument(
         '-s', '--strategies', help='List of sets of strategies (each set is a comma-separated string without spaces)',
         nargs='+',
         default=['CC,CE,FC,FE,AV-,AV+,HP-,HP+,R,M']
-    )
+    )'''
 
     parser.add_argument(
         '--train-opponents', help='Training opponents', nargs='+', default=['selfplay']
@@ -129,7 +129,7 @@ def cartesian_product(params_dict):
     
     params_list = [
         params_dict[attr] for attr in ['maps', 'decision_intervals', 'alphas', 'gammas', 'lambdas', 'epsilons',
-                                  'strategies', 'train_opponents']
+                                  'train_opponents']
     ]
     
     return itertools.product(*params_list)
@@ -139,13 +139,13 @@ def train_commands(params, outstream):
     """
     Writes the commands of the train jobs to the outstream
     """
-    for mapname, interval, alpha, gamma, lamda, epsilon, strats, train_opp in cartesian_product(params):
+    for mapname, interval, alpha, gamma, lamda, epsilon, train_opp in cartesian_product(params):
             command = './train.sh -c config/%s.properties -d %s/%s --train_matches %s --decision_interval %d ' \
-                      '--train_opponent %s -s %s -e materialdistancehp -r winlossdraw ' \
+                      '--train_opponent %s -e materialdistancehp -r winlossdraw ' \
                       '--td_alpha_initial %s --td_gamma %s --td_epsilon_initial %s --td_lambda %s ' \
                       '--checkpoint %d' % \
                       (mapname, params['basedir'], train_opp, params['train_matches'], interval,
-                       train_opp, strats, alpha, gamma, epsilon, lamda, params['checkpoint'])
+                       train_opp, alpha, gamma, epsilon, lamda, params['checkpoint'])
     
             for rep in range(params['initial_rep'], params['final_rep']+1):
                 outstream.write('%s\n' % command)
@@ -155,10 +155,10 @@ def test_commands(params, outstream):
     """
     Writes the commands of the test jobs to the outstream
     """
-    for mapname, interval, alpha, gamma, lamda, epsilon, strats, train_opp in cartesian_product(params):
-            command = './test.sh -d %s/%s/%s/fmaterialdistancehp_s%s_rwinlossdraw/m%d/d%d/a%s_e%s_g%s_l%s ' \
+    for mapname, interval, alpha, gamma, lamda, epsilon, train_opp in cartesian_product(params):
+            command = './test.sh -d %s/%s/%s/fmaterialdistancehp_rwinlossdraw/m%d/d%d/a%s_e%s_g%s_l%s ' \
                       '--test_matches %d --save_replay true ' % \
-                      (params['basedir'], train_opp, mapname, strats, params['train_matches'], interval,
+                      (params['basedir'], train_opp, mapname, params['train_matches'], interval,
                        alpha, epsilon, gamma, lamda, params['test_matches'])
     
             for rep in range(params['initial_rep'], params['final_rep']+1):
@@ -169,11 +169,11 @@ def lcurve_commands(params, outstream):
     """
     Writes the commands of the learning curve jobs to the outstream
     """
-    for mapname, interval, alpha, gamma, lamda, epsilon, strats, train_opp in cartesian_product(params):
+    for mapname, interval, alpha, gamma, lamda, epsilon, train_opp in cartesian_product(params):
             for c in range(params['checkpoint'], params['train_matches']+1, params['checkpoint']):  # +1 in second argument to ensure the last checkpoint is also picked 
-                    command = './learningcurve.sh -d %s/%s/%s/fmaterialdistancehp_s%s_rwinlossdraw/m%d/d%d/a%s_e%s_g%s_l%s ' \
+                    command = './learningcurve.sh -d %s/%s/%s/fmaterialdistancehp_rwinlossdraw/m%d/d%d/a%s_e%s_g%s_l%s ' \
                       '--test_matches %d --checkpoint %d ' % \
-                      (params['basedir'], train_opp, mapname, strats, params['train_matches'], interval,
+                      (params['basedir'], train_opp, mapname, params['train_matches'], interval,
                        alpha, epsilon, gamma, lamda, params['lcurve_matches'], c)
                        
                     for rep in range(params['initial_rep'], params['final_rep']+1):
