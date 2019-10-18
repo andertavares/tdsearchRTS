@@ -75,7 +75,7 @@ def arg_parser(description='Generates commands to run experiments: train, learni
     )
 
     parser.add_argument(
-        '-d', '--decision-intervals', help='List of decision intervals', nargs='+',
+        '-d', '--decision-intervals', type=int, help='List of decision intervals', nargs='+',
         default=[10]
         # default=[0.0, 0.05, 0.1, 0.15, 0.2, 0.3]
     )
@@ -140,7 +140,7 @@ def train_commands(params, outstream):
     Writes the commands of the train jobs to the outstream
     """
     for mapname, interval, alpha, gamma, lamda, epsilon, strats, train_opp in cartesian_product(params):
-            command = './train.sh -c config/%s.properties -d %s/%s --train_matches %s --decision_interval %s ' \
+            command = './train.sh -c config/%s.properties -d %s/%s --train_matches %s --decision_interval %d ' \
                       '--train_opponent %s -s %s -e materialdistancehp -r winlossdraw ' \
                       '--td_alpha_initial %s --td_gamma %s --td_epsilon_initial %s --td_lambda %s ' \
                       '--checkpoint %d' % \
