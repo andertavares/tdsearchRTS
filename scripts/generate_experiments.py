@@ -149,8 +149,8 @@ def train_commands(params, outstream):
                       '--train_opponent %s -p %s -e materialdistancehp -r winlossdraw ' \
                       '--td_alpha_initial %s --td_gamma %s --td_epsilon_initial %s --td_lambda %s ' \
                       '--checkpoint %d' % \
-                      (mapname, params['basedir'], train_opp, params['portfolio'], params['train_matches'], interval,
-                       train_opp, alpha, gamma, epsilon, lamda, params['checkpoint'])
+                      (mapname, params['basedir'], train_opp, params['train_matches'], interval,
+                       train_opp, params['portfolio'], alpha, gamma, epsilon, lamda, params['checkpoint'])
     
             for rep in range(params['initial_rep'], params['final_rep']+1):
                 outstream.write('%s\n' % command)
