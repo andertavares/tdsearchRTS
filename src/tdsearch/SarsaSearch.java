@@ -405,6 +405,7 @@ public class SarsaSearch extends AI {
     	for(AI ai : abstractions.values()){
     		ai.reset();
     	}
+    	choices = new ArrayList<>(); //resets the list of choices 
     }
 
 	@Override
