@@ -11,6 +11,8 @@
 /nbbuild.xml
 lib/nblibraries.properties
 lib/CopyLibs
-/logs/
-__pycache__
+logs/
+__pycache__/
 /queue*/
+
+
