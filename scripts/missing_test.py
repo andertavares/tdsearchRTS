@@ -24,14 +24,14 @@ def check_unfinished(params):
                 for opponent in params['opponent']:
                     for position in params['position']:
                         target_name = 'test-vs-%s_p%d.csv' % (opponent, position)
+                        target_path = os.path.join(root, target_name)
 
                         incomplete = False
                         if target_name not in files:
                             incomplete = True
-                            print(os.path.join(root, target_name))
 
                         else:  # file exists, count number of non-empty lines
-                            with open(filename) as f:
+                            with open(target_path) as f:
                                 non_blank_lines = sum(not line.isspace() for line in f) - 1  # -1 to discount the header
 
                                 if params['test_matches'] // 2 > non_blank_lines:
