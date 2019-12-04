@@ -15,7 +15,12 @@ import java.util.Random;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.encog.engine.network.activation.ActivationClippedLinear;
+import org.encog.engine.network.activation.ActivationLinear;
+import org.encog.engine.network.activation.ActivationReLU;
+import org.encog.engine.network.activation.ActivationSigmoid;
 import org.encog.neural.networks.BasicNetwork;
+import org.encog.neural.networks.layers.BasicLayer;
 
 import features.FeatureExtractor;
 import features.FeatureExtractorFactory;
@@ -42,6 +47,11 @@ public class MLPQLearning implements LearningAgent {
 		 * A list of possible actions
 		 */
 		List<String> actions;
+		
+		/**
+		 * The neural network to approximate the Q-values
+		 */
+		BasicNetwork qFunctionApproximator;
 	   
 	   
 	   /**
@@ -109,8 +119,14 @@ public class MLPQLearning implements LearningAgent {
  		
  		random = new Random(Integer.parseInt(config.getProperty("random_seed", "0")));
  		
- 		// create  a neural  network ,  without  using a  factory
- 		BasicNetwork network = new BasicNetwork(); //encog should be 'importable' now...
+ 		// creates  a neural  network. Layers: input, 2 hidden, output 
+ 		qFunctionApproximator = new BasicNetwork(); 
+ 		qFunctionApproximator.addLayer(new BasicLayer(null, true, featureExtractor.getNumFeatures()));
+ 		qFunctionApproximator.addLayer(new BasicLayer(new ActivationReLU(), true, 50));
+ 		qFunctionApproximator.addLayer(new BasicLayer(new ActivationReLU(), true, 25));
+ 		qFunctionApproximator.addLayer(new BasicLayer(new ActivationLinear(), false, actions.size()));
+ 		qFunctionApproximator.getStructure().finalizeStructure();
+ 		qFunctionApproximator.reset();
  		
  		initialize();
 	}
@@ -118,25 +134,14 @@ public class MLPQLearning implements LearningAgent {
 	/**
      * Initializes internal variables (logger, weights, eligibility traces as well as
      * current and previous state and action)
+     * 
+     * TODO Small code... move to constructor?
      */
     private void initialize() {
     	logger = LogManager.getRootLogger();
     	action = null;
         previousState = nextState = null;
-    	
-        //weights = new HashMap<>();
-        
         playerID = -1;	//initializes with a 'flag' value so that it is updated in the first call to 'act' 
-
-        /*for (String action : actions) {
-
-            // initializes weights randomly within [-1, 1]
-            double[] actionWeights = new double[featureExtractor.getNumFeatures()];
-            for (int i = 0; i < actionWeights.length; i++) {
-                    actionWeights[i] = (random.nextDouble() * 2) - 1; // randomly initialized in [-1,1]
-            }
-            weights.put(action, actionWeights);
-        }*/
     }
 
 	@Override
@@ -166,7 +171,6 @@ public class MLPQLearning implements LearningAgent {
 	@Override
 	/**
 	 * Performs an update with an s,a,r,s' experience tuple. 
-	 * If a' was not already chosen for s', it will be chosen here if s' is not terminal
 	 */
 	public void learn(GameState state, int player, String action, double reward, GameState nextState, boolean done) {
 		
