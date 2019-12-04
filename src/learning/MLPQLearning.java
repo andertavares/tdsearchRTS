@@ -15,6 +15,7 @@ import java.util.Random;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.encog.neural.networks.BasicNetwork;
 
 import features.FeatureExtractor;
 import features.FeatureExtractorFactory;
