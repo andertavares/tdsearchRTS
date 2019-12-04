@@ -229,7 +229,6 @@ public class LinearQLearning implements LearningAgent {
 	@Override
 	/**
 	 * Performs an update with an s,a,r,s' experience tuple. 
-	 * If a' was not already chosen for s', it will be chosen here if s' is not terminal
 	 */
 	public void learn(GameState state, int player, String action, double reward, GameState nextState, boolean done) {
 		
