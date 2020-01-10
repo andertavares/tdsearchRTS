@@ -96,6 +96,11 @@ def arg_parser(description='Generates commands to run experiments: train, learni
     )
 
     parser.add_argument(
+        '--test-opponents', help='Test opponents', nargs='+', 
+        default=['players.A3N']
+    )
+
+    parser.add_argument(
         '--silent', help='Does not log command to the log file', action='store_true',
     )
 
@@ -134,7 +139,7 @@ def cartesian_product(params_dict):
     
     params_list = [
         params_dict[attr] for attr in ['maps', 'decision_intervals', 'alphas', 'gammas', 'lambdas', 'epsilons',
-                                  'train_opponents']
+                                  'train_opponents', 'test_opponents']
     ]
     
     return itertools.product(*params_list)
@@ -160,11 +165,11 @@ def test_commands(params, outstream):
     """
     Writes the commands of the test jobs to the outstream
     """
-    for mapname, interval, alpha, gamma, lamda, epsilon, train_opp in cartesian_product(params):
+    for mapname, interval, alpha, gamma, lamda, epsilon, train_opp, test_opp in cartesian_product(params):
             command = './test.sh -d %s/%s/%s/fmaterialdistancehp_p%s_rwinlossdraw/m%d/d%d/a%s_e%s_g%s_l%s ' \
-                      '--test_matches %d --save_replay true ' % \
+                      '--test_matches %d --save_replay true --test_opponent %s' % \
                       (params['basedir'], train_opp, mapname, params['portfolio'], params['train_matches'], interval,
-                       alpha, epsilon, gamma, lamda, params['test_matches'])
+                       alpha, epsilon, gamma, lamda, params['test_matches'], test_opp)
     
             for rep in range(params['initial_rep'], params['final_rep']+1):
                 outstream.write('%s -i %d -f %d\n' % (command, rep, rep))
