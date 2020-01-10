@@ -46,9 +46,7 @@ def produce_results(basedir, raw_outstream=sys.stdout, avg_outstream=sys.stdout,
         # alpha, epsilon, gamma, lambda are obtained by removing the first letter after spliting on _
         alpha, epsilon, gamma, _lambda = (x[1:] for x in rlparams.split('_'))
 
-        # Ok
-        # print(train_opp, mapname, feature,strat,reward,matches,dec_int,alpha,epsilon,gamma,_lambda)
-
+        results = dict() # player_index -> statistics
         for test_pos in [0, 1]:
             test_file = os.path.join(rep_dir, 'test-vs-%s_p%d.csv' % (test_opp, test_pos))
             # print(test_file)
@@ -60,13 +58,21 @@ def produce_results(basedir, raw_outstream=sys.stdout, avg_outstream=sys.stdout,
             all_params = [train_opp, test_opp, str(test_pos), mapname, feature, strat, reward, matches, dec_int, alpha,
                           epsilon, gamma, _lambda]
 
-            results = stats.stats(test_file, test_pos)
-            results_collection[tuple(all_params)].append(results)
+            results[test_pos] = stats.stats(test_file, test_pos)
+            results_collection[tuple(all_params)].append(results[test_pos])
 
             # writes the raw output stream
             raw_outstream.write('%s\n' % sep.join(
                 all_params + [str(x) for x in results]
             ))
+            #print(results[test_pos])
+        # Results were collected for positions 0 and 1, now computes the average and stores as 'position' 2
+        try:
+            results[2] = np.mean([results[0], results[1]], axis=0)
+            all_params[2] = '2'  # player_position <- '2' (string to avoid error afterwards
+            results_collection[tuple(all_params)].append(results[2])
+        except KeyError as e:
+            print('Unable to calculate average results due to missing results in position {}'.format(e))
 
     # after all results are collected, writes them to avg_outstream
     for params, results in results_collection.items():
