@@ -1,0 +1,39 @@
+#!/bin/bash
+#SBATCH --nodes=2            #Numero de Nós
+#SBATCH --ntasks-per-node=8 #Numero de tarefas por Nó
+#SBATCH --ntasks=16           #Numero total de tarefas MPI
+#SBATCH -p tupi	      	#min 1 max 20 nós, 2h (lista: https://sdumont.lncc.br/support_manual.php?pg=support#5)
+#SBATCH -J rltrain         #Nome job
+#SBATCH --exclusive          #Utilização exclusiva dos nós durante a execução do job
+
+#SBATCH --mail-type=BEGIN,END,FAIL,TIME_LIMIT
+#SBATCH --mail-user=andersonrochatavares@gmail.com
+
+#SBATCH --time=1-00:00:00
+
+# sets the nodes to use
+nodeset -e $SLURM_JOB_NODELIST
+
+#cd $SLURM_SUBMIT_DIR
+
+#Configura o script intermediario
+SCRIPT=${PWD}/slurm/startjobs.sh
+
+QUEUEDIR="queue_cpusmall"
+
+# carrega o java 11 e o python3
+#module load java/jdk-11
+#module load python/3.7.2
+
+echo "# jobs: `wc -l $QUEUEDIR/todo.txt`"
+
+# runs 2 times the script that launches 8 file job clients each
+for i in {1..2}; do 
+	initial=$(( (($i - 1)) * 8 + 1)) 	# (i-1)*8 + 1
+	final=$(( $i * 8 ))				# i*8
+	srun --resv-ports  --nodes 1 --ntasks=1 -c 8 $SCRIPT $initial $final $QUEUEDIR & 
+done
+
+echo "Jobs submitted."
+
+wait
