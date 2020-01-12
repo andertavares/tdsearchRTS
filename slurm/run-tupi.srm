@@ -19,7 +19,7 @@ nodeset -e $SLURM_JOB_NODELIST
 #Configura o script intermediario
 SCRIPT=${PWD}/slurm/startjobs.sh
 
-QUEUEDIR="queue_cpusmall"
+QUEUEDIR="queue_tests"
 
 # carrega o java 11 e o python3
 #module load java/jdk-11
