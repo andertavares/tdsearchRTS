@@ -149,7 +149,7 @@ def train_commands(params, outstream):
     """
     Writes the commands of the train jobs to the outstream
     """
-    for mapname, interval, alpha, gamma, lamda, epsilon, train_opp in cartesian_product(params):
+    for mapname, interval, alpha, gamma, lamda, epsilon, train_opp, _ in cartesian_product(params):
             command = './train.sh -c config/%s.properties -d %s/%s --train_matches %s --decision_interval %d ' \
                       '--train_opponent %s -p %s -e materialdistancehp -r winlossdraw ' \
                       '--td_alpha_initial %s --td_gamma %s --td_epsilon_initial %s --td_lambda %s ' \
@@ -179,7 +179,7 @@ def lcurve_commands(params, outstream):
     """
     Writes the commands of the learning curve jobs to the outstream
     """
-    for mapname, interval, alpha, gamma, lamda, epsilon, train_opp in cartesian_product(params):
+    for mapname, interval, alpha, gamma, lamda, epsilon, train_opp, test_opp in cartesian_product(params):
             for c in range(params['checkpoint'], params['train_matches']+1, params['checkpoint']):  # +1 in second argument to ensure the last checkpoint is also picked 
                     command = './learningcurve.sh -d %s/%s/%s/fmaterialdistancehp_p%s_rwinlossdraw/m%d/d%d/a%s_e%s_g%s_l%s ' \
                       '--test_matches %d --checkpoint %d ' % \
