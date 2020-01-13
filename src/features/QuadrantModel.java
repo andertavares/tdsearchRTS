@@ -46,40 +46,47 @@ public class QuadrantModel implements FeatureExtractor {
 		// --- now for the quadrant-dependent features
 		int xQuadLength = s.getPhysicalGameState().getWidth() / NUM_QUADRANTS;
 		int yQuadLength = s.getPhysicalGameState().getHeight() / NUM_QUADRANTS;
+		int numTiles = xQuadLength * yQuadLength; //corresponds to the max #units in each quadrant
         
         // for each quadrant, counts the number of units of each type per player
 		for (int xQuad = 0; xQuad < NUM_QUADRANTS; xQuad++){
 			for (int yQuad = 0; yQuad < NUM_QUADRANTS; yQuad++){
 				
 				// arrays counting the sum of hit points and number of units owned by each player
-				float hpSum[] = new float[2];
+				// (we're actually using proportional hit points of units: current / max)
+				double hpSum[] = new double[2];
 				int unitCount[] = new int[2];
+				
+				// initializes the unit count and HP sum of each type and player as zero
+				hpSum[0] = hpSum[1] = 0;
+				unitCount[0] = unitCount[1] = 0;
+				
+				// initializes the count of each unit type as zero, ignoring resources
+				for(UnitType type : types.getUnitTypes()){
+					if(type.name.equalsIgnoreCase("resource")) continue; 
+					
+					features.put(unitCountFeatureName(xQuad, yQuad, 0, type), 0.0); //for player 0
+					features.put(unitCountFeatureName(xQuad, yQuad, 1, type), 0.0); //for player 1
+				}
 				
 				// a collection of units in this quadrant:
 				Collection<Unit> unitsInQuad = s.getPhysicalGameState().getUnitsAround(
 					xQuad*xQuadLength, yQuad*yQuadLength, xQuadLength
 				);
 				
-				// initializes the unit count of each type and player as zero
-				// also initializes the sum of HP of units owned per player as zero
-				for(int p = 0; p < 2; p++){ // p for each player
-					//unitCountPerQuad.put(p, new HashMap<>());
-					hpSum[p] = 0;
-					unitCount[p] = 0;
-				}
-				
 				// traverses the list of units in quadrant, incrementing their feature count
 				for(Unit u : unitsInQuad){
 					if(u.getType().isResource) continue;	//ignores resources
 					
 					unitCount[u.getPlayer()]++;
-					hpSum[u.getPlayer()] += u.getHitPoints();
+					hpSum[u.getPlayer()] += u.getHitPoints() / (double) u.getType().hp;
 
 					String name = unitCountFeatureName(xQuad, yQuad, u.getPlayer(), u.getType());
 					
 					// counts and increment the number of the given unit in the current quadrant
+					// increment is 1/quadsize due to normalization (assuming a max of 50 units)
 					// defaults to zero if this is the first time the feature is being queried
-					features.put(name, features.getOrDefault(name, 0.0) + 1);
+					features.put(name, features.get(name) + 1.0 / numTiles); 
 				}
 				
 				// computes the average HP of units owned by each player
