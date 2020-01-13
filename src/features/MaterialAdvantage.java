@@ -141,7 +141,7 @@ public class MaterialAdvantage implements FeatureExtractor {
 		features[2] /= maxResources;
 		
 		// 5 is normalized at maxTime
-		features[3] /= maxTime;
+		features[3] /= maxTime; // TODO check if the division is integer or double
 		
 		// from initial unit index to 2*the number of types (inclusive) are normalized at MAX_UNITS
 		// 2*number of types is used because the count is done for each player
