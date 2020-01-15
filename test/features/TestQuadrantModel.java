@@ -34,17 +34,17 @@ class TestQuadrantModel {
 			
 		String[] unitTypes = {"Base", "Barracks", "Worker", "Light", "Heavy", "Ranged"};
 		
+		// adds the unit_count feature names per quadrant & player (0 and 1) & unit type
 		// adds the avg_health feature names per quadrant & player (0 and 1)
-		// adds the unit_count feature names per quadrant & player (0 and 1) & unit type 
 		for(int xQuad = 0; xQuad < 3; xQuad++) {
 			for(int yQuad = 0; yQuad < 3; yQuad++) {
-				expectedNames.add(String.format("avg_health-%d-%d-%d", xQuad, yQuad, 0));
-				expectedNames.add(String.format("avg_health-%d-%d-%d", xQuad, yQuad, 1));
-				
 				for(String type : unitTypes){
 					expectedNames.add(String.format("unit_count-%d-%d-%d-%s", xQuad, yQuad, 0, type));
 					expectedNames.add(String.format("unit_count-%d-%d-%d-%s", xQuad, yQuad, 1, type));
 				}
+				
+				expectedNames.add(String.format("avg_health-%d-%d-%d", xQuad, yQuad, 0));
+				expectedNames.add(String.format("avg_health-%d-%d-%d", xQuad, yQuad, 1));
 			}
 		}
 		assertEquals(expectedNames, extractor.featureNames());
@@ -78,25 +78,32 @@ class TestQuadrantModel {
 		String[] unitTypes = {"Base", "Barracks", "Worker", "Light", "Heavy", "Ranged"};
 		for (int xQuad = 0; xQuad < 3; xQuad++){
 			for (int yQuad = 0; yQuad < 3; yQuad++){
-				for(int player = 0; player < 2; player++){
-					features.put(String.format("avg_health-%d-%d-%d", xQuad, yQuad, player), 0.0);
 					// initializes the count of each unit type as zero, ignoring resources
 					for(String type : unitTypes){
-						features.put(String.format("unit_count-%d-%d-%d-%s",xQuad, yQuad, player, type), 0.0); //for player 0
+						features.put(String.format("unit_count-%d-%d-%d-%s",xQuad, yQuad, 0, type), 0.0); //for player 0
+						features.put(String.format("unit_count-%d-%d-%d-%s",xQuad, yQuad, 1, type), 0.0); //for player 1
 					}
-				}
+					
+					features.put(String.format("avg_health-%d-%d-%d", xQuad, yQuad, 0), 0.0); //for player 0
+					features.put(String.format("avg_health-%d-%d-%d", xQuad, yQuad, 1), 0.0); //for player 1
+					
 			}
 		}
 		
 		// manually sets the values of known features. 
-		int numTilesPerQuadrant = (int) (8.0 * 8.0 / 9 ); //normalizing factor: 64 tiles in map / 9 quadrants 
-		//p0 has a base and a worker in quadrant (0,0)
+		int numTilesPerQuadrant = 9; //since each quadrant is a 3x3 region
+		
+		//p0 has a base and a worker in quadrant (0,0), both at full health
 		features.put("unit_count-0-0-0-Base", 1.0 / numTilesPerQuadrant ); 
 		features.put("unit_count-0-0-0-Worker", 1.0 / numTilesPerQuadrant ); 
+		features.put("avg_health-0-0-0", 1.0); 
 		
-		//p1 has a base and a worker in quadrant (3,3)
-		features.put("unit_count-2-2-1-Base", 1.0 / numTilesPerQuadrant ); 
-		features.put("unit_count-2-2-1-Worker", 1.0 / numTilesPerQuadrant ); 
+		//p1 has a base in quadrant (1, 2) and a worker in quadrant (2, 2), both at full health
+		features.put("unit_count-1-2-1-Base", 1.0 / numTilesPerQuadrant );
+		features.put("avg_health-1-2-1", 1.0);
+		features.put("unit_count-2-2-1-Worker", 1.0 / numTilesPerQuadrant );
+		features.put("avg_health-2-2-1", 1.0);
+		
 		
 		// unboxes the linked hash map into the expected feature array
 		double[] expectedFeatures = new double[130];	//130 is the number of features verified above
@@ -106,27 +113,9 @@ class TestQuadrantModel {
 			i++;
 		}
 		double[] extractedFeatures = extractor.extractFeatures(state, 1);
-		System.out.println(Arrays.toString(extractedFeatures));
-		System.out.println(extractor.featureNames());
+		//System.out.println(Arrays.toString(extractedFeatures));
+		//System.out.println(extractor.featureNames());
 		assertArrayEquals(expectedFeatures, extractedFeatures, 1E-5);
-		/*
-		
-		String[] unitTypes = {"Base", "Barracks", "Worker", "Light", "Heavy", "Ranged"};
-		
-		// adds the avg_health feature names per quadrant & player (0 and 1)
-		// adds the unit_count feature names per quadrant & player (0 and 1) & unit type 
-		for(int xQuad = 0; xQuad < 3; xQuad++) {
-			for(int yQuad = 0; yQuad < 3; yQuad++) {
-				for(int player = 0; player < 2; player++) {
-					expectedNames.add(String.format("avg_health-%d-%d-%d", xQuad, yQuad, player));
-					
-					for(String type : unitTypes){
-						expectedNames.add(String.format("unit_count-%d-%d-%d-%s", xQuad, yQuad, player, type));
-					}
-				}
-			}
-		}
-		assertEquals(expectedNames, extractor.featureNames());*/
 		
 	}
 
