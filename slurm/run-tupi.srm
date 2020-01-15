@@ -2,7 +2,7 @@
 #SBATCH --nodes=2            #Numero de Nós
 #SBATCH --ntasks-per-node=8 #Numero de tarefas por Nó
 #SBATCH --ntasks=16           #Numero total de tarefas MPI
-#SBATCH -p tupi	      	#min 1 max 20 nós, 2h (lista: https://sdumont.lncc.br/support_manual.php?pg=support#5)
+#SBATCH -p tupi	      	
 #SBATCH -J rltrain         #Nome job
 #SBATCH --exclusive          #Utilização exclusiva dos nós durante a execução do job
 
