@@ -102,6 +102,7 @@ public class QuadrantModel implements FeatureExtractor {
 		int i = 0;
 		for(Double d : features.values()) {
 			featureArray[i] = d.doubleValue();
+			i++;
 		}
 		// this one-liner did not work for unboxing: Stream.of(features.values()).mapToDouble(Double::doubleValue).toArray();
 		return featureArray;
