@@ -1,16 +1,23 @@
 package features;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.jdom.JDOMException;
 import org.junit.jupiter.api.Test;
 
 import rts.GameState;
 import rts.PhysicalGameState;
+import rts.units.Unit;
+import rts.units.UnitType;
 import rts.units.UnitTypeTable;
 
 class TestQuadrantModel {
@@ -31,12 +38,12 @@ class TestQuadrantModel {
 		// adds the unit_count feature names per quadrant & player (0 and 1) & unit type 
 		for(int xQuad = 0; xQuad < 3; xQuad++) {
 			for(int yQuad = 0; yQuad < 3; yQuad++) {
-				for(int player = 0; player < 2; player++) {
-					expectedNames.add(String.format("avg_health-%d-%d-%d", xQuad, yQuad, player));
-					
-					for(String type : unitTypes){
-						expectedNames.add(String.format("unit_count-%d-%d-%d-%s", xQuad, yQuad, player, type));
-					}
+				expectedNames.add(String.format("avg_health-%d-%d-%d", xQuad, yQuad, 0));
+				expectedNames.add(String.format("avg_health-%d-%d-%d", xQuad, yQuad, 1));
+				
+				for(String type : unitTypes){
+					expectedNames.add(String.format("unit_count-%d-%d-%d-%s", xQuad, yQuad, 0, type));
+					expectedNames.add(String.format("unit_count-%d-%d-%d-%s", xQuad, yQuad, 1, type));
 				}
 			}
 		}
@@ -52,31 +59,74 @@ class TestQuadrantModel {
 		
 		QuadrantModel extractor = new QuadrantModel(types, 3000);
 		
-		double[] features = extractor.extractFeatures(state, 1);
+		// 4 quadrant-independent features: bias, resources0,1 & game time
+		// 9*2 = 18 features of avg health
+		// 9*2*6 = 108 features of unit count per type
+		// total: 4 + 18 + 108 = 130 features
+		assertEquals(130, extractor.getNumFeatures());
 		
-		assertEquals(17, extractor.getNumFeatures());
+		// creates a linked hash map as the feature extractor does, then unboxes it and compares the resulting arrays
+		Map<String, Double> features = new LinkedHashMap<>();
 		
-		assertEquals(1, features[0]);	//bias
-		assertEquals(5 / 50.0, features[1]);	//resources p0
-		assertEquals(5 / 50.0, features[2]);	//resources p1
-		assertEquals(0., features[3]);			//time
+		// adds the 'global' features
+		features.put("bias", 1.0);
+		features.put("resources_p0", 5.0 / 50);
+		features.put("resources_p1", 5.0 / 50);
+		features.put("game_time", 0.0);
 		
-		// unit count: unit_count-x-y-player-type
-		// avg hp: avg_health-x-y-player
-		assertEquals(1.0 / 4, features[4]);	//unit_count-0-0-0-base
-		assertEquals(1.0 / 4, features[5]);	//unit_count-0-0-1-base
-		assertEquals(1.0 / 4, features[5]);	//unit_count-0-0-0-barracks
-		assertEquals(1.0 / 4, features[5]);	//unit_count-0-0-1-barracks
-		assertEquals(0, features[7]);	//light
-		assertEquals(0, features[8]);	//
-		assertEquals(0, features[9]);	//heavy
-		assertEquals(0, features[10]);	//
-		assertEquals(0, features[11]);	//ranged
-		assertEquals(0, features[12]);	//
-		assertEquals(1.0 / 64, features[13]);	//base
-		assertEquals(1.0 / 64, features[14]);	//
-		assertEquals(0, features[15]);	//barracks
-		assertEquals(0, features[16]);	//
+		// initializes quadrant-dependent features as zero
+		String[] unitTypes = {"Base", "Barracks", "Worker", "Light", "Heavy", "Ranged"};
+		for (int xQuad = 0; xQuad < 3; xQuad++){
+			for (int yQuad = 0; yQuad < 3; yQuad++){
+				for(int player = 0; player < 2; player++){
+					features.put(String.format("avg_health-%d-%d-%d", xQuad, yQuad, player), 0.0);
+					// initializes the count of each unit type as zero, ignoring resources
+					for(String type : unitTypes){
+						features.put(String.format("unit_count-%d-%d-%d-%s",xQuad, yQuad, player, type), 0.0); //for player 0
+					}
+				}
+			}
+		}
+		
+		// manually sets the values of known features. 
+		int numTilesPerQuadrant = (int) (8.0 * 8.0 / 9 ); //normalizing factor: 64 tiles in map / 9 quadrants 
+		//p0 has a base and a worker in quadrant (0,0)
+		features.put("unit_count-0-0-0-Base", 1.0 / numTilesPerQuadrant ); 
+		features.put("unit_count-0-0-0-Worker", 1.0 / numTilesPerQuadrant ); 
+		
+		//p1 has a base and a worker in quadrant (3,3)
+		features.put("unit_count-2-2-1-Base", 1.0 / numTilesPerQuadrant ); 
+		features.put("unit_count-2-2-1-Worker", 1.0 / numTilesPerQuadrant ); 
+		
+		// unboxes the linked hash map into the expected feature array
+		double[] expectedFeatures = new double[130];	//130 is the number of features verified above
+		int i = 0;
+		for(Double d : features.values()) {
+			expectedFeatures[i] = d.doubleValue();
+			i++;
+		}
+		double[] extractedFeatures = extractor.extractFeatures(state, 1);
+		System.out.println(Arrays.toString(extractedFeatures));
+		System.out.println(extractor.featureNames());
+		assertArrayEquals(expectedFeatures, extractedFeatures, 1E-5);
+		/*
+		
+		String[] unitTypes = {"Base", "Barracks", "Worker", "Light", "Heavy", "Ranged"};
+		
+		// adds the avg_health feature names per quadrant & player (0 and 1)
+		// adds the unit_count feature names per quadrant & player (0 and 1) & unit type 
+		for(int xQuad = 0; xQuad < 3; xQuad++) {
+			for(int yQuad = 0; yQuad < 3; yQuad++) {
+				for(int player = 0; player < 2; player++) {
+					expectedNames.add(String.format("avg_health-%d-%d-%d", xQuad, yQuad, player));
+					
+					for(String type : unitTypes){
+						expectedNames.add(String.format("unit_count-%d-%d-%d-%s", xQuad, yQuad, player, type));
+					}
+				}
+			}
+		}
+		assertEquals(expectedNames, extractor.featureNames());*/
 		
 	}
 

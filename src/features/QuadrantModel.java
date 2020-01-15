@@ -44,9 +44,12 @@ public class QuadrantModel implements FeatureExtractor {
 		
 		
 		// --- now for the quadrant-dependent features
-		int xQuadLength = s.getPhysicalGameState().getWidth() / NUM_QUADRANTS;
-		int yQuadLength = s.getPhysicalGameState().getHeight() / NUM_QUADRANTS;
-		int numTiles = xQuadLength * yQuadLength; //corresponds to the max #units in each quadrant
+		
+		int width = s.getPhysicalGameState().getWidth();
+		int heigth = s.getPhysicalGameState().getHeight();
+		int xQuadLength = width / NUM_QUADRANTS;
+		int yQuadLength = heigth / NUM_QUADRANTS;
+		int numTiles = (int) width * heigth / (NUM_QUADRANTS * NUM_QUADRANTS); //corresponds to the max #units in each quadrant
         
         // for each quadrant, counts the number of units of each type per player
 		for (int xQuad = 0; xQuad < NUM_QUADRANTS; xQuad++){
@@ -68,8 +71,8 @@ public class QuadrantModel implements FeatureExtractor {
 					features.put(unitCountFeatureName(xQuad, yQuad, 0, type), 0.0); //for player 0
 					features.put(unitCountFeatureName(xQuad, yQuad, 1, type), 0.0); //for player 1
 				}
-				
-				// a collection of units in this quadrant:
+				System.out.println(String.format("collecting units in %d,%d area = %d", xQuad*xQuadLength, yQuad*yQuadLength, xQuadLength));
+				// a collection of units in this quadrant (would it be a good idea to round up?:
 				Collection<Unit> unitsInQuad = s.getPhysicalGameState().getUnitsAround(
 					xQuad*xQuadLength, yQuad*yQuadLength, xQuadLength
 				);
@@ -86,6 +89,7 @@ public class QuadrantModel implements FeatureExtractor {
 					// counts and increment the number of the given unit in the current quadrant
 					// increment is 1/quadsize due to normalization (assuming a max of 50 units)
 					// defaults to zero if this is the first time the feature is being queried
+					System.out.println(String.format("putting %s: %f", name, features.get(name) + 1.0 / numTiles));
 					features.put(name, features.get(name) + 1.0 / numTiles); 
 				}
 				
@@ -93,6 +97,7 @@ public class QuadrantModel implements FeatureExtractor {
 				for(int p = 0; p < 2; p++){ // p for each player
 					double avgHP = unitCount[p] != 0 ? hpSum[p] / unitCount[p] : 0;
 					features.put(avgHealthFeatureName(xQuad, yQuad, p), avgHP);
+					System.out.println(String.format("putting %s: %f", avgHealthFeatureName(xQuad, yQuad, p), avgHP));
 				}
 				
 			}
@@ -123,17 +128,17 @@ public class QuadrantModel implements FeatureExtractor {
 		for (int xQuad = 0; xQuad < NUM_QUADRANTS; xQuad++){
 			for (int yQuad = 0; yQuad < NUM_QUADRANTS; yQuad++){
 				
-				// the third for traverses the players
-				for(int player = 0; player < 2; player++){
+				// one call for each player (0 and 1)
+				featureNames.add(avgHealthFeatureName(xQuad, yQuad, 0));
+				featureNames.add(avgHealthFeatureName(xQuad, yQuad, 1));
+				
+				// the third for traverses the unit types
+				for(UnitType type : types.getUnitTypes()){
+					if(type.name.equalsIgnoreCase("resource")) continue; // does not count resource in map, only owned by players
 					
-					featureNames.add(avgHealthFeatureName(xQuad, yQuad, player));
-					
-					// the fourth for traverses the unit types
-					for(UnitType type : types.getUnitTypes()){
-						if(type.name.equalsIgnoreCase("resource")) continue; // does not count resource in map, only owned by players
-						
-						featureNames.add(unitCountFeatureName(xQuad, yQuad, player, type));
-					}
+					// one call for each player (0 and 1)
+					featureNames.add(unitCountFeatureName(xQuad, yQuad, 0, type));
+					featureNames.add(unitCountFeatureName(xQuad, yQuad, 1, type));
 				}
 			}
 		}	
