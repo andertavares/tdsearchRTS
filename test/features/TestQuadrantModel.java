@@ -1,6 +1,6 @@
 package features;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -19,18 +19,28 @@ class TestQuadrantModel {
 		UnitTypeTable types = new UnitTypeTable(UnitTypeTable.VERSION_ORIGINAL_FINETUNED, UnitTypeTable.MOVE_CONFLICT_RESOLUTION_CANCEL_BOTH); 
 		QuadrantModel extractor = new QuadrantModel(types, 3000);
 		
-		List<String> expectedNames = new ArrayList<>() {{
-			add("bias");
-			add("resources_p0");
-			add("resources_p1");
-			add("time");
-			add("unit_count-0-0-0-base");
-			add("unit_count-0-0-1-base");
-			add("unit_count-0-1-0-base");
-			add("unit_count-0-1-1-base"); //... make it faster
+		List<String> expectedNames = new ArrayList<>(); 
+		expectedNames.add("bias");
+		expectedNames.add("resources_p0");
+		expectedNames.add("resources_p1");
+		expectedNames.add("game_time");
 			
-	    }};
+		String[] unitTypes = {"Base", "Barracks", "Worker", "Light", "Heavy", "Ranged"};
 		
+		// adds the avg_health feature names per quadrant & player (0 and 1)
+		// adds the unit_count feature names per quadrant & player (0 and 1) & unit type 
+		for(int xQuad = 0; xQuad < 3; xQuad++) {
+			for(int yQuad = 0; yQuad < 3; yQuad++) {
+				for(int player = 0; player < 2; player++) {
+					expectedNames.add(String.format("avg_health-%d-%d-%d", xQuad, yQuad, player));
+					
+					for(String type : unitTypes){
+						expectedNames.add(String.format("unit_count-%d-%d-%d-%s", xQuad, yQuad, player, type));
+					}
+				}
+			}
+		}
+		assertEquals(expectedNames, extractor.featureNames());
 	}
 
 	@Test

@@ -129,6 +129,8 @@ public class QuadrantModel implements FeatureExtractor {
 					
 					// the fourth for traverses the unit types
 					for(UnitType type : types.getUnitTypes()){
+						if(type.name.equalsIgnoreCase("resource")) continue; // does not count resource in map, only owned by players
+						
 						featureNames.add(unitCountFeatureName(xQuad, yQuad, player, type));
 					}
 				}
