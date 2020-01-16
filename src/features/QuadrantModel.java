@@ -148,17 +148,11 @@ public class QuadrantModel implements FeatureExtractor {
 	}
 
 	private String avgHealthFeatureName(int xQuad, int yQuad, int player) {
-		return String.format(
-			"avg_health-%d-%d-%d", 
-			xQuad, yQuad, player
-		);
+		return "avg_health-" + xQuad + "-" + yQuad + "-" + player;
 	}
 
 	private String unitCountFeatureName(int xQuad, int yQuad, int player, UnitType type) {
-		return String.format(
-			"unit_count-%d-%d-%d-%s", 
-			xQuad, yQuad, player, type.name
-		);
+		return "unit_count-" + xQuad + "-" + yQuad + "-" + player + "-" + type.name;
 	}
 
 }
