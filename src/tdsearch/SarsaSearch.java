@@ -3,6 +3,7 @@ package tdsearch;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -15,10 +16,12 @@ import ai.core.AI;
 import ai.core.ParameterSpecification;
 import learning.LearningAgent;
 import learning.LearningAgentFactory;
+import learning.LinearSarsaLambda;
 import portfolio.PortfolioManager;
 import rts.GameState;
 import rts.PlayerAction;
 import rts.units.UnitTypeTable;
+import utils.ForwardModel;
 
 public class SarsaSearch extends AI {
 
@@ -65,8 +68,23 @@ public class SarsaSearch extends AI {
 
 	LearningAgent learner;
 	
+	/**
+	 * Planning counterpart, to generate the actions of the opponent
+	 */
+	LearningAgent planningOpponent; 
+	
+	/**
+	 * Creates a SarsaSearch object by specifying all parameters
+	 * @param types
+	 * @param learner
+	 * @param portfolio
+	 * @param maxCycles
+	 * @param timeBudget
+	 * @param decisionInterval
+	 */
 	public SarsaSearch(UnitTypeTable types, LearningAgent learner, Map<String, AI> portfolio, int maxCycles, int timeBudget, int decisionInterval) {
 		this.learner = learner;
+		this.planningOpponent = ((LinearSarsaLambda)learner).almostClone();
 		this.maxCycles = maxCycles;
 		this.abstractions = portfolio;
 		this.timeBudget = timeBudget;
@@ -77,21 +95,23 @@ public class SarsaSearch extends AI {
 	}
 			
 	/**
-	    * Instantiates a policy selector with parameters from a config object
-	    * @param types
-	    * @param randomSeed
-	    * @param config
-	    */
-	   public SarsaSearch(UnitTypeTable types, int randomSeed, Properties config) {
-		   this(
-			   types, 
-			   LearningAgentFactory.getLearningAgent(config.getProperty("learner"), types, config, randomSeed),
-			   PortfolioManager.getPortfolio(types, Arrays.asList(config.getProperty("portfolio").split(","))),
-			   Integer.parseInt(config.getProperty("max_cycles")),
-			   Integer.parseInt(config.getProperty("search.timebudget")),
-			   Integer.parseInt(config.getProperty("decision_interval"))
-		   );
-	   }
+	 * Instantiates SarsaSearch with parameters from a config object
+	 * 
+	 * @param types
+	 * @param randomSeed
+	 * @param config
+	 */
+	public SarsaSearch(UnitTypeTable types, int randomSeed, Properties config) {
+		this(
+			types, 
+			LearningAgentFactory.getLearningAgent(config.getProperty("learner"), types, config, randomSeed),
+			PortfolioManager.getPortfolio(types, Arrays.asList(config.getProperty("portfolio").split(","))),
+			Integer.parseInt(config.getProperty("max_cycles")),
+			Integer.parseInt(config.getProperty("search.timebudget")),
+			Integer.parseInt(config.getProperty("decision_interval"))
+		);
+	}
+	
 
 	@Override
 	public PlayerAction getAction(int player, GameState gs) throws Exception {
@@ -104,6 +124,11 @@ public class SarsaSearch extends AI {
 			logger.error("Will proceed, but behavior might be unpredictable");
 		}
 		
+		// launches planning
+		//logger.debug("v({}) for player{} before planning: {}", gs.getTime(), player, stateValue(featureExtractor.extractFeatures(gs, player)));
+		sarsaPlanning(gs, player);
+		//logger.debug("v({}) for player{} after planning: {}", gs.getTime(), player, stateValue(featureExtractor.extractFeatures(gs, player)));
+		
 		// performs a new choice if the interval has passed
 		if (decisionInterval <= 1 || gs.getTime() % decisionInterval == 0) { 
 			// determines the current choice
@@ -115,11 +140,6 @@ public class SarsaSearch extends AI {
 		choices.add(currentChoiceName);
 		
 		return abstractionToAction(currentChoiceName, gs, player);
-		
-		/*logger.debug("v({}) for player{} before planning: {}", gs.getTime(), player, stateValue(featureExtractor.extractFeatures(gs, player)));
-		sarsaPlanning(gs, player);
-		logger.debug("v({}) for player{} after planning: {}", gs.getTime(), player, stateValue(featureExtractor.extractFeatures(gs, player)));
-		*/
 		
 	}
 	
@@ -145,53 +165,55 @@ public class SarsaSearch extends AI {
 	}
 
 
-	/*private void sarsaPlanning(GameState gs, int player) {
+	/**
+	 * Launches the planning procedure from the current state & player. 
+	 * Assumes that someone loaded the planning opponent with the proper weights.
+	 * @param gs
+	 * @param player
+	 */
+	private void sarsaPlanning(GameState gs, int player) {
 		Date begin = new Date(System.currentTimeMillis());
 		Date end = begin;
 		int planningBudget = (int) (.8 * timeBudget); // 80% of budget to planning
 		long duration = 0;
 		
-		// copies 'long-term' memory to 'short-term' memory
-		Map<String, double[]> planningWeights = new HashMap<>(weights);
-		
 		GameState state = gs.clone(); //this state will advance during the linear look-ahead search below
 		
 		while (duration < planningBudget) { // while time available
 			// starts with a new eligibility trace vector for planning
-			Map<String, double[]> planningEligibility = new HashMap<String, double[]>(); 
-			resetMap(planningEligibility);
+			LinearSarsaLambda shortTermLearner = ((LinearSarsaLambda)learner).clone();
 
 			state = gs.clone();
-			String aName = epsilonGreedy(state, player, planningWeights, planningEpsilon); // aName is a short for abstraction name
+			
 
 			while (!state.gameover() && duration < planningBudget) { // go until game over or time is out TODO add maxcycles condition
 
 				// issue the action to obtain the next state, issues a self-play move for the
 				// opponent
-				GameState nextState = state.clone();
+				String aName = shortTermLearner.act(state, player);// epsilonGreedy(state, player); // aName is a short for abstraction name
+				String opponentAName = planningOpponent.act(state, 1 - player);
 				logger.trace("Planning step, selected {}", aName);
-				String opponentAName = epsilonGreedy(state, 1 - player, planningWeights, planningEpsilon);
 				
 				// must retrieve both actions and only then issue them
 				PlayerAction playerAction = abstractionToAction(aName, state, player);
 				PlayerAction opponentAction = abstractionToAction(opponentAName, state, 1 - player);
 				
+				GameState nextState = state.clone();
+				
 				nextState.issueSafe(playerAction);
 				nextState.issueSafe(opponentAction);
 				ForwardModel.forward(nextState); //advances the state up to the next decision point or gameover
-
-				// nextAName is a short for next abstraction name
-				String nextAName = epsilonGreedy(nextState, player, planningWeights, planningEpsilon);
-
-				// updates the 'short-term' memory from simulated experience
-				sarsaUpdate(state, player, aName, nextState, nextAName, planningWeights, planningEligibility);
-
+				//shortTermLearner.learn(state, player, aName, reward, nextState, nextState.gameover());
 				state = nextState;
-				aName = nextAName;
 
 				// updates duration
 				end = new Date(System.currentTimeMillis());
 				duration = end.getTime() - begin.getTime();
+			}
+			// if reached a gameover, let learners finish
+			if(state.gameover()) {
+				shortTermLearner.finish(state.winner());
+				planningOpponent.finish(state.winner());
 			}
 			
 		} // end while (timeAvailable)
@@ -199,7 +221,7 @@ public class SarsaSearch extends AI {
 		logger.debug("Planning for player {} at frame #{} looked up to frame {} and took {}ms",
 			player, gs.getTime(), state.getTime(), end.getTime() - begin.getTime()
 		);
-	}*/
+	}
 	
 
 	/**
@@ -276,6 +298,16 @@ public class SarsaSearch extends AI {
 	 */
 	public void loadWeights(String path) throws IOException {
 		learner.load(path);
+	}
+	
+	/**
+	 * Loads the weights for the planning adversary from a binary file
+	 * 
+	 * @param path
+	 * @throws IOException
+	 */
+	public void loadPlanningOpponentWeights(String path) throws IOException {
+		planningOpponent.load(path);
 	}
 	
 	@Override

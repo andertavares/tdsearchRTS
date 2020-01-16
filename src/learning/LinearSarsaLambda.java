@@ -96,6 +96,11 @@ public class LinearSarsaLambda implements LearningAgent {
     protected Logger logger;
     
     /**
+     * Private empty constructor, used for cloning
+     */
+    private LinearSarsaLambda() {};
+    
+    /**
      * Creates a LinearSarsaLambda agent with all parameters specified via config file.
      * Random seed defaults to 0 if not specified in config.
      * @param types
@@ -170,6 +175,49 @@ public class LinearSarsaLambda implements LearningAgent {
     	
 	}
 
+    @Override
+    /**
+     * Returns a SHALLOW copy of this object, except for the reset eligiblities and 
+     * random number generator (which is overkill to clone: https://stackoverflow.com/a/54156572/1251716)
+     */
+    public LinearSarsaLambda clone() {
+    	LinearSarsaLambda copy = new LinearSarsaLambda();
+    	
+    	copy.rewards = this.rewards;
+    	copy.featureExtractor = this.featureExtractor;
+    	copy.actions = this.actions; 
+    	copy.alpha = this.alpha; 
+    	copy.epsilon = this.epsilon;
+    	copy.gamma = this.gamma; 
+    	copy.lambda = this.lambda;
+    	copy.random = new Random();
+    	copy.initialize();
+ 		copy.weights = this.weights;	//weights will be shared...
+ 		
+ 		return copy;
+    }
+    
+    /**
+     * Returns another LinearSarsaLambda object with the same parameters, but with new
+     * weights, eligibility & random number generator
+     * (which is overkill to clone: https://stackoverflow.com/a/54156572/1251716)
+     */
+    public LinearSarsaLambda almostClone() {
+    	LinearSarsaLambda copy = new LinearSarsaLambda();
+    	
+    	copy.rewards = this.rewards;
+    	copy.featureExtractor = this.featureExtractor;
+    	copy.actions = this.actions; 
+    	copy.alpha = this.alpha; 
+    	copy.epsilon = this.epsilon;
+    	copy.gamma = this.gamma; 
+    	copy.lambda = this.lambda;
+    	copy.random = new Random();
+    	copy.initialize();
+ 		
+ 		return copy;
+    }
+    
 	/**
      * Initializes internal variables (logger, weights, eligibility traces as well as
      * current and previous state and action)
@@ -196,6 +244,17 @@ public class LinearSarsaLambda implements LearningAgent {
             weights.put(action, actionWeights);
         }
     }
+    
+    /**
+     * Resets the eligibility traces
+     */
+    public void clearEligibility() {
+    	for (String action : actions) {
+            eligibility.put(action, new double[featureExtractor.getNumFeatures()]);	//TODO possible memory leak?
+    	}
+    }
+    
+    
 
 	@Override
 	public String act(GameState state, int player) {
@@ -376,6 +435,14 @@ public class LinearSarsaLambda implements LearningAgent {
 	 */
 	public Map<String, double[]> getWeights(){
 		return weights;
+	}
+	
+	/**
+	 * Replaces the current weights by the one specified here
+	 * @param weights
+	 */
+	public void setWeights(Map<String, double[]> weights) {
+		this.weights = weights;
 	}
 
 	@Override
