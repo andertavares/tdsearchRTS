@@ -227,7 +227,7 @@ public class Parameters {
 			put("test_matches", "10");
 			put("test_position", "0");
 			
-			put("search.timebudget", "100" );
+			put("search.timebudget", "0" );
 			
 			put("learner", "sarsa");
 			put("td.alpha.initial",  "0.01");
