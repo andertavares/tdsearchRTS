@@ -76,8 +76,8 @@ public class QuadrantModel implements FeatureExtractor {
 				}
 
 				// a collection of units in this quadrant 
-				Collection<Unit> unitsInQuad = s.getPhysicalGameState().getUnitsAround(
-					xQuad*xQuadLength, yQuad*yQuadLength, xQuadLength
+				Collection<Unit> unitsInQuad = s.getPhysicalGameState().getUnitsInRectangle(
+					xQuad*xQuadLength, yQuad*yQuadLength, xQuadLength, yQuadLength
 				);
 				
 				// traverses the list of units in quadrant, incrementing their feature count
