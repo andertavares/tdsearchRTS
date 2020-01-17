@@ -97,7 +97,11 @@ public class Test {
             
             String weightsFile = String.format("%s/weights_%d.bin", workingDir, testPosition);
             logger.info("Loading weights from {}", weightsFile);
-    		player.loadWeights(weightsFile);
+            player.loadWeights(weightsFile);
+            
+            String oppWeightsFile = String.format("%s/weights_%d.bin", workingDir, 1 - testPosition);
+            logger.info("Loading planningOpponent weights from {}", oppWeightsFile);
+    		player.loadPlanningOpponentWeights(oppWeightsFile);
     		
     		// if write replay (trace) is activated, sets the prefix to write files
     		String tracePrefix = null;

@@ -128,6 +128,16 @@ public class LearningCurve extends Test {
             	logger.error("Unable to load weights, ignoring {}.", weightsFile, ioe);
             	continue;
             }
+            
+            String oppWeightsFile = String.format("%s/weights_%d.bin", workingDir, 1 - testPosition);
+            logger.info("Loading planningOpponent weights from {}", oppWeightsFile);
+            try {
+            	player.loadPlanningOpponentWeights(oppWeightsFile);
+            }
+            catch (IOException ioe) {
+            	logger.error("Unable to load weights, ignoring {}.", weightsFile, ioe);
+            	continue;
+            }
     		
     		// if write replay (trace) is activated, sets the prefix to write files
     		String tracePrefix = null;
