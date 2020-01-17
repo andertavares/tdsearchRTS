@@ -204,7 +204,6 @@ public class Runner {
         		checkpoint(new AI[] {ai1, ai2}, workingDir, matchNumber+1);
         	}
         	
-        	
         	// writes summary
         	long duration = end.getTime() - begin.getTime();
         	if (summaryOutput != null){
