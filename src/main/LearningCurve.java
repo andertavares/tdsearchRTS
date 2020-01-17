@@ -44,11 +44,10 @@ public class LearningCurve extends Test {
 		int numMatches = Integer.parseInt(config.getProperty("test_matches"));
 		String saveReplay = config.getProperty("save_replay");
 		
-		// retrieves initial and final reps		
+		// retrieves initial, final reps and test opponent		
 		int initialRep = Integer.parseInt(config.getProperty("initial_rep", "0"));
 		int finalRep = Integer.parseInt(config.getProperty("final_rep", "0"));
-				
-		String testPartnerName = config.getProperty("test_opponent");
+		String testOppName = config.getProperty("test_opponent");
 						
 		boolean writeReplay = "true".equals(saveReplay);
 		logger.info("Will {}save replays (.trace files).", writeReplay ? "" : "NOT ");
@@ -61,14 +60,14 @@ public class LearningCurve extends Test {
 			Properties repConfig = ConfigManager.loadConfig(repDir + "/settings.properties");
 			repConfig = Parameters.ensureDefaults(repConfig);
 			
-			// puts the number of test matches and whether to save replays into the config
+			// puts the number of test matches, whether to save replays and search budget into the config
 			repConfig.setProperty("test_matches", ""+numMatches); //""+ is just to easily convert to string
 			repConfig.setProperty("save_replay", saveReplay);
 			repConfig.setProperty("checkpoint", config.getProperty("checkpoint"));
+			repConfig.setProperty("search.timebudget", config.getProperty("search.timebudget"));
 			
 			// runs one repetition
-			// random seed = 0 should make no difference (no greedy actions)  
-			runTestMatches(repConfig, testPartnerName, repDir, 0, 0, writeReplay);
+			runTestMatches(repConfig, testOppName, repDir, initialRep, initialRep+5000, writeReplay);
 		}
 			
 	}
@@ -92,8 +91,8 @@ public class LearningCurve extends Test {
 		int testMatches = Integer.parseInt(config.getProperty("test_matches"));
 		
 		// voids learning and exploration
-		config.setProperty("td.alpha.initial", "0");
-		config.setProperty("td.epsilon.initial", "0");
+		//config.setProperty("td.alpha.initial", "0");
+		//config.setProperty("td.epsilon.initial", "0");
 		
         // loads microRTS game settings
      	GameSettings settings = GameSettings.loadFromConfig(config);
@@ -157,7 +156,10 @@ public class LearningCurve extends Test {
     		
     		logger.info("Testing: Player0={}, Player1={}", p0.getClass().getSimpleName(), p1.getClass().getSimpleName());
     		
-    		String lcurveOutput = String.format("%s/lcurve-vs-%s_p%d_m%d.csv", workingDir, testOpponent.getClass().getSimpleName(), testPosition, checkpoint); //summary output
+    		String lcurveOutput = String.format(
+				"%s/lcurve-vs-%s_p%d_m%d_b%s.csv", workingDir, testOpponent.getClass().getSimpleName(), 
+				testPosition, checkpoint, config.getProperty("search.timebudget")
+			); //summary output
     		
     		Runner.repeatedMatches(
     			types, workingDir,
