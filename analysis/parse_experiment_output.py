@@ -9,7 +9,21 @@ import collections
 from pprint import pprint
 
 
-def produce_results(basedir, raw_outstream=sys.stdout, avg_outstream=sys.stdout, sep=',', test_opp='A3N'):
+def produce_results(basedir, raw_outstream=sys.stdout, avg_outstream=sys.stdout, sep=',', test_opp='A3N', search_timebudget=None):
+    """
+    Traverses the base dir all the way down to each experiment, collecting the results and writing csv 
+    files with raw results of the repetitions of each parameter configuration and an average of all repetitions.
+
+    :param basedir:
+    :param raw_outstream:
+    :param avg_outstream:
+    :param sep:
+    :param test_opp: collects statistics about a specific test opponent
+    :search_timebudget: collects statistics of tests on a specific budget for the search algorithm. 
+    Defaults to None to maintain compatibility with older versions that generated files without the budget.
+    """
+
+
     # key in results_collection will be a tuple of parameters, each result is a list of metrics
     results_collection = collections.defaultdict(list)
 
@@ -48,7 +62,10 @@ def produce_results(basedir, raw_outstream=sys.stdout, avg_outstream=sys.stdout,
 
         results = dict() # player_index -> statistics
         for test_pos in [0, 1]:
+
             test_file = os.path.join(rep_dir, 'test-vs-%s_p%d.csv' % (test_opp, test_pos))
+            if search_timebudget is not None:
+                test_file = os.path.join(rep_dir, 'test-vs-%s_p%d_b%d.csv' % (test_opp, test_pos, search_timebudget))
             # print(test_file)
 
             if not os.path.exists(test_file):
@@ -83,7 +100,7 @@ def produce_results(basedir, raw_outstream=sys.stdout, avg_outstream=sys.stdout,
         ))
 
 
-def main(basedir, raw_output='raw.csv', avg_output='avg.csv', sep=',', test_opp='A3N'):
+def main(basedir, raw_output='raw.csv', avg_output='avg.csv', sep=',', test_opp='A3N', search_timebudget=None):
     """
     Generates a .csv file by parsing all experiment data found by recursively traversing basedir.
 
@@ -98,13 +115,14 @@ def main(basedir, raw_output='raw.csv', avg_output='avg.csv', sep=',', test_opp=
     :param avg_output: file to write the average results across repetitions.
     :param sep: separator of the .csv file
     :param test_opp: test opponent
+    :param search_timebudget: time budget of the search algorithm. (defaults to None to maintain compatibility with versions that generated output files without the budget.)
     :return:
     """
 
     raw_outstream = open(os.path.join(basedir, raw_output), 'w')
     avg_outstream = open(os.path.join(basedir, avg_output), 'w')
 
-    produce_results(basedir, raw_outstream, avg_outstream, sep, test_opp)
+    produce_results(basedir, raw_outstream, avg_outstream, sep, test_opp, search_timebudget)
 
     raw_outstream.close()
     avg_outstream.close()
