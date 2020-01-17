@@ -26,6 +26,11 @@ def arg_parser(description='Generates commands to run experiments: train, learni
     )
     
     parser.add_argument(
+        '-b', '--search-timebudget', type=int, default=[0], nargs='+',
+        help='Time budget of the search algorithm during tests our learning curve matches.'
+    )
+
+    parser.add_argument(
         '--lcurve-matches', type=int, default=20,
         help='Number of learning curve matches'
     )
@@ -145,7 +150,7 @@ def cartesian_product(params_dict):
     
     params_list = [
         params_dict[attr] for attr in ['maps', 'decision_intervals', 'features', 'alphas', 'gammas', 'lambdas', 'epsilons',
-                                  'train_opponents', 'test_opponents']
+                                  'train_opponents', 'test_opponents', 'search_timebudget']
     ]
     
     return itertools.product(*params_list)
@@ -154,8 +159,11 @@ def cartesian_product(params_dict):
 def train_commands(params, outstream):
     """
     Writes the commands of the train jobs to the outstream
+    TODO: besides ignoring test_opp and budget during unpacking, train commands are repeatedly generated for each value in them...
     """
-    for mapname, interval, feature, alpha, gamma, lamda, epsilon, train_opp, _ in cartesian_product(params):
+
+    # ignores test_opp and budget during unpacking
+    for mapname, interval, feature, alpha, gamma, lamda, epsilon, train_opp, *rest in cartesian_product(params):
             command = './train.sh -c config/%s.properties -d %s/%s --train_matches %s --decision_interval %d ' \
                       '--train_opponent %s -p %s -e %s -r winlossdraw ' \
                       '--td_alpha_initial %s --td_gamma %s --td_epsilon_initial %s --td_lambda %s ' \
@@ -171,11 +179,11 @@ def test_commands(params, outstream):
     """
     Writes the commands of the test jobs to the outstream
     """
-    for mapname, interval, feature, alpha, gamma, lamda, epsilon, train_opp, test_opp in cartesian_product(params):
+    for mapname, interval, feature, alpha, gamma, lamda, epsilon, train_opp, test_opp, budget in cartesian_product(params):
             command = './test.sh -d %s/%s/%s/f%s_p%s_rwinlossdraw/m%d/d%d/a%s_e%s_g%s_l%s ' \
-                      '--test_matches %d --save_replay true --test_opponent %s' % \
+                      '--test_matches %d --save_replay true --test_opponent %s --search_timebudget %s' % \
                       (params['basedir'], train_opp, mapname, feature, params['portfolio'], params['train_matches'], interval,
-                       alpha, epsilon, gamma, lamda, params['test_matches'], test_opp)
+                       alpha, epsilon, gamma, lamda, params['test_matches'], test_opp, budget)
     
             for rep in range(params['initial_rep'], params['final_rep']+1):
                 outstream.write('%s -i %d -f %d\n' % (command, rep, rep))
@@ -185,12 +193,12 @@ def lcurve_commands(params, outstream):
     """
     Writes the commands of the learning curve jobs to the outstream
     """
-    for mapname, interval, feature, alpha, gamma, lamda, epsilon, train_opp, test_opp in cartesian_product(params):
+    for mapname, interval, feature, alpha, gamma, lamda, epsilon, train_opp, test_opp, budget in cartesian_product(params):
             for c in range(params['checkpoint'], params['train_matches']+1, params['checkpoint']):  # +1 in second argument to ensure the last checkpoint is also picked 
                     command = './learningcurve.sh -d %s/%s/%s/f%s_p%s_rwinlossdraw/m%d/d%d/a%s_e%s_g%s_l%s ' \
-                      '--test_matches %d --checkpoint %d ' % \
+                      '--test_matches %d --checkpoint %d --search_timebudget %s' % \
                       (params['basedir'], train_opp, mapname, feature, params['portfolio'], params['train_matches'], interval,
-                       alpha, epsilon, gamma, lamda, params['lcurve_matches'], c)
+                       alpha, epsilon, gamma, lamda, params['lcurve_matches'], c, budget)
                        
                     for rep in range(params['initial_rep'], params['final_rep']+1):
                         outstream.write('%s -i %d -f %d\n' % (command, rep, rep))
