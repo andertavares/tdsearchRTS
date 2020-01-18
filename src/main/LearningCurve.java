@@ -167,7 +167,8 @@ public class LearningCurve extends Test {
     			lcurveOutput, 
     			null, //choices prefix //String.format("%s/lcurve-vs-%s_p%d_m%d", workingDir, testOpponent.getClass().getSimpleName(), testPosition, checkpoint)
     			p0, p1, visualizeTest, settings, tracePrefix, 
-    			0 // no checkpoints (we're already testing existing ones)
+    			0, // no checkpoints (we're already testing existing ones)
+    			0 // latestMatch is zero to don't interfere with remainingMatches
     		);
         }
         

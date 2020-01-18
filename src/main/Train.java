@@ -28,15 +28,16 @@ public class Train {
         
         String experimentDir = FileNameUtil.getExperimentDir(config);
        
-        int repNumber = FileNameUtil.nextAvailableRepNumber(
-    		experimentDir, "true".equals(config.getProperty("restart"))
+        // repNumber is directly specified if the experiment is to be resumed, otherwise it is the next available number
+        int repNumber = "true".equals(config.getProperty("resume")) ?  
+        	Integer.parseInt(config.getProperty("initial_rep")) : 
+        	FileNameUtil.nextAvailableRepNumber(experimentDir, "true".equals(config.getProperty("restart"))
     	);
         
         String fullDir = String.format("%s/rep%d", experimentDir, repNumber);
        		
 		// runs one repetition
 		// p0's random seed is the rep number, p1's is 5000 + repNumber 
-        // TODO restore the experiment if the user requested so
         Train experiment = new Train();
 		experiment.run(config, fullDir, repNumber, repNumber + 5000);
 		
@@ -94,13 +95,33 @@ public class Train {
 		logger.info("Starting training...");
 		boolean visualizeTraining = Boolean.parseBoolean(config.getProperty("visualize_training", "false"));
 		
+		int checkpointSkip = Integer.parseInt(config.getProperty("checkpoint"));
+		int latestMatch = 0;
+		if ("true".equals(config.getProperty("resume"))) {
+			latestMatch = FileNameUtil.latestCheckpoint(workingDir, checkpointSkip, trainMatches);
+			
+			if (latestMatch != 0) { //i.e. found some checkpoint 
+				String weightsFile = String.format("%s/weights_0-m%d.bin", workingDir, latestMatch);
+	            logger.info("Loading weights for player 0 from {}", weightsFile);
+	            player.loadWeights(weightsFile);
+	            
+	            // loads p1 weights as well if in selfplay
+	            if(trainingOpponent instanceof SarsaSearch) {
+	            	String oppWeightsFile = String.format("%s/weights_1-m%d.bin", workingDir, latestMatch);
+		            logger.info("Loading weights for player 1 from {}", oppWeightsFile);
+		    		((SarsaSearch)trainingOpponent).loadWeights(oppWeightsFile);
+	    		}
+	            
+			}
+		}
+		
 		Runner.repeatedMatches(
 			types, workingDir, 
 			trainMatches, 
 			workingDir + "/train.csv", 
 			null, //won't record choices at training time 
 			player, trainingOpponent, visualizeTraining, settings, null,
-			Integer.parseInt(config.getProperty("checkpoint"))
+			checkpointSkip, latestMatch
 		);
 		
 		logger.info("Training finished. Saving weights to " + workingDir + "/weights_0.bin (and weights_1.bin if selfplay).");

@@ -126,7 +126,8 @@ public class Test {
     			String.format("%s/test-vs-%s_p%d_b%s.csv", workingDir, testOpponent.getClass().getSimpleName(), testPosition, config.getProperty("search.timebudget")),
     			String.format("%s/test-vs-%s_b%s", workingDir, testOpponent.getClass().getSimpleName(), config.getProperty("search.timebudget")), //runner infers the test position, no need to pass in the prefix
     			p0, p1, visualizeTest, settings, tracePrefix, 
-    			0 // no checkpoints
+    			0, // no checkpoints
+    			0 //assumes no prior matches were played
     		);
         }
         

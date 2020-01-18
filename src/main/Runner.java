@@ -167,6 +167,7 @@ public class Runner {
 	 * @param gameSettings
 	 * @param tracePrefix
 	 * @param checkpoint
+	 * @param latestMatch if there were matches played before, start from there
 	 * @throws Exception
 	 */
 	public static void repeatedMatches(
@@ -175,12 +176,12 @@ public class Runner {
 			int numMatches, String summaryOutput, String choicesPrefix, 
 			AI ai1, AI ai2, 
 			boolean visualize, GameSettings gameSettings, String tracePrefix, 
-			int checkpoint
+			int checkpoint, int latestMatch
 	) throws Exception {
 		
 		Logger logger = LogManager.getRootLogger();
 		
-		for(int matchNumber = 0; matchNumber < numMatches; matchNumber++){
+		for(int matchNumber = latestMatch; matchNumber < numMatches; matchNumber++){
         	
         	//determines the trace output file. It is either null or the one calculated from the specified prefix
     		String traceOutput = null;
