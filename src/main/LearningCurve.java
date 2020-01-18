@@ -118,25 +118,26 @@ public class LearningCurve extends Test {
         for (int testPosition = 0; testPosition < 2; testPosition++) {
         	// creates the player instance and loads weights according to its position
             
-            String weightsFile = String.format("%s/weights_%d-m%d.bin", workingDir, testPosition, checkpoint);
-            logger.info("Loading weights from {}", weightsFile);
-            try {
-            	player.loadWeights(weightsFile);
-            }
-            catch (IOException ioe) {
-            	logger.error("Unable to load weights, ignoring {}.", weightsFile, ioe);
-            	continue;
-            }
-            
-            String oppWeightsFile = String.format("%s/weights_%d.bin", workingDir, 1 - testPosition);
-            logger.info("Loading planningOpponent weights from {}", oppWeightsFile);
-            try {
-            	player.loadPlanningOpponentWeights(oppWeightsFile);
-            }
-            catch (IOException ioe) {
-            	logger.error("Unable to load weights, ignoring {}.", weightsFile, ioe);
-            	continue;
-            }
+        	// loads weight files of player & planning opponent, except if testing w/o training (checkpoint is zero)
+        	String weightsFile = String.format("%s/weights_%d-m%d.bin", workingDir, testPosition, checkpoint);
+        	String oppWeightsFile = String.format("%s/weights_%d-m%d.bin", workingDir, 1 - testPosition, checkpoint);
+        	if(checkpoint != 0) { 
+        		logger.info("Loading weights from {}", weightsFile);
+                try {
+                	player.loadWeights(weightsFile);
+                }
+                catch (IOException ioe) {
+                	logger.error("Unable to load weights, ignoring {}.", weightsFile, ioe);
+                	continue;
+                }
+                logger.info("Loading planningOpponent weights from {}", oppWeightsFile);
+                try {
+                	player.loadPlanningOpponentWeights(oppWeightsFile);
+                }
+                catch (IOException ioe) {
+                	logger.error("Unable to load of opp. planner {}, using random", weightsFile, ioe);
+                }
+        	}
     		
     		// if write replay (trace) is activated, sets the prefix to write files
     		String tracePrefix = null;
