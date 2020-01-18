@@ -44,7 +44,7 @@ public class Train {
 		// writes a flag file named 'finished' to indicate that this repetition ended
 		File repFinished = new File(fullDir + "/finished");
 		if (!repFinished.createNewFile()) {
-			logger.error("Unable to create file to indicate that repetition {} has finished!", repNumber);
+			logger.error("Unable to create file to indicate that repetition {} has finished! Perhaps it already exists?", repNumber);
 		};
 	}
 	
