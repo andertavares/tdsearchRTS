@@ -98,6 +98,34 @@ public class FileNameUtil {
 				return repNum; 
 			}
 		} 
+	}
+	
+	/**
+	 * Finds the latest checkpoint saved in the workingDir
+	 * 
+	 * @param workingDir 
+	 * @param checkpointSkip
+	 * @param numMatches maximum number of matches
+	 * @return
+	 */
+	public static int latestCheckpoint(String workingDir, int checkpointSkip, int numMatches) {
+
+		Logger logger = LogManager.getRootLogger();
 		
+		// starts from the first checkpoint and tries to find the latest
+		for (int fileNum = checkpointSkip; fileNum < numMatches; fileNum += checkpointSkip) {
+			String filename = String.format("%s/weights_0-m%d.bin", workingDir, fileNum);
+			File checkpoint = new File(filename); 
+			
+			// if the current checkpoint does not exist, the previous one is the latest
+			if(!checkpoint.exists()) {
+				logger.info("Latest checkpoint: {}", fileNum - checkpointSkip);
+				return fileNum - checkpointSkip; //if there is no checkpoint, this should be zero
+			}
+		}
+		// went through all checkpoints, so this experiment is finished: return the 'final' checkpoint
+		// which corresponds to the number of matches
+		logger.info("Experiment finished! Final checkpoint: {} ", numMatches);
+		return numMatches;
 	}
 }
