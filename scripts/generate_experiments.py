@@ -41,6 +41,11 @@ def arg_parser(description='Generates commands to run experiments: train, learni
     )
 
     parser.add_argument(
+        '--specific-checkpoints', type=int, default=[], nargs='+',
+        help='Run learning curve experiments of specific checkpoints.'
+    )
+
+    parser.add_argument(
         '-i', '--initial-rep', required=True, type=int,
         help='Initial repetition'
     )
@@ -202,7 +207,10 @@ def lcurve_commands(params, outstream):
     Writes the commands of the learning curve jobs to the outstream
     """
     for mapname, interval, feature, alpha, gamma, lamda, epsilon, train_opp, test_opp, budget in cartesian_product(params):
-            for c in range(params['checkpoint'], params['train_matches']+1, params['checkpoint']):  # +1 in second argument to ensure the last checkpoint is also picked 
+    		# generates commands for specific checkpoints or all in the directory
+            checkpoints = params['specific_checkpoints'] if len(params['specific_checkpoints']) > 0 else range(params['checkpoint'], params['train_matches']+1, params['checkpoint'])
+
+            for c in checkpoints:  # +1 in second argument to ensure the last checkpoint is also picked 
                     command = './learningcurve.sh -d %s/%s/%s/f%s_p%s_rwinlossdraw/m%d/d%d/a%s_e%s_g%s_l%s ' \
                       '--test_matches %d --checkpoint %d --search_timebudget %s' % \
                       (params['basedir'], train_opp, mapname, feature, params['portfolio'], params['train_matches'], interval,
