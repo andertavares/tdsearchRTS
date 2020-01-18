@@ -112,6 +112,10 @@ def arg_parser(description='Generates commands to run experiments: train, learni
     )
 
     parser.add_argument(
+        '--resume', help='Resume previously training sessions rather than start new ones.', action='store_true',
+    )
+
+    parser.add_argument(
         '--silent', help='Does not log command to the log file', action='store_true',
     )
 
@@ -163,7 +167,7 @@ def train_commands(params, outstream):
     """
 
     # ignores test_opp and budget during unpacking
-    for mapname, interval, feature, alpha, gamma, lamda, epsilon, train_opp, *rest in cartesian_product(params):
+    for mapname, interval, feature, alpha, gamma, lamda, epsilon, train_opp, *ignored in cartesian_product(params):
             command = './train.sh -c config/%s.properties -d %s/%s --train_matches %s --decision_interval %d ' \
                       '--train_opponent %s -p %s -e %s -r winlossdraw ' \
                       '--td_alpha_initial %s --td_gamma %s --td_epsilon_initial %s --td_lambda %s ' \
@@ -172,7 +176,11 @@ def train_commands(params, outstream):
                        train_opp, params['portfolio'], feature, alpha, gamma, epsilon, lamda, params['checkpoint'])
     
             for rep in range(params['initial_rep'], params['final_rep']+1):
-                outstream.write('%s\n' % command)
+                if params['resume']:
+                    # resume experiments must explicitly indicate the rep to resume
+                    outstream.write('%s --resume true -i %d -f %d\n' % (command, rep, rep))
+                else:
+                    outstream.write('%s\n' % command)
 
 
 def test_commands(params, outstream):
