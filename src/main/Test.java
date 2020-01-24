@@ -40,11 +40,13 @@ public class Test {
 			// loads the configuration, ensuring default values are set
 			Properties repConfig = ConfigManager.loadConfig(repDir + "/settings.properties");
 			repConfig = Parameters.ensureDefaults(repConfig);
+			// FIXME must merge with command line parameters (e.g. to allow gui)!
 			
-			// puts the number of test matches, whether to save replays and search budget into the config
+			// puts the number of test matches, whether to save replays, GUI and search budget into the config
 			repConfig.setProperty("test_matches", ""+numMatches); //""+ is just to easily convert to string
 			repConfig.setProperty("save_replay", saveReplay);
 			repConfig.setProperty("search.timebudget", config.getProperty("search.timebudget"));
+			repConfig.setProperty("visualize_test", config.getProperty("visualize_test"));
 			
 			// runs one repetition
 			runTestMatches(repConfig, testOppName, repDir, initialRep, initialRep+5000, writeReplay);
@@ -83,7 +85,6 @@ public class Test {
 		logger.info(config.toString());
 		
 		boolean visualizeTest = Boolean.parseBoolean(config.getProperty("visualize_test", "false"));
-        
 		logger.info("{} write replay.", writeReplay ? "Will" : "Will not");
 		
 		SarsaSearch player = new SarsaSearch(types, randomSeedP0, config);
