@@ -175,44 +175,46 @@ public class SarsaSearch extends AI {
 		Date begin = new Date(System.currentTimeMillis());
 		Date end = begin;
 		int planningBudget = (int) (.8 * timeBudget); // 80% of budget to planning
-		long duration = 0;
+		long elapsed = 0;
 		
 		GameState state = gs.clone(); //this state will advance during the linear look-ahead search below
 		
-		while (duration < planningBudget) { // while time available
+		while (elapsed < planningBudget) { // while time available
 			// starts with a new eligibility trace vector for planning
-			LinearSarsaLambda shortTermLearner = ((LinearSarsaLambda)learner).clone();
+			LinearSarsaLambda planner = ((LinearSarsaLambda)learner).clone();
 
 			state = gs.clone();
 			
+			// go until the match ends, the time is over or the planning budget is over
+			while (!state.gameover() && state.getTime() < maxCycles && elapsed < planningBudget) { 
 
-			while (!state.gameover() && duration < planningBudget) { // go until game over or time is out TODO add maxcycles condition
-
-				// issue the action to obtain the next state, issues a self-play move for the
-				// opponent
-				String aName = shortTermLearner.act(state, player);// epsilonGreedy(state, player); // aName is a short for abstraction name
+				// requests the action from the planners (learning happens inside the act method) 
+				String aName = planner.act(state, player); // aName is a short for abstraction name
 				String opponentAName = planningOpponent.act(state, 1 - player);
-				logger.trace("Planning step, selected {}", aName);
+				logger.trace("Planning step, selected {} vs {}", aName, opponentAName);
 				
-				// must retrieve both actions and only then issue them
+				// retrieves the actions given by the abstractions
 				PlayerAction playerAction = abstractionToAction(aName, state, player);
 				PlayerAction opponentAction = abstractionToAction(opponentAName, state, 1 - player);
 				
+				// issues the actions
 				GameState nextState = state.clone();
-				
 				nextState.issueSafe(playerAction);
 				nextState.issueSafe(opponentAction);
 				ForwardModel.forward(nextState); //advances the state up to the next decision point or gameover
-				//shortTermLearner.learn(state, player, aName, reward, nextState, nextState.gameover());
+				
+				// (don't need to call planner.learn() here because it happens inside 'act'
+				
 				state = nextState;
 
 				// updates duration
 				end = new Date(System.currentTimeMillis());
-				duration = end.getTime() - begin.getTime();
+				elapsed = end.getTime() - begin.getTime();
 			}
-			// if reached a gameover, let learners finish
-			if(state.gameover()) {
-				shortTermLearner.finish(state.winner());
+
+			// if reached a gameover or timeout, let learners finish
+			if(state.gameover() || state.getTime() >= maxCycles) {
+				planner.finish(state.winner());
 				planningOpponent.finish(state.winner());
 			}
 			
