@@ -329,7 +329,7 @@ public class LinearSarsaLambda implements LearningAgent {
 	public void sarsaUpdate(GameState state, int player, String action, double reward, GameState nextState, String nextAction, boolean done) {
 		this.nextAction = nextAction; //on the next step, I must perform this action (on policy)
 		
-		logger.debug(
+		logger.trace(
 			"Player {}: <s,a,r,s'(gameover?),a',q(s',a')> = <{}, {}, {}, {}({}), {}, {}>",
 			player,
 			state.getTime(), action, 
