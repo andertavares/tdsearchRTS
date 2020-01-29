@@ -565,6 +565,25 @@ public class LinearSarsaLambda implements LearningAgent {
 	public double qValue(double[] features, String actionName) {
 		return MathHelper.dotProduct(features, weights.get(actionName));
 	}
+
+	@Override
+	public double stateValue(GameState state, int player) {
+		double[] features = featureExtractor.extractFeatures(state, player);
+		
+		// max Q:
+		double maxQ = Double.NEGATIVE_INFINITY; // because MIN_VALUE is positive =/
+		for (String candidate : weights.keySet()) {
+			double q = qValue(features, candidate);
+			if(Double.isInfinite(q) || Double.isNaN(q)) {
+				logger.warn("(+ or -) infinite qValue for action {} in state {}", candidate, features); 
+			}
+			if (q > maxQ) {
+				maxQ = q;
+			}
+		}
+		
+		return maxQ;
+	}
 	
 
 }

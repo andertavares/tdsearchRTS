@@ -43,6 +43,14 @@ public interface LearningAgent {
 	public double qValue(GameState state, int player, String action);
 	
 	/**
+	 * Returns the value of a state
+	 * @param state
+	 * @param player
+	 * @return
+	 */
+	public double stateValue(GameState state, int player);
+	
+	/**
 	 * Saves the agent knowledge to the specified path
 	 * @param path
 	 * @throws IOException
