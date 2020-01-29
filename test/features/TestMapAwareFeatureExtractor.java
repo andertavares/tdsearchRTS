@@ -1,4 +1,4 @@
-package featureExtractor;
+package features;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -53,7 +53,7 @@ class TestMapAwareFeatureExtractor {
 		UnitTypeTable types = new UnitTypeTable(UnitTypeTable.VERSION_ORIGINAL_FINETUNED, UnitTypeTable.MOVE_CONFLICT_RESOLUTION_CANCEL_BOTH); 
 		
 		// loads errorState.xml 
-		GameState state = GameState.fromXML("test/featureExtractor/errorState.xml", types);
+		GameState state = GameState.fromXML("test/features/errorState.xml", types);
 		
 		MapAware extractor = new MapAware(types, 3000, 64, 64, 50);
 		
