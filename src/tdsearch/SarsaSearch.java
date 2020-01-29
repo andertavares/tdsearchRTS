@@ -126,7 +126,11 @@ public class SarsaSearch extends AI {
 		
 		// launches planning
 		//logger.debug("v({}) for player{} before planning: {}", gs.getTime(), player, stateValue(featureExtractor.extractFeatures(gs, player)));
+		
+		logger.debug("Frame {}. Player {} would choose: {} before planning.", gs.getTime(), player, learner.act(gs, player));
 		sarsaPlanning(gs, player);
+		logger.debug("Frame {}. Player {} would choose: {} after planning.", gs.getTime(), player, learner.act(gs, player));
+		
 		//logger.debug("v({}) for player{} after planning: {}", gs.getTime(), player, stateValue(featureExtractor.extractFeatures(gs, player)));
 		
 		// performs a new choice if the interval has passed
@@ -214,14 +218,15 @@ public class SarsaSearch extends AI {
 
 			// if reached a gameover or timeout, let learners finish
 			if(state.gameover() || state.getTime() >= maxCycles) {
+				logger.debug("Planning reached gameover({}), winner: {}", state.getTime(), state.winner());
 				planner.finish(state.winner());
 				planningOpponent.finish(state.winner());
 			}
 			
 		} // end while (timeAvailable)
 		
-		logger.debug("Planning for player {} at frame #{} looked up to frame {} and took {}ms",
-			player, gs.getTime(), state.getTime(), end.getTime() - begin.getTime()
+		logger.debug("Planning for player {} at frame #{} looked up to frame {} (over={}) and took {}ms",
+			player, gs.getTime(), state.getTime(), state.gameover(), end.getTime() - begin.getTime()
 		);
 	}
 	

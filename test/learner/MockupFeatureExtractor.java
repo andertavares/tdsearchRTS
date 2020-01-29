@@ -3,6 +3,7 @@ package learner;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import features.FeatureExtractor;
 import rts.GameState;
@@ -58,7 +59,17 @@ public class MockupFeatureExtractor implements FeatureExtractor {
 			return featureVector;
 		}
 		
-		return mapping.get(s);
+		// doing a manual "get" in the HashMap because hash values are different
+		// for 'equivalent' states represented by different (e.g. cloned) objects
+		for(Entry<GameState, double[]> entry : mapping.entrySet()) {
+			if(entry.getKey().equals(s)) {
+				return entry.getValue();
+			}
+		}
+		
+		// should not get here...
+		System.out.println("Unable to find an entry for " + s + ". Prepare for error!");
+		return null;	
 		
 	}
 

@@ -339,10 +339,28 @@ public class LinearSarsaLambda implements LearningAgent {
 			done ? 0 : qValue(nextState, player, nextAction)
 		);
 		
-		//delta = r + gammna * Q(s',a') - Q(s,a)
+		if(done) {
+		logger.debug(
+				"Player {}: <s,a,r,s'(gameover?),a',q(s',a')> = <{}, {}, {}, {}({}), {}, {}>",
+				player,
+				state.getTime(), action, 
+				reward, 
+				nextState == null ? "null" : nextState.getTime(), 
+				done, nextAction,
+				done ? 0 : qValue(nextState, player, nextAction)
+			);
+		}
+		
+		//delta = r + gamma * Q(s',a') - Q(s,a)
 		double tdError = tdTarget(reward, nextState, player, nextAction, done) - qValue(state, player, action);
 
+		if(done) {
+			logger.debug("weights before: {}", weights.get(action));
+		}
 		tdLambdaUpdateRule(state, player, action, tdError);
+		if(done) {
+			logger.debug("weights after: {}", weights.get(action));
+		}
 	}
 	
 	/**
