@@ -197,17 +197,17 @@ public class SarsaSearch extends AI {
 		int planningBudget = (int) (.8 * timeBudget); // 80% of budget to planning
 		long elapsed = 0;
 		
-		// if planning state is null, I'll start planning from the received state
-		// otherwise I'll resume from the previously saved planningState
-		if (planningState == null) {
-			logger.debug("(Re)starting planning from state {}", gs.getTime());
-			planningState = gs.clone(); 
-		}
-		else {
-			logger.debug("Resuming previous planning from state {}", planningState.getTime() );
-		}
-		
 		while (elapsed < planningBudget) { // while time available
+			
+			// if planning state is null, I'll start planning from the received state
+			// otherwise I'll resume from the previously saved planningState
+			if (planningState == null) {
+				logger.debug("(Re)starting planning from state {}", gs.getTime());
+				planningState = gs.clone(); 
+			}
+			else {
+				logger.debug("Resuming previous planning from state {}", planningState.getTime() );
+			}
 
 			// go until the match ends, the time is over or the planning budget is over
 			while (!planningState.gameover() && planningState.getTime() < maxCycles && elapsed < planningBudget) { 
@@ -253,8 +253,10 @@ public class SarsaSearch extends AI {
 			
 		} // end while (timeAvailable)
 		
-		logger.debug("Planning for player {} at frame #{} looked up to frame {} (over={}) and took {}ms",
-			player, gs.getTime(), planningState.getTime(), planningState.gameover(), end.getTime() - begin.getTime()
+		logger.debug("Planning for player {} at frame #{} looked up to frame {} and took {}ms",
+			player, gs.getTime(), 
+			planningState == null ? "gameover" : planningState.getTime(), 
+			end.getTime() - begin.getTime()
 		);
 	}
 	
