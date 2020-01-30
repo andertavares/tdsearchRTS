@@ -10,6 +10,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Random;
 
@@ -175,12 +176,11 @@ public class LinearSarsaLambda implements LearningAgent {
     	
 	}
 
-    @Override
     /**
-     * Returns a SHALLOW copy of this object, except for the reset eligiblities and 
+     * Returns a clone of this object, except for the reset eligiblities and 
      * random number generator (which is overkill to clone: https://stackoverflow.com/a/54156572/1251716)
      */
-    public LinearSarsaLambda clone() {
+    public LinearSarsaLambda cloneExceptEligibility() {
     	LinearSarsaLambda copy = new LinearSarsaLambda();
     	
     	copy.rewards = this.rewards;
@@ -192,7 +192,8 @@ public class LinearSarsaLambda implements LearningAgent {
     	copy.lambda = this.lambda;
     	copy.random = new Random();
     	copy.initialize();
- 		copy.weights = this.weights;	//weights will be shared...
+    	
+    	copy.copyWeights(this.getWeights());
  		
  		return copy;
     }
@@ -202,7 +203,7 @@ public class LinearSarsaLambda implements LearningAgent {
      * weights, eligibility & random number generator
      * (which is overkill to clone: https://stackoverflow.com/a/54156572/1251716)
      */
-    public LinearSarsaLambda almostClone() {
+    public LinearSarsaLambda cloneExceptWeightsAndEligibility() {
     	LinearSarsaLambda copy = new LinearSarsaLambda();
     	
     	copy.rewards = this.rewards;
@@ -583,6 +584,20 @@ public class LinearSarsaLambda implements LearningAgent {
 		}
 		
 		return maxQ;
+	}
+
+	/**
+	 * Copies the values of the weights (differently from {@link #setWeights(Map)}) 
+	 * that only references the given map.
+	 * @param from
+	 */
+	public void copyWeights(Map<String, double[]> from) {
+		
+    	for(Entry<String, double[]> entry: from.entrySet()) {
+    		// not the most memory-efficient...
+    		weights.put(entry.getKey(), Arrays.copyOf(entry.getValue(), entry.getValue().length));
+    	}
+		
 	}
 	
 
