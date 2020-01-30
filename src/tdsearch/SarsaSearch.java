@@ -209,31 +209,39 @@ public class SarsaSearch extends AI {
 				logger.debug("Resuming previous planning from state {}", planningState.getTime() );
 			}
 
+			
+			int skippedFrames = 0; //counts the number of skipped frames
+			//PlayerAction playerAction = null, oppAction = null; //stores the game action of the player & its opponent
+			
 			// go until the match ends, the time is over or the planning budget is over
 			while (!planningState.gameover() && planningState.getTime() < maxCycles && elapsed < planningBudget) { 
 
 				// requests the action from the planners (learning happens inside the act method) 
-				String aName = planner.act(planningState, player); // aName is a short for abstraction name
-				String opponentAName = planningOpponent.act(planningState, 1 - player);
-				logger.trace("Planning step, selected {} vs {}", aName, opponentAName);
+				String actionName = planner.act(planningState, player); // aName is a short for abstraction name
+				String oppActionName = planningOpponent.act(planningState, 1 - player);
+				logger.trace("Planning step, selected {} vs {}", actionName, oppActionName);
 				
-				// retrieves the actions given by the abstractions
-				PlayerAction playerAction = abstractionToAction(aName, planningState, player);
-				PlayerAction opponentAction = abstractionToAction(opponentAName, planningState, 1 - player);
+				// issues the actions & forwards the state
 				
-				// issues the actions
-				GameState nextState = planningState.clone();
-				nextState.issueSafe(playerAction);
-				nextState.issueSafe(opponentAction);
-				ForwardModel.forward(nextState); //advances the state up to the next decision point or gameover
-				
-				// (don't need to call planner.learn() here because it happens inside 'act'
-				
-				planningState = nextState;
-
-				// updates duration
-				end = new Date(System.currentTimeMillis());
-				elapsed = end.getTime() - begin.getTime();
+				while(skippedFrames < decisionInterval && elapsed < planningBudget) {
+					
+					// retrieves the actions given by the abstractions
+					PlayerAction playerAction = abstractionToAction(actionName, planningState, player);
+					PlayerAction oppAction = abstractionToAction(oppActionName, planningState, 1 - player);
+					
+					GameState nextState = planningState.clone();
+					nextState.issueSafe(playerAction);
+					nextState.issueSafe(oppAction);
+					skippedFrames += ForwardModel.forward(nextState); //advances the state up to the next decision point or gameover
+					// (don't need to call planner.learn() here because it happens inside 'act'
+					planningState = nextState;
+	
+					// updates duration
+					end = new Date(System.currentTimeMillis());
+					elapsed = end.getTime() - begin.getTime();
+				}
+				logger.debug("Skipped {} frames. Decision interval={}", skippedFrames, decisionInterval);
+				skippedFrames = 0;
 			}
 
 			// if reached a gameover or timeout, let learners finish & prepare planners for the new initial state
