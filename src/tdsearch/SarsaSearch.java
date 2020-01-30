@@ -200,7 +200,11 @@ public class SarsaSearch extends AI {
 		// if planning state is null, I'll start planning from the received state
 		// otherwise I'll resume from the previously saved planningState
 		if (planningState == null) {
+			logger.debug("(Re)starting planning from state {}", gs.getTime());
 			planningState = gs.clone(); 
+		}
+		else {
+			logger.debug("Resuming previous planning from state {}", planningState.getTime() );
 		}
 		
 		while (elapsed < planningBudget) { // while time available
@@ -232,7 +236,7 @@ public class SarsaSearch extends AI {
 				elapsed = end.getTime() - begin.getTime();
 			}
 
-			// if reached a gameover or timeout, let learners finish
+			// if reached a gameover or timeout, let learners finish & prepare planners for the new initial state
 			if(planningState.gameover() || planningState.getTime() >= maxCycles) {
 				logger.debug("Planning reached gameover({}), winner: {}", planningState.getTime(), planningState.winner());
 				planner.finish(planningState.winner());
@@ -244,6 +248,7 @@ public class SarsaSearch extends AI {
 				// resets eligibility of the planners for the next iteration
 				planner.clearEligibility();	
 				planningOpponent.clearEligibility();
+				planningState = null;	//resets the planning state to restart planning from the received game state
 			}
 			
 		} // end while (timeAvailable)
