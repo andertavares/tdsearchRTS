@@ -66,12 +66,27 @@ public class SarsaSearch extends AI {
 
 	protected Logger logger;
 
-	LearningAgent learner;
+	/**
+	 * Learning agent for offline training. It is also the ultimate
+	 * decision-maker during matches
+	 */
+	LinearSarsaLambda learner;
+	
+	/**
+	 * The planning agent, called to improve the policy during real matches.
+	 */
+	LinearSarsaLambda planner;
 	
 	/**
 	 * Planning counterpart, to generate the actions of the opponent
 	 */
-	LearningAgent planningOpponent; 
+	LinearSarsaLambda planningOpponent; 
+	
+	/**
+	 * Stores the current game state of planning
+	 * (in case planning is split between frames)
+	 */
+	GameState planningState;
 	
 	/**
 	 * Creates a SarsaSearch object by specifying all parameters
@@ -82,9 +97,10 @@ public class SarsaSearch extends AI {
 	 * @param timeBudget
 	 * @param decisionInterval
 	 */
-	public SarsaSearch(UnitTypeTable types, LearningAgent learner, Map<String, AI> portfolio, int maxCycles, int timeBudget, int decisionInterval) {
-		this.learner = learner;
-		this.planningOpponent = ((LinearSarsaLambda)learner).almostClone();
+	private SarsaSearch(UnitTypeTable types, LearningAgent learner, Map<String, AI> portfolio, int maxCycles, int timeBudget, int decisionInterval) {
+		this.learner = (LinearSarsaLambda)learner;
+		this.planner = this.learner.cloneExceptEligibility();
+		this.planningOpponent = this.planner.cloneExceptEligibility();
 		this.maxCycles = maxCycles;
 		this.abstractions = portfolio;
 		this.timeBudget = timeBudget;
@@ -181,35 +197,35 @@ public class SarsaSearch extends AI {
 		int planningBudget = (int) (.8 * timeBudget); // 80% of budget to planning
 		long elapsed = 0;
 		
-		GameState state = gs.clone(); //this state will advance during the linear look-ahead search below
+		// if planning state is null, I'll start planning from the received state
+		// otherwise I'll resume from the previously saved planningState
+		if (planningState == null) {
+			planningState = gs.clone(); 
+		}
 		
 		while (elapsed < planningBudget) { // while time available
-			// starts with a new eligibility trace vector for planning
-			LinearSarsaLambda planner = ((LinearSarsaLambda)learner).clone();
 
-			state = gs.clone();
-			
 			// go until the match ends, the time is over or the planning budget is over
-			while (!state.gameover() && state.getTime() < maxCycles && elapsed < planningBudget) { 
+			while (!planningState.gameover() && planningState.getTime() < maxCycles && elapsed < planningBudget) { 
 
 				// requests the action from the planners (learning happens inside the act method) 
-				String aName = planner.act(state, player); // aName is a short for abstraction name
-				String opponentAName = planningOpponent.act(state, 1 - player);
+				String aName = planner.act(planningState, player); // aName is a short for abstraction name
+				String opponentAName = planningOpponent.act(planningState, 1 - player);
 				logger.trace("Planning step, selected {} vs {}", aName, opponentAName);
 				
 				// retrieves the actions given by the abstractions
-				PlayerAction playerAction = abstractionToAction(aName, state, player);
-				PlayerAction opponentAction = abstractionToAction(opponentAName, state, 1 - player);
+				PlayerAction playerAction = abstractionToAction(aName, planningState, player);
+				PlayerAction opponentAction = abstractionToAction(opponentAName, planningState, 1 - player);
 				
 				// issues the actions
-				GameState nextState = state.clone();
+				GameState nextState = planningState.clone();
 				nextState.issueSafe(playerAction);
 				nextState.issueSafe(opponentAction);
 				ForwardModel.forward(nextState); //advances the state up to the next decision point or gameover
 				
 				// (don't need to call planner.learn() here because it happens inside 'act'
 				
-				state = nextState;
+				planningState = nextState;
 
 				// updates duration
 				end = new Date(System.currentTimeMillis());
@@ -217,16 +233,23 @@ public class SarsaSearch extends AI {
 			}
 
 			// if reached a gameover or timeout, let learners finish
-			if(state.gameover() || state.getTime() >= maxCycles) {
-				logger.debug("Planning reached gameover({}), winner: {}", state.getTime(), state.winner());
-				planner.finish(state.winner());
-				planningOpponent.finish(state.winner());
+			if(planningState.gameover() || planningState.getTime() >= maxCycles) {
+				logger.debug("Planning reached gameover({}), winner: {}", planningState.getTime(), planningState.winner());
+				planner.finish(planningState.winner());
+				planningOpponent.finish(planningState.winner());
+				
+				//transfers the weights from the planner to the learner
+				learner.copyWeights(planner.getWeights()); 
+				
+				// resets eligibility of the planners for the next iteration
+				planner.clearEligibility();	
+				planningOpponent.clearEligibility();
 			}
 			
 		} // end while (timeAvailable)
 		
 		logger.debug("Planning for player {} at frame #{} looked up to frame {} (over={}) and took {}ms",
-			player, gs.getTime(), state.getTime(), state.gameover(), end.getTime() - begin.getTime()
+			player, gs.getTime(), planningState.getTime(), planningState.gameover(), end.getTime() - begin.getTime()
 		);
 	}
 	
