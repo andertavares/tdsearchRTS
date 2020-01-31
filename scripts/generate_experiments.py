@@ -101,6 +101,11 @@ def arg_parser(description='Generates commands to run experiments: train, learni
         # default=[0.0, 0.05, 0.1, 0.15, 0.2, 0.3]
     )
 
+    parser.add_argument(
+        '--other', help='A string with as many other parameters as you want', 
+        default=''
+    )
+
     '''parser.add_argument(
         '-s', '--strategies', help='List of sets of strategies (each set is a comma-separated string without spaces)',
         nargs='+',
@@ -176,9 +181,10 @@ def train_commands(params, outstream):
             command = './train.sh -c config/%s.properties -d %s/%s --train_matches %s --decision_interval %d ' \
                       '--train_opponent %s -p %s -e %s -r winlossdraw ' \
                       '--td_alpha_initial %s --td_gamma %s --td_epsilon_initial %s --td_lambda %s ' \
-                      '--checkpoint %d' % \
+                      '--checkpoint %d %s' % \
                       (mapname, params['basedir'], train_opp, params['train_matches'], interval,
-                       train_opp, params['portfolio'], feature, alpha, gamma, epsilon, lamda, params['checkpoint'])
+                       train_opp, params['portfolio'], feature, alpha, gamma, epsilon, lamda, 
+                       params['checkpoint'], params['other'])
     
             for rep in range(params['initial_rep'], params['final_rep']+1):
                 if params['resume']:
@@ -194,9 +200,9 @@ def test_commands(params, outstream):
     """
     for mapname, interval, feature, alpha, gamma, lamda, epsilon, train_opp, test_opp, budget in cartesian_product(params):
             command = './test.sh -d %s/%s/%s/f%s_p%s_rwinlossdraw/m%d/d%d/a%s_e%s_g%s_l%s ' \
-                      '--test_matches %d --save_replay true --test_opponent %s --search_timebudget %s' % \
+                      '--test_matches %d --save_replay true --test_opponent %s --search_timebudget %s %s' % \
                       (params['basedir'], train_opp, mapname, feature, params['portfolio'], params['train_matches'], interval,
-                       alpha, epsilon, gamma, lamda, params['test_matches'], test_opp, budget)
+                       alpha, epsilon, gamma, lamda, params['test_matches'], test_opp, budget, params['other'])
     
             for rep in range(params['initial_rep'], params['final_rep']+1):
                 outstream.write('%s -i %d -f %d\n' % (command, rep, rep))
@@ -212,9 +218,9 @@ def lcurve_commands(params, outstream):
 
             for c in checkpoints:  # +1 in second argument to ensure the last checkpoint is also picked 
                     command = './learningcurve.sh -d %s/%s/%s/f%s_p%s_rwinlossdraw/m%d/d%d/a%s_e%s_g%s_l%s ' \
-                      '--test_matches %d --checkpoint %d --search_timebudget %s' % \
+                      '--test_matches %d --checkpoint %d --search_timebudget %s %s' % \
                       (params['basedir'], train_opp, mapname, feature, params['portfolio'], params['train_matches'], interval,
-                       alpha, epsilon, gamma, lamda, params['lcurve_matches'], c, budget)
+                       alpha, epsilon, gamma, lamda, params['lcurve_matches'], c, budget, params['other'])
                        
                     for rep in range(params['initial_rep'], params['final_rep']+1):
                         outstream.write('%s -i %d -f %d\n' % (command, rep, rep))
