@@ -91,9 +91,9 @@ public class LearningCurve extends Test {
 		
 		int testMatches = Integer.parseInt(config.getProperty("test_matches"));
 		
-		// voids learning and exploration
-		//config.setProperty("td.alpha.initial", "0");
-		//config.setProperty("td.epsilon.initial", "0");
+		// voids the learning and exploration rates
+		config.setProperty("td.alpha.initial", "0");
+		config.setProperty("td.epsilon.initial", "0");
 		
         // loads microRTS game settings
      	GameSettings settings = GameSettings.loadFromConfig(config);
@@ -111,10 +111,9 @@ public class LearningCurve extends Test {
         
 		logger.info("{} write replay.", writeReplay ? "Will" : "Will not");
 		
-		// creates the planners for use with the player
+		// creates the planners and the player that uses them
 		LinearSarsaLambda planner = LinearSarsaLambda.newPlanningAgent(types, config);
 		LinearSarsaLambda planningOpponent = LinearSarsaLambda.newPlanningAgent(types, config);
-		
 		SarsaSearch player = new SarsaSearch(types, randomSeedP0, config, planner, planningOpponent);
 		
 		AI testOpponent = AILoader.loadAI(testPartnerName, types);

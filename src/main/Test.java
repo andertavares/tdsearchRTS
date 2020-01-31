@@ -72,9 +72,9 @@ public class Test {
 		
 		int testMatches = Integer.parseInt(config.getProperty("test_matches"));
 		
-		// voids learning and exploration
-		//config.setProperty("td.alpha.initial", "0");
-		//config.setProperty("td.epsilon.initial", "0");
+		// voids the learning and exploration rates
+		config.setProperty("td.alpha.initial", "0");
+		config.setProperty("td.epsilon.initial", "0");
 		
         // loads microRTS game settings
      	GameSettings settings = GameSettings.loadFromConfig(config);
@@ -88,7 +88,7 @@ public class Test {
 		boolean visualizeTest = Boolean.parseBoolean(config.getProperty("visualize_test", "false"));
 		logger.info("{} write replay.", writeReplay ? "Will" : "Will not");
 		
-		// creates the planners and the player with them
+		// creates the planners and the player that uses them
 		LinearSarsaLambda planner = LinearSarsaLambda.newPlanningAgent(types, config);
 		LinearSarsaLambda planningOpponent = LinearSarsaLambda.newPlanningAgent(types, config);
 		SarsaSearch player = new SarsaSearch(types, randomSeedP0, config, planner, planningOpponent);
