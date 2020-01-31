@@ -13,6 +13,7 @@ import org.apache.logging.log4j.Logger;
 import ai.core.AI;
 import config.ConfigManager;
 import config.Parameters;
+import learning.LinearSarsaLambda;
 import rts.GameSettings;
 import rts.units.UnitTypeTable;
 import tdsearch.SarsaSearch;
@@ -110,7 +111,11 @@ public class LearningCurve extends Test {
         
 		logger.info("{} write replay.", writeReplay ? "Will" : "Will not");
 		
-		SarsaSearch player = new SarsaSearch(types, randomSeedP0, config);
+		// creates the planners for use with the player
+		LinearSarsaLambda planner = LinearSarsaLambda.newPlanningAgent(types, config);
+		LinearSarsaLambda planningOpponent = LinearSarsaLambda.newPlanningAgent(types, config);
+		
+		SarsaSearch player = new SarsaSearch(types, randomSeedP0, config, planner, planningOpponent);
 		
 		AI testOpponent = AILoader.loadAI(testPartnerName, types);
 		
@@ -125,6 +130,7 @@ public class LearningCurve extends Test {
         		logger.info("Loading weights from {}", weightsFile);
                 try {
                 	player.loadWeights(weightsFile);
+                	planner.load(weightsFile);
                 }
                 catch (IOException ioe) {
                 	logger.error("Unable to load weights, ignoring {}.", weightsFile, ioe);
@@ -132,7 +138,7 @@ public class LearningCurve extends Test {
                 }
                 logger.info("Loading planningOpponent weights from {}", oppWeightsFile);
                 try {
-                	player.loadPlanningOpponentWeights(oppWeightsFile);
+                	planningOpponent.load(oppWeightsFile);
                 }
                 catch (IOException ioe) {
                 	logger.error("Unable to load of opp. planner {}, using random", weightsFile, ioe);

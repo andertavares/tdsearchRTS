@@ -102,6 +102,22 @@ public class LinearSarsaLambda implements LearningAgent {
     private LinearSarsaLambda() {};
     
     /**
+     * Returns a LinearSarsaLambda object configured with alpha, epsilon and
+     * lambda from planning_* configuration parameters
+     * @param types
+     * @param config
+     * @return
+     */
+    public static LinearSarsaLambda newPlanningAgent(UnitTypeTable types, Properties config) {
+    	LinearSarsaLambda planningAgent = new LinearSarsaLambda(types, config);
+    	planningAgent.alpha = Double.parseDouble(config.getProperty("planning_alpha"));
+    	planningAgent.epsilon = Double.parseDouble(config.getProperty("planning_epsilon"));
+    	planningAgent.lambda = Double.parseDouble(config.getProperty("planning_lambda"));
+    	
+    	return planningAgent;
+    }
+    
+    /**
      * Creates a LinearSarsaLambda agent with all parameters specified via config file.
      * Random seed defaults to 0 if not specified in config.
      * @param types

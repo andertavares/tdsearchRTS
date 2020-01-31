@@ -84,6 +84,11 @@ public class Parameters {
         options.addOption(new Option(null, "td_epsilon_initial", true, "Initial exploration rate (held constant throughout experiment by now)"));
         options.addOption(new Option(null, "td_gamma", true, "Discount factor"));
         options.addOption(new Option(null, "td_lambda", true, "Eligibility trace parameter"));
+        
+        options.addOption(new Option(null, "planning_lambda", true, "Eligibility trace for planning"));
+        options.addOption(new Option(null, "planning_alpha", true, "Learning rate for planning"));
+        options.addOption(new Option(null, "planning_epsilon", true, "Exploration factor for planning"));
+        
         options.addOption(new Option(null, "decision_interval", true, "Number of frames to decision_interval a selection (this will be the interval between decision points)."));
 		options.addOption(new Option(null, "save_replay", true, "(true or false) Generate replay (trace) files ."));
 		options.addOption(new Option(null, "test_matches", true, "Number of test matches."));
@@ -110,6 +115,7 @@ public class Parameters {
 				"working_dir", "initial_rep", "final_rep", "train_opponent", "test_opponent", 
 				"test_matches", "rewards", "features", "train_matches", "portfolio",
 				"save_replay", "learner", 
+				"planning_alpha", "planning_epsilon", "planning_lambda",
 				//"test_position", 
 				"decision_interval", "restart", "checkpoint", "resume"
 		);
@@ -148,22 +154,6 @@ public class Parameters {
 	 */
 	private static void parseSpecialParameters(Properties prop) {
 		Logger logger = LogManager.getRootLogger();
-		
-		// the strategies parameters requires a special treatment if the user specified some key words
-		/*String csvStrategies = null;
-		if("all".equals(prop.getProperty("strategies"))) {
-			csvStrategies = "CC,CE,FC,FE,AV-,AV+,HP-,HP+,R,M"; 
-		}
-		
-		if("basic".equals(prop.getProperty("strategies"))) {
-			csvStrategies = "CE,FE,HP-,HP+,AV+"; 
-		}
-		
-		if(csvStrategies != null) { // detects and effects the change in the parameter
-			logger.info("Parameter 'strategies' set to '{}'", csvStrategies);
-			prop.setProperty("strategies", csvStrategies);
-		}*/
-		
 		
 		// the portfolio parameter requires a special treatment:
 		// retrieves the portfolio from prop file, with the default as basic8 (4 rush, 4 offense)
@@ -233,6 +223,10 @@ public class Parameters {
 			put("learner", "sarsa");
 			put("td.alpha.initial",  "0.01");
 			put("td.lambda",  "0.1");
+			
+			put("planning_alpha",  "0");
+			put("planning_epsilon",  "0");
+			put("planning_lambda",  "0");
 			
 			put("decision_interval", "1");
 			put("checkpoint", "100");

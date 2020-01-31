@@ -8,6 +8,7 @@ import org.apache.logging.log4j.Logger;
 import ai.core.AI;
 import config.ConfigManager;
 import config.Parameters;
+import learning.LinearSarsaLambda;
 import rts.GameSettings;
 import rts.units.UnitTypeTable;
 import tdsearch.SarsaSearch;
@@ -87,7 +88,10 @@ public class Test {
 		boolean visualizeTest = Boolean.parseBoolean(config.getProperty("visualize_test", "false"));
 		logger.info("{} write replay.", writeReplay ? "Will" : "Will not");
 		
-		SarsaSearch player = new SarsaSearch(types, randomSeedP0, config);
+		// creates the planners and the player with them
+		LinearSarsaLambda planner = LinearSarsaLambda.newPlanningAgent(types, config);
+		LinearSarsaLambda planningOpponent = LinearSarsaLambda.newPlanningAgent(types, config);
+		SarsaSearch player = new SarsaSearch(types, randomSeedP0, config, planner, planningOpponent);
 		
 		AI testOpponent = AILoader.loadAI(testPartnerName, types);
 		
@@ -98,10 +102,11 @@ public class Test {
             String weightsFile = String.format("%s/weights_%d.bin", workingDir, testPosition);
             logger.info("Loading weights from {}", weightsFile);
             player.loadWeights(weightsFile);
+            planner.load(weightsFile);
             
             String oppWeightsFile = String.format("%s/weights_%d.bin", workingDir, 1 - testPosition);
             logger.info("Loading planningOpponent weights from {}", oppWeightsFile);
-    		player.loadPlanningOpponentWeights(oppWeightsFile);
+            planningOpponent.load(oppWeightsFile);
     		
     		// if write replay (trace) is activated, sets the prefix to write files
     		String tracePrefix = null;

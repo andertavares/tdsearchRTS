@@ -89,30 +89,38 @@ public class SarsaSearch extends AI {
 	GameState planningState;
 	
 	/**
-	 * Creates a SarsaSearch object by specifying all parameters
+	 * * Creates a SarsaSearch object by specifying all parameters
 	 * @param types
 	 * @param learner
 	 * @param portfolio
 	 * @param maxCycles
 	 * @param timeBudget
 	 * @param decisionInterval
+	 * @param planningAlpha
+	 * @param planningEpsilon
 	 */
-	private SarsaSearch(UnitTypeTable types, LearningAgent learner, Map<String, AI> portfolio, int maxCycles, int timeBudget, int decisionInterval) {
+	private SarsaSearch(UnitTypeTable types, LearningAgent learner, Map<String, AI> portfolio, 
+			int maxCycles, int timeBudget, int decisionInterval, LinearSarsaLambda planner, 
+			LinearSarsaLambda planningOpponent ) {
 		this.learner = (LinearSarsaLambda)learner;
-		this.planner = this.learner.cloneExceptEligibility();
-		this.planningOpponent = this.planner.cloneExceptEligibility();
 		this.maxCycles = maxCycles;
 		this.abstractions = portfolio;
 		this.timeBudget = timeBudget;
 		this.decisionInterval = decisionInterval;
-
+		this.planner = planner;
+		this.planningOpponent = planningOpponent;
+		
+		this.planner = planner;
+		this.planningOpponent = planningOpponent;
+		
 		choices = new ArrayList<>();
 		logger = LogManager.getRootLogger();
 	}
 			
 	/**
 	 * Instantiates SarsaSearch with parameters from a config object
-	 * 
+	 * This is ideal for training, as the planners are initialized with the 
+	 * same parameters as the learner, and also with random weights
 	 * @param types
 	 * @param randomSeed
 	 * @param config
@@ -124,8 +132,29 @@ public class SarsaSearch extends AI {
 			PortfolioManager.getPortfolio(types, Arrays.asList(config.getProperty("portfolio").split(","))),
 			Integer.parseInt(config.getProperty("max_cycles")),
 			Integer.parseInt(config.getProperty("search.timebudget")),
-			Integer.parseInt(config.getProperty("decision_interval"))
+			Integer.parseInt(config.getProperty("decision_interval")),
+			new LinearSarsaLambda(types, config),
+			new LinearSarsaLambda(types, config)
 		);
+	}
+
+	/**
+	 * Instantiates SarsaSearch with parameters from a config object, but with 
+	 * specific planners. 
+	 * This is ideal for testing, as the planners would have been previously initialized
+	 * and loaded with the proper hyperparameters and weights 
+	 * @param types
+	 * @param randomSeed
+	 * @param config
+	 * @param planner
+	 * @param planningOpponent
+	 */
+	public SarsaSearch(UnitTypeTable types, int randomSeed, Properties config, 
+			LinearSarsaLambda planner, LinearSarsaLambda planningOpponent) {
+		
+		this(types, randomSeed, config);
+		this.planner = planner;
+		this.planningOpponent = planningOpponent;
 	}
 	
 
@@ -343,16 +372,6 @@ public class SarsaSearch extends AI {
 	 */
 	public void loadWeights(String path) throws IOException {
 		learner.load(path);
-	}
-	
-	/**
-	 * Loads the weights for the planning adversary from a binary file
-	 * 
-	 * @param path
-	 * @throws IOException
-	 */
-	public void loadPlanningOpponentWeights(String path) throws IOException {
-		planningOpponent.load(path);
 	}
 	
 	@Override
