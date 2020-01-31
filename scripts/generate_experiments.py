@@ -218,9 +218,9 @@ def lcurve_commands(params, outstream):
 
             for c in checkpoints:  # +1 in second argument to ensure the last checkpoint is also picked 
                     command = './learningcurve.sh -d %s/%s/%s/f%s_p%s_rwinlossdraw/m%d/d%d/a%s_e%s_g%s_l%s ' \
-                      '--test_matches %d --checkpoint %d --search_timebudget %s %s' % \
+                      '--test_matches %d --checkpoint %d --test_opponent %s --search_timebudget %s %s' % \
                       (params['basedir'], train_opp, mapname, feature, params['portfolio'], params['train_matches'], interval,
-                       alpha, epsilon, gamma, lamda, params['lcurve_matches'], c, budget, params['other'])
+                       alpha, epsilon, gamma, lamda, params['lcurve_matches'], c, test_opp, budget, params['other'])
                        
                     for rep in range(params['initial_rep'], params['final_rep']+1):
                         outstream.write('%s -i %d -f %d\n' % (command, rep, rep))
