@@ -9,7 +9,8 @@ import collections
 from pprint import pprint
 
 
-def produce_results(basedir, raw_outstream=sys.stdout, avg_outstream=sys.stdout, sep=',', test_opp='A3N', search_timebudget=None):
+def produce_results(basedir, raw_outstream=sys.stdout, avg_outstream=sys.stdout, sep=',', 
+    test_opp='A3N', file_prefix='test-vs-', search_timebudget=None):
     """
     Traverses the base dir all the way down to each experiment, collecting the results and writing csv 
     files with raw results of the repetitions of each parameter configuration and an average of all repetitions.
@@ -19,6 +20,7 @@ def produce_results(basedir, raw_outstream=sys.stdout, avg_outstream=sys.stdout,
     :param avg_outstream:
     :param sep:
     :param test_opp: collects statistics about a specific test opponent
+    :param file_prefix: specify if the csv files to be analysed have a different beginning
     :search_timebudget: collects statistics of tests on a specific budget for the search algorithm. 
     Defaults to None to maintain compatibility with older versions that generated files without the budget.
     """
@@ -63,9 +65,9 @@ def produce_results(basedir, raw_outstream=sys.stdout, avg_outstream=sys.stdout,
         results = dict() # player_index -> statistics
         for test_pos in [0, 1]:
 
-            test_file = os.path.join(rep_dir, 'test-vs-%s_p%d.csv' % (test_opp, test_pos))
+            test_file = os.path.join(rep_dir, '%s%s_p%d.csv' % (file_prefix, test_opp, test_pos))
             if search_timebudget is not None:
-                test_file = os.path.join(rep_dir, 'test-vs-%s_p%d_b%d.csv' % (test_opp, test_pos, search_timebudget))
+                test_file = os.path.join(rep_dir, '%s%s_p%d_b%d.csv' % (file_prefix, test_opp, test_pos, search_timebudget))
             # print(test_file)
 
             if not os.path.exists(test_file):
@@ -100,7 +102,7 @@ def produce_results(basedir, raw_outstream=sys.stdout, avg_outstream=sys.stdout,
         ))
 
 
-def main(basedir, raw_output='raw.csv', avg_output='avg.csv', sep=',', test_opp='A3N', search_timebudget=None):
+def main(basedir, raw_output='raw.csv', avg_output='avg.csv', sep=',', test_opp='A3N', file_prefix='test-vs-', search_timebudget=None):
     """
     Generates a .csv file by parsing all experiment data found by recursively traversing basedir.
 
@@ -115,6 +117,7 @@ def main(basedir, raw_output='raw.csv', avg_output='avg.csv', sep=',', test_opp=
     :param avg_output: file to write the average results across repetitions.
     :param sep: separator of the .csv file
     :param test_opp: test opponent
+    :param file_prefix: specify if the csv files to be analysed have a different beginning
     :param search_timebudget: time budget of the search algorithm. (defaults to None to maintain compatibility with versions that generated output files without the budget.)
     :return:
     """
@@ -122,7 +125,7 @@ def main(basedir, raw_output='raw.csv', avg_output='avg.csv', sep=',', test_opp=
     raw_outstream = open(os.path.join(basedir, raw_output), 'w')
     avg_outstream = open(os.path.join(basedir, avg_output), 'w')
 
-    produce_results(basedir, raw_outstream, avg_outstream, sep, test_opp, search_timebudget)
+    produce_results(basedir, raw_outstream, avg_outstream, sep, test_opp, file_prefix, search_timebudget)
 
     raw_outstream.close()
     avg_outstream.close()
