@@ -4,6 +4,7 @@ import sys
 import fire
 import tarfile
 import collections
+from tqdm import tqdm
 
 
 def pack_checkpoints(basedir):
@@ -25,7 +26,7 @@ def pack_checkpoints(basedir):
                 # packs the checkpoints in a .tar.gz
                 if len(checkpoints) > 0:
                     with tarfile.open(os.path.join(root, 'checkpoints.tar.gz'), "w:gz") as tar:
-                        for c in checkpoints:
+                        for c in tqdm(checkpoints):
                             # arcname=c prevents the creation of a chain of subdirs
                             tar.add(os.path.join(root,c), arcname=c) 
                             os.unlink(os.path.join(root,c))
