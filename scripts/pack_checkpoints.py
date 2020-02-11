@@ -30,7 +30,7 @@ def pack_checkpoints(basedir):
                             # arcname=c prevents the creation of a chain of subdirs
                             tar.add(os.path.join(root,c), arcname=c) 
                     # removes all checkpoint files after packing
-                    os.unlink([os.path.join(root,c) for c in checkpoints])
+                    map(os.unlink, [os.path.join(root,c) for c in checkpoints])
                 
 
 if __name__ == '__main__':
