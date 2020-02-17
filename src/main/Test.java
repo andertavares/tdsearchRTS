@@ -47,7 +47,7 @@ public class Test {
 			repConfig.setProperty("test_matches", ""+numMatches); //""+ is just to easily convert to string
 			repConfig.setProperty("save_replay", saveReplay);
 			repConfig.setProperty("search.timebudget", config.getProperty("search.timebudget"));
-			repConfig.setProperty("visualize_test", config.getProperty("visualize_test"));
+			repConfig.setProperty("gui", config.getProperty("gui"));
 			
 			// runs one repetition
 			runTestMatches(repConfig, testOppName, repDir, initialRep, initialRep+5000, writeReplay);
