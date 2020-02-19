@@ -6,10 +6,11 @@ import stats
 import numpy as np
 import collections
 
+from tqdm import tqdm
 from pprint import pprint
 
 
-def produce_results(basedir, raw_outstream=sys.stdout, avg_outstream=sys.stdout, sep=',', 
+def produce_results(basedir, raw_output='raw.csv', avg_output='avg.csv', sep=',', 
     test_opp='A3N', file_prefix='test-vs-', search_timebudget=None):
     """
     Traverses the base dir all the way down to each experiment, collecting the results and writing csv 
@@ -23,8 +24,13 @@ def produce_results(basedir, raw_outstream=sys.stdout, avg_outstream=sys.stdout,
     :param file_prefix: specify if the csv files to be analysed have a different beginning
     :search_timebudget: collects statistics of tests on a specific budget for the search algorithm. 
     Defaults to None to maintain compatibility with older versions that generated files without the budget.
+
+    TODO: accept a wildcard in test_opp and budget to get multiple opponents and budgets at once
+    TODO: unify with parse_lcurve_output
     """
 
+    raw_outstream = open(os.path.join(basedir, raw_output), 'w')
+    avg_outstream = open(os.path.join(basedir, avg_output), 'w')   
 
     # key in results_collection will be a tuple of parameters, each result is a list of metrics
     results_collection = collections.defaultdict(list)
@@ -43,7 +49,7 @@ def produce_results(basedir, raw_outstream=sys.stdout, avg_outstream=sys.stdout,
     ))
 
     # the last glob parameter are actually 7 parameters expanded from a list of 7 asterisks
-    for rep_dir in glob.glob(os.path.join(basedir, *['*'] * 7)):
+    for rep_dir in tqdm(glob.glob(os.path.join(basedir, *['*'] * 7))):
         dirs = rep_dir.split(os.sep)
         param_dirs = dirs[-7:]  # ignores directories before the mapname
 
@@ -101,36 +107,10 @@ def produce_results(basedir, raw_outstream=sys.stdout, avg_outstream=sys.stdout,
             [str(len(results))] + list(params) + [str(x) for x in np.mean(results, axis=0)]
         ))
 
-
-def main(basedir, raw_output='raw.csv', avg_output='avg.csv', sep=',', test_opp='A3N', file_prefix='test-vs-', search_timebudget=None):
-    """
-    Generates a .csv file by parsing all experiment data found by recursively traversing basedir.
-
-    The expected directory structure of experiments is:
-    basedir/train_opp/map/fFEATURE_sSTRAT_rREWARD/mTRAIN/dDECISION/aALPHA_eEPSILON_gGAMMA_lLAMBDA/repREP
-
-    results/selfplay/TwoBasesBarracks16x16/fmaterialdistancehp_sCC,CE,FC,FE,AV-,AV+,HP-,HP+,R,M_rwinlossdraw/m1000/d10/a0.01_e0.1_g1_l0/rep0
-
-
-    :param basedir: experiment root dir.
-    :param raw_output: file to write the raw results of each repetition.
-    :param avg_output: file to write the average results across repetitions.
-    :param sep: separator of the .csv file
-    :param test_opp: test opponent
-    :param file_prefix: specify if the csv files to be analysed have a different beginning
-    :param search_timebudget: time budget of the search algorithm. (defaults to None to maintain compatibility with versions that generated output files without the budget.)
-    :return:
-    """
-
-    raw_outstream = open(os.path.join(basedir, raw_output), 'w')
-    avg_outstream = open(os.path.join(basedir, avg_output), 'w')
-
-    produce_results(basedir, raw_outstream, avg_outstream, sep, test_opp, file_prefix, search_timebudget)
-
     raw_outstream.close()
     avg_outstream.close()
 
 
 if __name__ == '__main__':
-    fire.Fire(main)
+    fire.Fire(produce_results)
     print("Done")
