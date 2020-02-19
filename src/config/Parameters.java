@@ -203,6 +203,7 @@ public class Parameters {
 			put("final_rep", "0");
 			put("initial_rep", "0");
 			put("gui",  "false");
+			put("visualize_test", "false");
 			put("save_replay", "false");
 			
 			put("train_opponent", "selfplay");
