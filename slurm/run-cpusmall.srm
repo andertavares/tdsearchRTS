@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH --nodes=20            #Numero de Nós
+#SBATCH --nodes=4            #Numero de Nós
 #SBATCH --ntasks-per-node=24 #Numero de tarefas por Nó
-#SBATCH --ntasks=480           #Numero total de tarefas MPI
+#SBATCH --ntasks=96           #Numero total de tarefas MPI
 #SBATCH -p cpu_small	      	#min 1 max 20 nós, 2h (lista: https://sdumont.lncc.br/support_manual.php?pg=support#5)
 #SBATCH -J jobs_small         #Nome job
 #SBATCH --exclusive          #Utilização exclusiva dos nós durante a execução do job
@@ -19,7 +19,7 @@ cd $SLURM_SUBMIT_DIR
 #Configura o script intermediario
 SCRIPT=${PWD}/slurm/startjobs.sh
 
-QUEUEDIR="queue_cpusmall"
+QUEUEDIR="queue_tests"
 
 # carrega o java 11 e o python3
 module load java/jdk-11
@@ -27,8 +27,8 @@ module load python/3.7.2
 
 echo "# jobs: `wc -l $QUEUEDIR/todo.txt`"
 
-# runs 20 times the script that launches 24 file job clients each
-for i in {1..20}; do 
+# runs X times the script that launches 24 file job clients each
+for i in {1..4}; do 
 	initial=$(( (($i - 1)) * 24 + 1)) 	# (i-1)*24 + 1
 	final=$(( $i * 24 ))				# i*24
 	srun --resv-ports  --nodes 1 --ntasks=1 -c 24 $SCRIPT $initial $final $QUEUEDIR & 
