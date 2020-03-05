@@ -2,9 +2,11 @@
 #SBATCH --nodes=1            #Numero de Nós
 #SBATCH --ntasks-per-node=16 #Numero de tarefas por Nó
 #SBATCH --ntasks=16           #Numero total de tarefas MPI
-#SBATCH -p tupi	      	
+#SBATCH -p tupi
 #SBATCH -J rltrain         #Nome job
 #SBATCH --exclusive          #Utilização exclusiva dos nós durante a execução do job
+#SBATCH --output=logs/%x_%j.out
+#SBATCH --error=logs/%x_%j.err
 
 #SBATCH --mail-type=BEGIN,END,FAIL,TIME_LIMIT
 #SBATCH --mail-user=andersonrochatavares@gmail.com
