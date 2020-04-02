@@ -181,6 +181,7 @@ public class SarsaSearch extends AI {
 		// performs a new choice if the interval has passed
 		if (decisionInterval <= 1 || gs.getTime() % decisionInterval == 0) { 
 			// determines the current choice
+			//FIXME possible issue: act has the side effect of learning. this isn't happening throughout all states!
 			currentChoiceName = learner.act(gs, player);
 		}
 
