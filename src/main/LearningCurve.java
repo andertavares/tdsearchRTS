@@ -156,7 +156,6 @@ public class LearningCurve extends Test {
     				
     		AI p0 = player, p1 = testOpponent;
     		if(testPosition == 1) { //swaps the player and opponent if testPosition is 1
-    			// FIXME player has loaded weights of position 0 but will play at position 1
     			p0 = testOpponent;
     			p1 = player;
     		}
