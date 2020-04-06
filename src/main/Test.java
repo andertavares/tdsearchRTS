@@ -1,5 +1,6 @@
 package main;
 
+import java.io.IOException;
 import java.util.Properties;
 
 import org.apache.logging.log4j.LogManager;
@@ -100,13 +101,26 @@ public class Test {
         	// creates the player instance and loads weights according to its position
             
             String weightsFile = String.format("%s/weights_%d.bin", workingDir, testPosition);
-            logger.info("Loading weights from {}", weightsFile);
-            player.loadWeights(weightsFile);
-            planner.load(weightsFile);
-            
             String oppWeightsFile = String.format("%s/weights_%d.bin", workingDir, 1 - testPosition);
+            
+            
+            logger.info("Loading weights from {}", weightsFile);
+            try {
+	            player.loadWeights(weightsFile);
+	            planner.load(weightsFile);
+            }
+            catch (IOException ioe) {
+            	logger.error("Unable to load weights, ignoring {}.", weightsFile, ioe);
+            	continue;
+            }
+            
             logger.info("Loading planningOpponent weights from {}", oppWeightsFile);
-            planningOpponent.load(oppWeightsFile);
+            try {
+            	planningOpponent.load(oppWeightsFile);
+            }
+            catch (IOException ioe) {
+            	logger.error("Unable to load of opp. planner {}, using random", oppWeightsFile, ioe);
+            }
     		
     		// if write replay (trace) is activated, sets the prefix to write files
     		String tracePrefix = null;

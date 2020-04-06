@@ -140,7 +140,7 @@ public class LearningCurve extends Test {
                 	planningOpponent.load(oppWeightsFile);
                 }
                 catch (IOException ioe) {
-                	logger.error("Unable to load of opp. planner {}, using random", weightsFile, ioe);
+                	logger.error("Unable to load of opp. planner {}, using random", oppWeightsFile, ioe);
                 }
         	}
     		
