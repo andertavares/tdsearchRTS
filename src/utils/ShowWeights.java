@@ -1,7 +1,9 @@
 package utils;
 
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Properties;
+import java.util.stream.Collectors;
 
 import config.ConfigManager;
 import config.Parameters;
@@ -34,17 +36,20 @@ public class ShowWeights {
 		learner.load(args[1]);
 		Map<String, double[]> weights = learner.getWeights();
 		
-		//outputs the feature and its value for each strategy
-		int i = 0; //accounts for the index in the feature vector
-		for(String featureName : extractor.featureNames()) {
-			System.out.println(featureName + ":");
-			
-			for (String strategyName : weights.keySet()) {
-				System.out.println(String.format("\t%s: %f", strategyName, weights.get(strategyName)[i]));
-			}
-			
-			i++; //moves to the next feature
+		// writes a header with the feature names
+		System.out.println("strategy," + String.join(",", extractor.featureNames()));
+		
+		//writes the feature values for one strategy per line
+		for (String strategyName : weights.keySet()) {
+			System.out.println(
+				strategyName + "," +  
+				Arrays.stream(weights.get(strategyName)) //array to csv black magic: https://stackoverflow.com/a/38425624/1251716
+		        .mapToObj(String::valueOf)
+		        .collect(Collectors.joining(","))
+		    );
 		}
+		
+		
 	}
 
 }
