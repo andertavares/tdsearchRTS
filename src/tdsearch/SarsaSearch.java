@@ -172,9 +172,9 @@ public class SarsaSearch extends AI {
 		// launches planning
 		//logger.debug("v({}) for player{} before planning: {}", gs.getTime(), player, stateValue(featureExtractor.extractFeatures(gs, player)));
 		
-		logger.debug("Frame {}. Player {} would choose: {} before planning.", gs.getTime(), player, learner.act(gs, player));
+		//logger.debug("Frame {}. Player {} would choose: {} before planning.", gs.getTime(), player, learner.act(gs, player));
 		sarsaPlanning(gs, player);
-		logger.debug("Frame {}. Player {} would choose: {} after planning.", gs.getTime(), player, learner.act(gs, player));
+		//logger.debug("Frame {}. Player {} would choose: {} after planning.", gs.getTime(), player, learner.act(gs, player));
 		
 		//logger.debug("v({}) for player{} after planning: {}", gs.getTime(), player, stateValue(featureExtractor.extractFeatures(gs, player)));
 		
