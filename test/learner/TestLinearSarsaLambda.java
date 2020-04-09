@@ -9,7 +9,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
-import java.util.stream.Collectors;
 
 import org.jdom.JDOMException;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,7 +20,6 @@ import rts.GameState;
 import rts.PhysicalGameState;
 import rts.units.Unit;
 import rts.units.UnitTypeTable;
-import utils.StrategyNames;
 
 class TestLinearSarsaLambda {
 
@@ -597,7 +595,7 @@ class TestLinearSarsaLambda {
 		
 		// writes a header with the feature names
 		System.out.println("strategy," + String.join(",", testFeatureExtractor.featureNames()));
-		
+		/*
 		//writes the feature values for one strategy per line
 		for (String strategyName : anotherLearner.getWeights().keySet()) {
 			System.out.println(
@@ -607,7 +605,7 @@ class TestLinearSarsaLambda {
 		        .collect(Collectors.joining(","))
 		    );
 		}
-		
+		*/
 	}
 	
 	@Test
@@ -624,7 +622,10 @@ class TestLinearSarsaLambda {
 			alpha, 0.1, gamma, lambda, 0
 		);
 		
-		// loads the previously saved weights
+		// changes some weight arbitrarily
+		anotherLearner.getWeights().get("WD")[0] = -569847654.6;
+		
+		// loads the previously saved weights (manually changed weight should be overridden
 		anotherLearner.load("test/learner/weights_0-m1.bin");
 		
 		/*
