@@ -167,11 +167,15 @@ public class LearningCurve extends Test {
 				testPosition, checkpoint, config.getProperty("search.timebudget")
 			); //summary output
     		
+    		String choicesPrefix = "true".equalsIgnoreCase(config.getProperty("save_choices", "false")) ? 
+				String.format("%s/lcurve-vs-%s_b%s", workingDir, testOpponent.getClass().getSimpleName(), config.getProperty("search.timebudget")) : //runner infers the test position, no need to pass in the prefix
+				null;
+    		
     		Runner.repeatedMatches(
     			types, workingDir,
     			remainingMatches(testMatches / 2, lcurveOutput), // runs up to half the matches in each position  
     			lcurveOutput, 
-    			null, //choices prefix //String.format("%s/lcurve-vs-%s_p%d_m%d", workingDir, testOpponent.getClass().getSimpleName(), testPosition, checkpoint)
+    			choicesPrefix, //String.format("%s/lcurve-vs-%s_p%d_m%d", workingDir, testOpponent.getClass().getSimpleName(), testPosition, checkpoint)
     			p0, p1, visualizeTest, settings, tracePrefix, 
     			0, // no checkpoints (we're already testing existing ones)
     			0 // latestMatch is zero to don't interfere with remainingMatches

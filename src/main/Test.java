@@ -140,11 +140,15 @@ public class Test {
     		
     		logger.info("Testing: Player0={}, Player1={}", p0.getClass().getSimpleName(), p1.getClass().getSimpleName());
     		
+    		String choicesPrefix = "true".equalsIgnoreCase(config.getProperty("save_choices", "false")) ? 
+    				String.format("%s/test-vs-%s_b%s", workingDir, testOpponent.getClass().getSimpleName(), config.getProperty("search.timebudget")) : //runner infers the test position, no need to pass in the prefix
+    				null;
+    		
     		Runner.repeatedMatches(
     			types, workingDir,
     			testMatches / 2, //half the matches in each position
     			String.format("%s/test-vs-%s_p%d_b%s.csv", workingDir, testOpponent.getClass().getSimpleName(), testPosition, config.getProperty("search.timebudget")),
-    			String.format("%s/test-vs-%s_b%s", workingDir, testOpponent.getClass().getSimpleName(), config.getProperty("search.timebudget")), //runner infers the test position, no need to pass in the prefix
+    			choicesPrefix,
     			p0, p1, visualizeTest, settings, tracePrefix, 
     			0, // no checkpoints
     			0 //assumes no prior matches were played

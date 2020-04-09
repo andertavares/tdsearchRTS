@@ -115,11 +115,15 @@ public class Train {
 			}
 		}
 		
+		String choicesPrefix = "true".equalsIgnoreCase(config.getProperty("save_choices", "false")) ? 
+			String.format("%s/train-vs-%s_b%s", workingDir, trainingOpponent.getClass().getSimpleName(), config.getProperty("search.timebudget")) : //runner infers the test position, no need to pass in the prefix
+			null;
+		
 		Runner.repeatedMatches(
 			types, workingDir, 
 			trainMatches, 
 			workingDir + "/train.csv", 
-			null, //won't record choices at training time 
+			choicesPrefix, //won't record choices at training time 
 			player, trainingOpponent, visualizeTraining, settings, null,
 			checkpointSkip, latestMatch
 		);
