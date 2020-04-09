@@ -9,11 +9,13 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.stream.Collectors;
 
 import org.jdom.JDOMException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import features.FeatureExtractorFactory;
 import learning.LinearSarsaLambda;
 import rts.GameState;
 import rts.PhysicalGameState;
@@ -541,7 +543,7 @@ class TestLinearSarsaLambda {
 	}
 
 	@Test
-	void testLoadAndSaveWeights() throws NoSuchFieldException, IllegalAccessException, IOException {
+	void testSaveAndLoadWeights() throws NoSuchFieldException, IllegalAccessException, IOException {
 		Map<String, double[]> testWeights = new HashMap<>(); 
 		testWeights.put("action1", new double[] {0.1, 2});
 		testWeights.put("action2", new double[] {4, -1});
@@ -561,6 +563,90 @@ class TestLinearSarsaLambda {
 		assertEquals(2, learner.qValue(new double[] {0, 1} , "action1"));
 		assertEquals(4, learner.qValue(new double[] {1, 0} , "action2"));
 		assertEquals(-1, learner.qValue(new double[] {0, 1} , "action2"));
+		
+	}
+	
+	@Test
+	void testSaveAndLoadWeightsInNewLearner() throws NoSuchFieldException, IllegalAccessException, IOException {
+		Map<String, double[]> testWeights = new HashMap<>(); 
+		testWeights.put("action1", new double[] {0.006516215653132131, 2});
+		testWeights.put("action2", new double[] {4, -1});
+		setLearnerWeights(testWeights);
+		
+		learner.save("testweights.bin");
+		
+		// creates a new instance of the learner
+		LinearSarsaLambda anotherLearner = new LinearSarsaLambda(
+			types, 
+			testRewardModel, 
+			testFeatureExtractor, 
+			Arrays.asList("WR,LR,HR,RR".split(",")), 
+			alpha, 0.1, gamma, lambda, 0
+		);
+		
+		// loads the previously saved weights
+		anotherLearner.load("testweights.bin");
+		
+		// --- checks that the weights have the same values as of the original learner
+		// for action1
+		assertEquals(0.006516215653132131, anotherLearner.getWeights().get("action1")[0]);
+		assertEquals(2, anotherLearner.getWeights().get("action1")[1]);
+		// for action2
+		assertEquals(4, anotherLearner.getWeights().get("action2")[0]);
+		assertEquals(-1, anotherLearner.getWeights().get("action2")[1]);
+		
+		// writes a header with the feature names
+		System.out.println("strategy," + String.join(",", testFeatureExtractor.featureNames()));
+		
+		//writes the feature values for one strategy per line
+		for (String strategyName : anotherLearner.getWeights().keySet()) {
+			System.out.println(
+				strategyName + "," +  
+				Arrays.stream(anotherLearner.getWeights().get(strategyName)) //array to csv black magic: https://stackoverflow.com/a/38425624/1251716
+		        .mapToObj(String::valueOf)
+		        .collect(Collectors.joining(","))
+		    );
+		}
+		
+	}
+	
+	@Test
+	void testLoadWeightsWithMaterialAdvantage() throws NoSuchFieldException, IllegalAccessException, IOException {
+		// the weights at test/learner/weights_0-m1.bin should have the following values in WD:
+		
+		
+		// creates a new instance of the learner
+		LinearSarsaLambda anotherLearner = new LinearSarsaLambda(
+			types, 
+			testRewardModel, 
+			FeatureExtractorFactory.getFeatureExtractor("materialadvantage", types, 3000), 
+			Arrays.asList("WR,LR,HR,RR,WD,LD,HD,RD,BB,BK".split(",")), 
+			alpha, 0.1, gamma, lambda, 0
+		);
+		
+		// loads the previously saved weights
+		anotherLearner.load("test/learner/weights_0-m1.bin");
+		
+		/*
+		// writes a header with the feature names
+		System.out.println("strategy," + String.join(",", testFeatureExtractor.featureNames()));
+		
+		//writes the feature values for one strategy per line
+		for (String strategyName : anotherLearner.getWeights().keySet()) {
+			System.out.println(
+				strategyName + "," +  
+				Arrays.stream(anotherLearner.getWeights().get(strategyName)) //array to csv black magic: https://stackoverflow.com/a/38425624/1251716
+		        .mapToObj(String::valueOf)
+		        .collect(Collectors.joining(","))
+		    );
+		}
+		*/
+		
+		// test against the weights as obtained manually via debug (after match 1 on the config at test/learner/settings.properties) 
+		double[] expectedWeights = new double[] {-0.48622284568384794, -0.19735093079259122, 0.8790665700097834, 0.9346594250251063, -0.8947654170008539, 0.35020689058988785, 0.6079114460034036, 0.5917895491420104, 0.33897278756524196, 0.6068907463779818, -0.6027754109486272, -0.3237323123984954, 0.451490108509776, -0.2906302781928527, -0.10574294031185216, -0.8730303258141261, -0.45454231898843706, 0.27554588148013387, 0.4743686770003598, -0.7346210317323029, 0.9738406740564549, -0.07051906268621885, 0.49213105543683394, 0.8676912876841563};
+		assertArrayEquals(expectedWeights, anotherLearner.getWeights().get("WD"));
+		
+		
 		
 	}
 	

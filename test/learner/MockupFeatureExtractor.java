@@ -1,5 +1,6 @@
 package learner;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -75,8 +76,11 @@ public class MockupFeatureExtractor implements FeatureExtractor {
 
 	@Override
 	public List<String> featureNames() {
-		// should not be called...
-		return null;
+		List<String> names = new ArrayList<>(featureVector.length);
+		for(int i = 0; i < featureVector.length; i++) {
+			names.add(""+i);	//name is the index
+		}
+		return names;
 	}
 
 }

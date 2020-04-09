@@ -437,6 +437,7 @@ public class LinearSarsaLambda implements LearningAgent {
 			double[] w = weights.get(actionName); // weight vector
 			double[] e = eligibility.get(actionName); // eligibility vector 
 			
+			assert w == weights.get(actionName);
 			// certifies that things are ok
 			assert w.length == e.length;
 			assert e.length == f.length;
