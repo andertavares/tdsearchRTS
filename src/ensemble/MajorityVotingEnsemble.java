@@ -1,12 +1,13 @@
 package ensemble;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
+
+import org.apache.logging.log4j.LogManager;
 
 import ai.core.AI;
 import ai.core.ParameterSpecification;
@@ -39,23 +40,36 @@ public class MajorityVotingEnsemble extends AI{
 		this.types = types;
 		this.config = config;
 		policies = new HashMap<>();
-		portfolio = PortfolioManager.getPortfolio(
-			types, Arrays.asList(config.getProperty("portfolio").split(","))
-		);
+		portfolio = PortfolioManager.fullPortfolio(types);
 		
-		// TODO traverse the config adding the policies?
+		/*
+		String[] paths = config.getProperty("policy.paths").split(",");
+		String[] names = config.getProperty("policy.names").split(",");
+		
+		if (paths.length != names.length) {
+			throw new RuntimeException("Names and policy paths have differing lengths");
+		}
+		
+		for (int i = 0; i < paths.length; i++) {
+			addSarsaPolicy(names[i], paths[i]);
+		}
+		*/
 	}
 	
-	public void addSarsaPolicy(String name, String path) throws IOException {
+	public void addSarsaPolicy(Properties sarsaConfig, String name, String path)  {
 		
 		//creates a dummy config with zero alpha & epsilon
-		Properties dummyConfig = (Properties) config.clone();
+		Properties dummyConfig = (Properties) sarsaConfig.clone();
 		dummyConfig.put("td.alpha.initial", "0");
 		dummyConfig.put("td.epsilon.initial", "0");
 		
 		// creates the learning agent w/ dummyConfig, loads its policy and adds it
 		LinearSarsaLambda policy = new LinearSarsaLambda(types, dummyConfig, policies.size());
-		policy.load(path);
+		try {
+			policy.load(path);
+		} catch (IOException e) {
+			LogManager.getRootLogger().error("Unable to load policy " + path + " using random weights.", e);
+		}
 		addPolicy(name, policy);
 	}
 	
@@ -91,7 +105,7 @@ public class MajorityVotingEnsemble extends AI{
 				mostVotes = votes.get(vote);
 			}
 		}
-		
+		LogManager.getRootLogger().debug("Most voted: {} with {} votes", mostVoted, mostVotes);
 		return portfolio.get(mostVoted).getAction(player, state);
 	}
 

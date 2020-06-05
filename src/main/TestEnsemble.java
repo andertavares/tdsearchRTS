@@ -1,6 +1,5 @@
 package main;
 
-import java.io.IOException;
 import java.util.Properties;
 
 import org.apache.logging.log4j.LogManager;
@@ -9,14 +8,19 @@ import org.apache.logging.log4j.Logger;
 import ai.core.AI;
 import config.ConfigManager;
 import config.Parameters;
-import learning.LinearSarsaLambda;
+import ensemble.MajorityVotingEnsemble;
 import rts.GameSettings;
 import rts.units.UnitTypeTable;
-import tdsearch.SarsaSearch;
 import utils.AILoader;
 
 public class TestEnsemble {
 	public static void main(String[] args) throws Exception {
+		
+		/*
+		 * Example of call:
+		 * ./ensemble_test.sh -c config/ensemble_all.properties -d results/selflambda1M/selfplay/basesWorkers16x16A/fmaterialdistancehp_pWR,LR,RR,HR,WD,LD,RD,HD,BB,BK_rwinlossdraw/m1000000/d100/a0.01_e0.1_g0.99_l0.5/ --test_matches 40 --save_replay true --test_opponent ai.abstraction.WorkerRush --search_timebudget 0  -i 0 -f 0 
+		 */
+		
 		Logger logger = LogManager.getRootLogger();
 		
 		Properties config = Parameters.parseParameters(args); //ConfigManager.loadConfig(configFile);
@@ -51,7 +55,7 @@ public class TestEnsemble {
 			repConfig.setProperty("gui", config.getProperty("gui"));
 			
 			// runs one repetition
-			runTestMatches(repConfig, testOppName, repDir, initialRep, initialRep+5000, writeReplay);
+			runTestMatches(repConfig, config, testOppName, repDir, writeReplay);
 		}
 			
 	}
@@ -68,7 +72,7 @@ public class TestEnsemble {
 	 * @param writeReplay write the replay (traces) for each match?
 	 * @throws Exception
 	 */
-	public static void runTestMatches(Properties config, String testPartnerName, String workingDir, int randomSeedP0, int randomSeedP1, boolean writeReplay) throws Exception {
+	public static void runTestMatches(Properties config, Properties ensembleConfig, String testPartnerName, String workingDir, boolean writeReplay) throws Exception {
 		Logger logger = LogManager.getRootLogger();
 		
 		int testMatches = Integer.parseInt(config.getProperty("test_matches"));
@@ -89,38 +93,38 @@ public class TestEnsemble {
 		boolean visualizeTest = Boolean.parseBoolean(config.getProperty("visualize_test", "false"));
 		logger.info("{} write replay.", writeReplay ? "Will" : "Will not");
 		
-		// creates the planners and the player that uses them
-		// TODO replace by the ensemble player
-		SarsaSearch player = new SarsaSearch(types, randomSeedP0, config);
-		
+		// instantiates the players
+		MajorityVotingEnsemble player = new MajorityVotingEnsemble(types, ensembleConfig);
 		AI testOpponent = AILoader.loadAI(testPartnerName, types);
+		
+		// path to weight files:
+		// results/EXP/selfplay/MAP/fFEAT_pWR,LR,RR,HR,WD,LD,RD,HD,BB,BK_rwinlossdraw/
+		//mMATCHES/d100/a0.01_e0.1_g0.99_l0.5/rep0/weights_p-mM.bin
+
 		
         // tests the learner both as player 0 and 1
         for (int testPosition = 0; testPosition < 2; testPosition++) {
         	// creates the player instance and loads weights according to its position
             
-            String weightsFile = String.format("%s/weights_%d.bin", workingDir, testPosition);
-            String oppWeightsFile = String.format("%s/weights_%d.bin", workingDir, 1 - testPosition);
-            
-            /*
-    		for p in config['policies']:
-    		 	player.loadPolicy(p.name, p.path)
-    		*/
-            
-            logger.info("Loading weights from {}", weightsFile);
-            try {
-	            player.loadWeights(weightsFile);
-            }
-            catch (IOException ioe) {
-            	logger.error("Unable to load weights, ignoring {}.", weightsFile, ioe);
-            	continue;
-            }
+            // loads the policies appended by the player position
+            String[] paths = ensembleConfig.getProperty("policy.paths").split(",");
+    		String[] names = ensembleConfig.getProperty("policy.names").split(",");
+    		
+    		if (paths.length != names.length) {
+    			throw new RuntimeException("Names and policy paths have differing lengths");
+    		}
+    		
+    		for (int i = 0; i < paths.length; i++) {
+    			String path = workingDir + "/" + String.format(paths[i], testPosition);
+    			logger.info("Loading policy from {}", path);
+    			player.addSarsaPolicy(config, names[i], path);
+    		}
             
     		// if write replay (trace) is activated, sets the prefix to write files
     		String tracePrefix = null;
     		if(writeReplay) {
     			tracePrefix = String.format(
-    				"%s/test-trace-vs-%s_p%d", 
+    				"%s/test-trace-ensemble-vs-%s_p%d", 
     				workingDir, testOpponent.getClass().getSimpleName(), 
     				testPosition
     			); 
@@ -134,14 +138,14 @@ public class TestEnsemble {
     		
     		logger.info("Testing: Player0={}, Player1={}", p0.getClass().getSimpleName(), p1.getClass().getSimpleName());
     		
-    		String choicesPrefix = "true".equalsIgnoreCase(config.getProperty("save_choices", "false")) ? 
+    		String choicesPrefix = null;/*"true".equalsIgnoreCase(config.getProperty("save_choices", "false")) ? 
     				String.format("%s/test-vs-%s_b%s", workingDir, testOpponent.getClass().getSimpleName(), config.getProperty("search.timebudget")) : //runner infers the test position, no need to pass in the prefix
-    				null;
+    				null;*/
     		
     		Runner.repeatedMatches(
     			types, workingDir,
     			testMatches / 2, //half the matches in each position
-    			String.format("%s/test-vs-%s_p%d_b%s.csv", workingDir, testOpponent.getClass().getSimpleName(), testPosition, config.getProperty("search.timebudget")),
+    			String.format("%s/test-%s-vs-%s_p%d_b%s.csv", workingDir, ensembleConfig.getProperty("ensemble.name"), testOpponent.getClass().getSimpleName(), testPosition, config.getProperty("search.timebudget")),
     			choicesPrefix,
     			p0, p1, visualizeTest, settings, tracePrefix, 
     			0, // no checkpoints
