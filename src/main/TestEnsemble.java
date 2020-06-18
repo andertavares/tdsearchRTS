@@ -1,5 +1,14 @@
 package main;
 
+import java.io.IOException;
+import java.nio.file.FileSystems;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.PathMatcher;
+import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Properties;
 
 import org.apache.logging.log4j.LogManager;
@@ -106,19 +115,7 @@ public class TestEnsemble {
         for (int testPosition = 0; testPosition < 2; testPosition++) {
         	// creates the player instance and loads weights according to its position
             
-            // loads the policies appended by the player position
-            String[] paths = ensembleConfig.getProperty("policy.paths").split(",");
-    		String[] names = ensembleConfig.getProperty("policy.names").split(",");
-    		
-    		if (paths.length != names.length) {
-    			throw new RuntimeException("Names and policy paths have differing lengths");
-    		}
-    		
-    		for (int i = 0; i < paths.length; i++) {
-    			String path = workingDir + "/" + String.format(paths[i], testPosition);
-    			logger.info("Loading policy from {}", path);
-    			player.addSarsaPolicy(config, names[i], path);
-    		}
+            loadPolicies(config, ensembleConfig, workingDir, player, testPosition);
             
     		// if write replay (trace) is activated, sets the prefix to write files
     		String tracePrefix = null;
@@ -155,5 +152,54 @@ public class TestEnsemble {
         
         
 		logger.info("Test finished.");
+	}
+
+	private static void loadPolicies(Properties config, Properties ensembleConfig, String workingDir, 
+			MajorityVotingEnsemble player, int playerPosition) throws IOException {
+		
+		Logger logger = LogManager.getRootLogger();
+		
+		// if policy files are specified by a pattern 
+		if ("glob".equalsIgnoreCase(ensembleConfig.getProperty("policy.path.type"))) {
+			String glob = "glob:" + String.format(ensembleConfig.getProperty("policy.paths", "crowd_%dm*.bin"), playerPosition);
+			final PathMatcher pathMatcher = FileSystems.getDefault().getPathMatcher(glob);
+			
+			Files.walkFileTree(Paths.get(workingDir), new SimpleFileVisitor<Path>() {
+				
+				int count = 0;
+				
+				@Override
+				public FileVisitResult visitFile(Path path, BasicFileAttributes attrs) throws IOException {
+					if (pathMatcher.matches(path)) {
+						logger.info("Loading policy from {}", path);
+						player.addSarsaPolicy(config, "crowd" + count++, path.toString());
+					}
+					return FileVisitResult.CONTINUE;
+				}
+
+				@Override
+				public FileVisitResult visitFileFailed(Path file, IOException exc)
+						throws IOException {
+					return FileVisitResult.CONTINUE;
+				}
+			});
+		}
+		else { // policy files are explicitly defined in config:
+
+			// loads the policies appended by the player position
+			String[] paths = ensembleConfig.getProperty("policy.paths").split(",");
+			String[] names = ensembleConfig.getProperty("policy.names").split(",");
+			
+			if (paths.length != names.length) {
+				throw new RuntimeException("Names and policy paths have differing lengths");
+			}
+			
+			for (int i = 0; i < paths.length; i++) {
+				String path = workingDir + "/" + String.format(paths[i], playerPosition);
+				logger.info("Loading policy from {}", path);
+				player.addSarsaPolicy(config, names[i], path);
+			}
+		}
+		
 	}
 }
