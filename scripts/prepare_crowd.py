@@ -19,6 +19,11 @@ if __name__ == '__main__':
        '-c', '--checkpoint', help='Which checkpoint shall be gathered.',
        required=True, type=int
     )
+    
+    parser.add_argument(
+       '-p', '--prefix', help='Prefix of the files in the new folder',
+       default='crowdweight'
+    )
 
     args = parser.parse_args()
     
@@ -30,7 +35,7 @@ if __name__ == '__main__':
         for p in [0, 1]:  # copies the files for both player positions
             shutil.copyfile(
                 os.path.join(rep_dir, f'weights_{p}-m{args.checkpoint}.bin'), 
-                os.path.join(rep0_dir, f'crowdweight_p{p}-m{args.checkpoint}-r{rep_num}.bin')
+                os.path.join(rep0_dir, f'{args.prefix}_p{p}-m{args.checkpoint}-r{rep_num}.bin')
             )
     print(f'Done. Check {rep0_dir}.')
 
