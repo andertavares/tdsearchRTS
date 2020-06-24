@@ -22,6 +22,7 @@ import rts.TraceEntry;
 import rts.units.UnitTypeTable;
 import tdsearch.SarsaSearch;
 import utils.FileNameUtil;
+import utils.MatchData;
 
 /**
  * A class to run microRTS games to train and test RL agents
@@ -29,11 +30,6 @@ import utils.FileNameUtil;
  */
 public class Runner {
 
-	public static final int MATCH_ERROR = 2;
-	public static final int DRAW = -1;
-	public static final int P1_WINS = 0;
-	public static final int P2_WINS = 1;
-	
 	/**
 	 * Runs a match between two AIs with the specified settings, without the GUI.
 	 * Saves the trace to re-play the match if traceOutput is not null
@@ -46,7 +42,7 @@ public class Runner {
 	 * @return
 	 * @throws Exception
 	 */
-	public static int match(UnitTypeTable types, AI ai1, AI ai2, boolean visualize, GameSettings config, String traceOutput) throws Exception{
+	public static MatchData match(UnitTypeTable types, AI ai1, AI ai2, boolean visualize, GameSettings config, String traceOutput) throws Exception{
 		Logger logger = LogManager.getRootLogger();
 		
 		//UnitTypeTable types = new UnitTypeTable(config.getUTTVersion(), config.getConflictPolicy());
@@ -64,7 +60,7 @@ public class Runner {
 		} catch (Exception e) {
 			logger.error("Error while loading map from file: " + config.getMapLocation(), e);
 			logger.error("Aborting match execution...");
-			return MATCH_ERROR;
+			return new MatchData(MatchData.MATCH_ERROR, 0);
 		}
 		
 		GameState state = new GameState(pgs, types);
@@ -150,7 +146,7 @@ public class Runner {
     		
 		}
 		
-		return state.winner();
+		return new MatchData(state.winner(), state.getTime());
     }
 
 	/**
@@ -195,10 +191,10 @@ public class Runner {
         	
     		// runs the match, recording the initial and finishing times
         	Date begin = new Date(System.currentTimeMillis());
-        	int result = match(types, ai1, ai2, visualize, gameSettings, traceOutput);
+        	MatchData data = match(types, ai1, ai2, visualize, gameSettings, traceOutput);
         	Date end = new Date(System.currentTimeMillis());
         	
-        	System.out.print(String.format("\rMatch %8d finished with result %3d.", matchNumber+1, result));
+        	System.out.print(String.format("\rMatch %8d finished with result %3d.", matchNumber+1, data.winner));
         	
         	// saves weights every 'checkpoint' matches (adds 1 to matchNumber because it is starts at 0
         	if (checkpoint > 0 && (matchNumber+1) % checkpoint == 0) {
@@ -209,7 +205,7 @@ public class Runner {
         	long duration = end.getTime() - begin.getTime();
         	if (summaryOutput != null){
         		try{
-        			outputSummary(summaryOutput, result, duration, begin, end);
+        			outputSummary(summaryOutput, data.winner, duration, data.frames, begin, end);
         		}
         		catch(IOException ioe){
         			logger.error("Error while trying to write summary to '" + summaryOutput + "'", ioe);
@@ -301,7 +297,7 @@ public class Runner {
     	writer.close();
 	}
     
-    public static void outputSummary(String path, int result, long duration, Date start, Date finish) throws IOException{
+    public static void outputSummary(String path, int result, long milliseconds, int frames, Date start, Date finish) throws IOException{
     	File f = new File(path);
 		FileWriter writer; 
 		Logger logger = LogManager.getRootLogger();
@@ -314,13 +310,13 @@ public class Runner {
 			}
     		logger.debug("File didn't exist, creating and writing header");
     		writer = new FileWriter(f, false); //must be after the test, because it creates the file upon instantiation
-    		writer.write("#result,duration(ms),initial_time,final_time\n");
+    		writer.write("#result,duration(ms),duration(frames),initial_time,final_time\n");
     		writer.close();
     	}
     	
     	// appends one line with each weight value separated by a comma
     	writer = new FileWriter(f, true); 
-    	writer.write(String.format("%d,%d,%s,%s\n", result, duration, start, finish));
+    	writer.write(String.format("%d,%d,%d,%s,%s\n", result, milliseconds, frames, start, finish));
     	logger.debug("Successfully wrote to " + path); 
     	
     	writer.close();
