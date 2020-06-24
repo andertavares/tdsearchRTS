@@ -97,6 +97,7 @@ public class Parameters {
 		
 		options.addOption(new Option(null, "restart", true, "(must indicate true or false) Restart an unfinished experiment (make sure it is not running in another program instance!)"));
 		options.addOption(new Option(null, "resume", true, "(must indicate true or false) Resume an unfinished training? The repetition number must be specified. E.g.: -i 2 -f 2 to resume the experiment in rep2 directory"));
+		options.addOption(new Option(null, "ensemble_paths", true, "Pattern to load ensemble policies, must either be a glob with a placeholder to the player position, e.g. crowd_%dm*.bin, or a comma-separated-list with all files listed explicitly"));
         
 		options.addOption(new Option(null, "save_choices", true, "(true or false) Save all action selections during all matches."));
         return options;
@@ -145,6 +146,13 @@ public class Parameters {
 				logger.info("Parameter '{}' overridden to '{}'", dotParamName, cmd.getOptionValue(paramName));
 				prop.setProperty(dotParamName, cmd.getOptionValue(paramName));
 			}
+		}
+		
+		// if the user specified ensemble_paths, adds type glob
+		if(cmd.hasOption("ensemble_paths")) {
+			logger.info("Ensemble policy pattern specified as '{}'", cmd.getOptionValue("ensemble_paths"));
+			prop.put("ensemble_path_type", "glob");
+			prop.put("ensemble_paths", cmd.getOptionValue("ensemble_paths"));
 		}
 	}
 

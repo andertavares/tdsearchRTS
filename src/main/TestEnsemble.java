@@ -1,14 +1,10 @@
 package main;
 
 import java.io.IOException;
-import java.nio.file.FileSystems;
-import java.nio.file.FileVisitResult;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.PathMatcher;
 import java.nio.file.Paths;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Properties;
 
 import org.apache.logging.log4j.LogManager;
@@ -81,7 +77,8 @@ public class TestEnsemble {
 	 * @param writeReplay write the replay (traces) for each match?
 	 * @throws Exception
 	 */
-	public static void runTestMatches(Properties config, Properties ensembleConfig, String testPartnerName, String workingDir, boolean writeReplay) throws Exception {
+	public static void runTestMatches(Properties config, Properties ensembleConfig, 
+			String testPartnerName, String workingDir, boolean writeReplay) throws Exception {
 		Logger logger = LogManager.getRootLogger();
 		
 		int testMatches = Integer.parseInt(config.getProperty("test_matches"));
@@ -147,6 +144,7 @@ public class TestEnsemble {
     			0, // no checkpoints
     			0 //assumes no prior matches were played
     		);
+    		player = new MajorityVotingEnsemble(types, ensembleConfig); //resets the player (i.e. discards the previously loaded ensemble policies)
         }
         
         
@@ -159,35 +157,24 @@ public class TestEnsemble {
 		Logger logger = LogManager.getRootLogger();
 		
 		// if policy files are specified by a pattern 
-		if ("glob".equalsIgnoreCase(ensembleConfig.getProperty("policy.path.type"))) {
-			String glob = "glob:" + String.format(ensembleConfig.getProperty("policy.paths", "crowd_%dm*.bin"), playerPosition);
-			final PathMatcher pathMatcher = FileSystems.getDefault().getPathMatcher(glob);
-			
-			Files.walkFileTree(Paths.get(workingDir), new SimpleFileVisitor<Path>() {
-				
+		if ("glob".equalsIgnoreCase(ensembleConfig.getProperty("ensemble_path_type"))) {
+			String pattern = String.format(ensembleConfig.getProperty("ensemble_paths"), playerPosition);
+			logger.info("Loading policies with pattern '{}'", pattern);
+			Path dir = Paths.get(workingDir);
+			try (DirectoryStream<Path> stream = Files.newDirectoryStream(dir, pattern)) { 
 				int count = 0;
-				
-				@Override
-				public FileVisitResult visitFile(Path path, BasicFileAttributes attrs) throws IOException {
-					if (pathMatcher.matches(path)) {
-						logger.info("Loading policy from {}", path);
-						player.addSarsaPolicy(config, "crowd" + count++, path.toString());
-					}
-					return FileVisitResult.CONTINUE;
+				for (Path path : stream) {
+					logger.info("Loading policy from {}", path);
+					player.addSarsaPolicy(config, "crowd" + count++, path.toString());
+					count++;
 				}
-
-				@Override
-				public FileVisitResult visitFileFailed(Path file, IOException exc)
-						throws IOException {
-					return FileVisitResult.CONTINUE;
-				}
-			});
+			}
 		}
 		else { // policy files are explicitly defined in config:
 
 			// loads the policies appended by the player position
-			String[] paths = ensembleConfig.getProperty("policy.paths").split(",");
-			String[] names = ensembleConfig.getProperty("policy.names").split(",");
+			String[] paths = ensembleConfig.getProperty("ensemble_paths").split(",");
+			String[] names = ensembleConfig.getProperty("ensemble_names").split(",");
 			
 			if (paths.length != names.length) {
 				throw new RuntimeException("Names and policy paths have differing lengths");

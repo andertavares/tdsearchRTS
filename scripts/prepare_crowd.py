@@ -22,7 +22,7 @@ if __name__ == '__main__':
     
     parser.add_argument(
        '-p', '--prefix', help='Prefix of the files in the new folder',
-       default='crowdweight'
+       default='crowd'
     )
 
     args = parser.parse_args()
