@@ -113,8 +113,7 @@ public class TestEnsemble {
 		
         // tests the learner both as player 0 and 1
         for (int testPosition = 0; testPosition < 2; testPosition++) {
-        	// creates the player instance and loads weights according to its position
-            
+        	// loads the player's ensemble policies 
             loadPolicies(config, ensembleConfig, workingDir, player, testPosition);
             
     		// if write replay (trace) is activated, sets the prefix to write files
