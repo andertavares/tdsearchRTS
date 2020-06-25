@@ -41,11 +41,6 @@ def arg_parser(description='Generates commands to run ensemble experiments'):
     )
 
     parser.add_argument(
-        '--lcurve-matches', type=int, default=20,
-        help='Number of learning curve matches'
-    )
-    
-    parser.add_argument(
         '-c', '--checkpoint', type=int, default=10,
         help='Save weights every "checkpoint" matches'
     )
@@ -61,7 +56,7 @@ def arg_parser(description='Generates commands to run ensemble experiments'):
     )
     
     parser.add_argument(
-        '-p', '--portfolio', default='WR,LR,RR,HR',
+        '-p', '--portfolio', default='WR,LR,RR,HR,WD,LD,RD,HD,BB',
         help='Portfolio (csv list of WR,LR,RR,HR,WD,LD,RD,HD,BB and/or BK)'
     )
 
