@@ -31,6 +31,13 @@ public class MajorityVotingEnsemble extends AI{
 	Map<String, AI> portfolio;
 	
 	/**
+	 * Interval between actions (i.e. sticky-action duration)
+	 */
+	int decisionInterval;
+	
+	String currentChoice;
+	
+	/**
 	 * Stored to aid the creation of SarsaSearch AIs
 	 */
 	private UnitTypeTable types;
@@ -41,19 +48,7 @@ public class MajorityVotingEnsemble extends AI{
 		this.config = config;
 		policies = new HashMap<>();
 		portfolio = PortfolioManager.fullPortfolio(types);
-		
-		/*
-		String[] paths = config.getProperty("policy.paths").split(",");
-		String[] names = config.getProperty("policy.names").split(",");
-		
-		if (paths.length != names.length) {
-			throw new RuntimeException("Names and policy paths have differing lengths");
-		}
-		
-		for (int i = 0; i < paths.length; i++) {
-			addSarsaPolicy(names[i], paths[i]);
-		}
-		*/
+		decisionInterval = Integer.parseInt(config.getProperty("decision_interval")); //FIXME defaulting to 1
 	}
 	
 	public void addSarsaPolicy(Properties sarsaConfig, String name, String path)  {
@@ -90,28 +85,31 @@ public class MajorityVotingEnsemble extends AI{
 
 	@Override
 	public PlayerAction getAction(int player, GameState state) throws Exception {
-		Map<String, Integer> votes = new HashMap<String, Integer>();
-		String mostVoted = null;
-		int mostVotes = -1;
+		if (decisionInterval <= 1 || state.getTime() % decisionInterval == 0) { 
 		
-		// traverses the list of actors to collect the votes
-		for(LearningAgent actor : policies.values()) {
-			String vote = actor.act(state, player);
-			votes.put(vote, votes.getOrDefault(vote, 0) + 1);
+			Map<String, Integer> votes = new HashMap<String, Integer>();
+			String mostVoted = null;
+			int mostVotes = -1;
 			
-			// change the winner if necessary
-			if (votes.get(vote) > mostVotes) {
-				mostVoted = vote;
-				mostVotes = votes.get(vote);
+			// traverses the list of actors to collect the votes
+			for(LearningAgent actor : policies.values()) {
+				String vote = actor.act(state, player);
+				votes.put(vote, votes.getOrDefault(vote, 0) + 1);
+				
+				// change the winner if necessary
+				if (votes.get(vote) > mostVotes) {
+					mostVoted = vote;
+					mostVotes = votes.get(vote);
+				}
 			}
+			LogManager.getRootLogger().debug("Frame {}: Most voted: {} with {} votes", state.getTime(), mostVoted, mostVotes);
+			currentChoice = mostVoted;	//the most voted will be used
 		}
-		LogManager.getRootLogger().debug("Most voted: {} with {} votes", mostVoted, mostVotes);
-		return portfolio.get(mostVoted).getAction(player, state);
+		return portfolio.get(currentChoice).getAction(player, state);
 	}
 
 	@Override
 	public List<ParameterSpecification> getParameters() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 

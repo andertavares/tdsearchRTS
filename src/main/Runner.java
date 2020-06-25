@@ -194,7 +194,7 @@ public class Runner {
         	MatchData data = match(types, ai1, ai2, visualize, gameSettings, traceOutput);
         	Date end = new Date(System.currentTimeMillis());
         	
-        	System.out.print(String.format("\rMatch %8d finished with result %3d.", matchNumber+1, data.winner));
+        	System.out.print(String.format("\rMatch %8d finished with result %3d, taking %8d frames.", matchNumber+1, data.winner, data.frames));
         	
         	// saves weights every 'checkpoint' matches (adds 1 to matchNumber because it is starts at 0
         	if (checkpoint > 0 && (matchNumber+1) % checkpoint == 0) {

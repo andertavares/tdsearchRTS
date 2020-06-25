@@ -5,6 +5,7 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Map.Entry;
 import java.util.Properties;
 
 import org.apache.logging.log4j.LogManager;
@@ -99,8 +100,17 @@ public class TestEnsemble {
 		boolean visualizeTest = Boolean.parseBoolean(config.getProperty("visualize_test", "false"));
 		logger.info("{} write replay.", writeReplay ? "Will" : "Will not");
 		
+		//merges ensembleConfig into config
+		for(Entry<Object,Object> entry: ensembleConfig.entrySet()) {
+			if(! config.containsKey(entry.getKey())) {
+				logger.debug("Merging {}={} into config", entry.getKey(), entry.getValue());
+				config.put(entry.getKey(), entry.getValue());
+			}
+		}
+		
+		
 		// instantiates the players
-		MajorityVotingEnsemble player = new MajorityVotingEnsemble(types, ensembleConfig);
+		MajorityVotingEnsemble player = new MajorityVotingEnsemble(types, config);
 		AI testOpponent = AILoader.loadAI(testPartnerName, types);
 		
 		// path to weight files:
