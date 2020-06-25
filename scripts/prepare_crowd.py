@@ -33,10 +33,13 @@ if __name__ == '__main__':
         rep_num = int(rep_dir.split('/')[-1][3:])  # -1 gets rep* dir and 3: gets the *
         #print(rep_num, rep_dir)
         for p in [0, 1]:  # copies the files for both player positions
-            shutil.copyfile(
-                os.path.join(rep_dir, f'weights_{p}-m{args.checkpoint}.bin'), 
-                os.path.join(rep0_dir, f'{args.prefix}_p{p}-m{args.checkpoint}-r{rep_num}.bin')
-            )
+            try:
+                shutil.copyfile(
+                    os.path.join(rep_dir, f'weights_{p}-m{args.checkpoint}.bin'), 
+                    os.path.join(rep0_dir, f'{args.prefix}_p{p}-m{args.checkpoint}-r{rep_num}.bin')
+                )
+            except FileNotFoundError as e:
+                print('A file has not been copied: ', e)
     print(f'Done. Check {rep0_dir}.')
 
 
