@@ -11,7 +11,7 @@ from pprint import pprint
 
 
 def produce_results(basedir, raw_output='raw.csv', avg_output='avg.csv', sep=',', 
-    file_prefix='test-vs-', search_timebudget=None, test_opp=('A3N',), rep_num=-1):
+    file_prefix='test-vs-', search_budget=None, test_opp=('A3N',), rep_num=-1):
     """
     Traverses the base dir all the way down to each experiment, collecting the results and writing csv 
     files with raw results of the repetitions of each parameter configuration and an average of all repetitions.
@@ -23,7 +23,7 @@ def produce_results(basedir, raw_output='raw.csv', avg_output='avg.csv', sep=','
     :param rep_num: look at a specific rep? -1 to look at all reps
     :param test_opp: collects statistics about test opponents in a list
     :param file_prefix: specify if the csv files to be analysed have a different beginning
-    :search_timebudget: collects statistics of tests on a specific budget for the search algorithm. 
+    :search_budget: collects statistics of tests on a specific budget for the search algorithm. 
     Defaults to None to maintain compatibility with older versions that generated files without the budget.
 
     TODO: unify with parse_lcurve_output
@@ -79,8 +79,8 @@ def produce_results(basedir, raw_output='raw.csv', avg_output='avg.csv', sep=','
             for test_pos in [0, 1]:
     
                 test_file = os.path.join(rep_dir, '%s%s_p%d.csv' % (file_prefix, opp, test_pos))
-                if search_timebudget is not None:
-                    test_file = os.path.join(rep_dir, '%s%s_p%d_b%d.csv' % (file_prefix, opp, test_pos, search_timebudget))
+                if search_budget is not None:
+                    test_file = os.path.join(rep_dir, '%s%s_p%d_b%d.csv' % (file_prefix, opp, test_pos, search_budget))
                 # print(test_file)
     
                 if not os.path.exists(test_file):
