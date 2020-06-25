@@ -148,7 +148,7 @@ public class TestEnsemble {
     		Runner.repeatedMatches(
     			types, workingDir,
     			testMatches / 2, //half the matches in each position
-    			String.format("%s/test-%s-vs-%s_p%d_b%s.csv", workingDir, ensembleConfig.getProperty("ensemble.name"), testOpponent.getClass().getSimpleName(), testPosition, config.getProperty("search.timebudget")),
+    			String.format("%s/test-%s-vs-%s_p%d_b%s.csv", workingDir, ensembleConfig.getProperty("ensemble_name"), testOpponent.getClass().getSimpleName(), testPosition, config.getProperty("search.timebudget")),
     			choicesPrefix,
     			p0, p1, visualizeTest, settings, tracePrefix, 
     			0, // no checkpoints

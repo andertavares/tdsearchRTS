@@ -97,6 +97,7 @@ public class Parameters {
 		
 		options.addOption(new Option(null, "restart", true, "(must indicate true or false) Restart an unfinished experiment (make sure it is not running in another program instance!)"));
 		options.addOption(new Option(null, "resume", true, "(must indicate true or false) Resume an unfinished training? The repetition number must be specified. E.g.: -i 2 -f 2 to resume the experiment in rep2 directory"));
+		options.addOption(new Option(null, "ensemble_name", true, "Name of the ensemble being evaluated"));
 		options.addOption(new Option(null, "ensemble_paths", true, "Pattern to load ensemble policies, must either be a glob with a placeholder to the player position, e.g. crowd_%dm*.bin, or a comma-separated-list with all files listed explicitly"));
         
 		options.addOption(new Option(null, "save_choices", true, "(true or false) Save all action selections during all matches."));
@@ -119,7 +120,8 @@ public class Parameters {
 				"save_replay", "save_choices", "learner", 
 				"planning_alpha", "planning_epsilon", "planning_lambda",
 				//"test_position", 
-				"decision_interval", "restart", "checkpoint", "resume"
+				"decision_interval", "restart", "checkpoint", "resume",
+				"ensemble_name"
 		);
 		
 		for(String paramName : overrideList) {
@@ -244,6 +246,8 @@ public class Parameters {
 			
 			put("restart", "false");
 			put("resume", "false");
+			
+			put("ensemble_name", "ensemble");  
 		}};
 		
 		for(Entry<String, String> param : defaults.entrySet()) {
