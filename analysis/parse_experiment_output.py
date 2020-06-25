@@ -11,7 +11,7 @@ from pprint import pprint
 
 
 def produce_results(basedir, raw_output='raw.csv', avg_output='avg.csv', sep=',', 
-    file_prefix='test-vs-', search_timebudget=None, test_opp=('A3N',)):
+    file_prefix='test-vs-', search_timebudget=None, test_opp=('A3N',), rep_num=-1):
     """
     Traverses the base dir all the way down to each experiment, collecting the results and writing csv 
     files with raw results of the repetitions of each parameter configuration and an average of all repetitions.
@@ -20,6 +20,7 @@ def produce_results(basedir, raw_output='raw.csv', avg_output='avg.csv', sep=','
     :param raw_outstream:
     :param avg_outstream:
     :param sep:
+    :param rep_num: look at a specific rep? -1 to look at all reps
     :param test_opp: collects statistics about test opponents in a list
     :param file_prefix: specify if the csv files to be analysed have a different beginning
     :search_timebudget: collects statistics of tests on a specific budget for the search algorithm. 
@@ -50,7 +51,12 @@ def produce_results(basedir, raw_output='raw.csv', avg_output='avg.csv', sep=','
         ))
     
         # the last glob parameter are actually 7 parameters expanded from a list of 7 asterisks
-        for rep_dir in tqdm(glob.glob(os.path.join(basedir, *['*'] * 7))):
+        pattern = os.path.join(basedir, *['*'] * 7)
+        # if the user specified a rep, look into it
+        if rep_num != -1:
+            pattern = os.path.join(basedir, *['*'] * 6, f'rep{rep_num}')
+            
+        for rep_dir in tqdm(glob.glob(pattern)):
             dirs = rep_dir.split(os.sep)
             param_dirs = dirs[-7:]  # ignores directories before the mapname
     
