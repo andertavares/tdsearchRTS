@@ -16,7 +16,13 @@ def arg_parser(description='Generates commands to run ensemble experiments'):
     )
 
     parser.add_argument(
-        'configs', help='List of ensemble configurations to evaluate', nargs='+'
+        '--configs', help='List of ensemble configurations to evaluate', nargs='+',
+        required=False
+    )
+    
+    parser.add_argument(
+        '--ensemble-paths', help='Pattern to match ensemble policy files (must include a %d for player position)',
+        default='crowd_p%d-m*-r*.bin'
     )
 
     parser.add_argument(
@@ -66,7 +72,8 @@ def arg_parser(description='Generates commands to run ensemble experiments'):
 
     parser.add_argument(
         '-m', '--maps', help='List of maps', nargs='+',
-        default=['basesWorkers8x8', 'NoWhereToRun9x8', 'TwoBasesBarracks16x16']
+        required=True
+        #default=['basesWorkers8x8', 'NoWhereToRun9x8', 'TwoBasesBarracks16x16']
     )
 
     parser.add_argument(
@@ -90,18 +97,18 @@ def arg_parser(description='Generates commands to run ensemble experiments'):
     parser.add_argument(
         '-g', '--gammas', help='List of gammas to test', nargs='+',
         #default=[0.5, 0.7, 0.9, 0.99, 0.999, 1.0]
-        default=[0.9]
+        default=[0.99]
     )
 
     parser.add_argument(
         '-d', '--decision-intervals', type=int, help='List of decision intervals', nargs='+',
-        default=[10]
+        default=[100]
         # default=[0.0, 0.05, 0.1, 0.15, 0.2, 0.3]
     )
 
     parser.add_argument(
         '--features', help='List of feature extractors', nargs='+',
-        default=['materialdistancehp']
+        default=['quadrantmodel']
         # default=[0.0, 0.05, 0.1, 0.15, 0.2, 0.3]
     )
 
@@ -109,12 +116,6 @@ def arg_parser(description='Generates commands to run ensemble experiments'):
         '--other', help='A string with as many other parameters as you want', 
         default=''
     )
-
-    '''parser.add_argument(
-        '-s', '--strategies', help='List of sets of strategies (each set is a comma-separated string without spaces)',
-        nargs='+',
-        default=['CC,CE,FC,FE,AV-,AV+,HP-,HP+,R,M']
-    )'''
 
     parser.add_argument(
         '--train-opponents', help='Training opponents', nargs='+', default=['selfplay']
@@ -142,21 +143,6 @@ def arg_parser(description='Generates commands to run ensemble experiments'):
         action='store_true'
     )
     
-    parser.add_argument(
-        '--no-train', help="Don't generate train jobs",
-        action='store_true'
-    )
-    
-    parser.add_argument(
-        '--no-test', help="Don't generate test jobs",
-        action='store_true'
-    )
-    
-    parser.add_argument(
-        '--no-lcurve', help="Don't generate learning curve jobs",
-        action='store_true'
-    )
-
     return parser
 
 
@@ -177,70 +163,31 @@ def ensemble_commands(params, outstream):
     """
     Writes the commands of the ensemble jobs to the outstream
     """
-    for cfg, mapname, interval, feature, alpha, gamma, lamda, epsilon, train_opp, test_opp, budget in cartesian_product(params):
-            command = './ensemble_test.sh -c %s -d %s/%s/%s/f%s_p%s_rwinlossdraw/m%d/d%d/a%s_e%s_g%s_l%s ' \
-                      '--test_matches %d --save_replay true --test_opponent %s --search_timebudget %s %s' % \
-                      (cfg, params['basedir'], train_opp, mapname, feature, params['portfolio'], params['train_matches'], interval,
-                       alpha, epsilon, gamma, lamda, params['test_matches'], test_opp, budget, params['other'])
     
-            for rep in range(params['initial_rep'], params['final_rep']+1):
-                outstream.write('%s -i %d -f %d\n' % (command, rep, rep))
+    if params['configs'] is not None:
+        for cfg, mapname, interval, feature, alpha, gamma, lamda, epsilon, train_opp, test_opp, budget in cartesian_product(params):
+                command = './ensemble_test.sh -c %s -d %s/%s/%s/f%s_p%s_rwinlossdraw/m%d/d%d/a%s_e%s_g%s_l%s ' \
+                          '--test_matches %d --save_replay true --test_opponent %s --search_timebudget %s %s' % \
+                          (cfg, params['basedir'], train_opp, mapname, feature, params['portfolio'], params['train_matches'], interval,
+                           alpha, epsilon, gamma, lamda, params['test_matches'], test_opp, budget, params['other'])
+        
+                for rep in range(params['initial_rep'], params['final_rep']+1):
+                    outstream.write('%s -i %d -f %d\n' % (command, rep, rep))
 
-
-def train_commands(params, outstream):
-    """
-    Writes the commands of the train jobs to the outstream
-    TODO: besides ignoring test_opp and budget during unpacking, train commands are repeatedly generated for each value in them...
-    """
-
-    # ignores test_opp and budget during unpacking
-    for mapname, interval, feature, alpha, gamma, lamda, epsilon, train_opp, *ignored in cartesian_product(params):
-            command = './train.sh -c config/%s.properties -d %s/%s --train_matches %s --decision_interval %d ' \
-                      '--train_opponent %s -p %s -e %s -r winlossdraw ' \
-                      '--td_alpha_initial %s --td_gamma %s --td_epsilon_initial %s --td_lambda %s ' \
-                      '--checkpoint %d %s' % \
-                      (mapname, params['basedir'], train_opp, params['train_matches'], interval,
-                       train_opp, params['portfolio'], feature, alpha, gamma, epsilon, lamda, 
-                       params['checkpoint'], params['other'])
-    
-            for rep in range(params['initial_rep'], params['final_rep']+1):
-                if params['resume']:
-                    # resume experiments must explicitly indicate the rep to resume
-                    outstream.write('%s --resume true -i %d -f %d\n' % (command, rep, rep))
-                else:
-                    outstream.write('%s\n' % command)
-
-
-def test_commands(params, outstream):
-    """
-    Writes the commands of the test jobs to the outstream
-    """
-    for mapname, interval, feature, alpha, gamma, lamda, epsilon, train_opp, test_opp, budget in cartesian_product(params):
-            command = './test.sh -d %s/%s/%s/f%s_p%s_rwinlossdraw/m%d/d%d/a%s_e%s_g%s_l%s ' \
-                      '--test_matches %d --save_replay true --test_opponent %s --search_timebudget %s %s' % \
-                      (params['basedir'], train_opp, mapname, feature, params['portfolio'], params['train_matches'], interval,
-                       alpha, epsilon, gamma, lamda, params['test_matches'], test_opp, budget, params['other'])
-    
-            for rep in range(params['initial_rep'], params['final_rep']+1):
-                outstream.write('%s -i %d -f %d\n' % (command, rep, rep))
-
-
-def lcurve_commands(params, outstream):
-    """
-    Writes the commands of the learning curve jobs to the outstream
-    """
-    for mapname, interval, feature, alpha, gamma, lamda, epsilon, train_opp, test_opp, budget in cartesian_product(params):
-    		# generates commands for specific checkpoints or all in the directory
-            checkpoints = params['specific_checkpoints'] if len(params['specific_checkpoints']) > 0 else range(params['checkpoint'], params['train_matches']+1, params['checkpoint'])
-
-            for c in checkpoints:  # +1 in second argument to ensure the last checkpoint is also picked 
-                    command = './learningcurve.sh -d %s/%s/%s/f%s_p%s_rwinlossdraw/m%d/d%d/a%s_e%s_g%s_l%s ' \
-                      '--test_matches %d --checkpoint %d --test_opponent %s --search_timebudget %s %s' % \
-                      (params['basedir'], train_opp, mapname, feature, params['portfolio'], params['train_matches'], interval,
-                       alpha, epsilon, gamma, lamda, params['lcurve_matches'], c, test_opp, budget, params['other'])
-                       
-                    for rep in range(params['initial_rep'], params['final_rep']+1):
-                        outstream.write('%s -i %d -f %d\n' % (command, rep, rep))
+    else:
+        params_list = [
+            params[attr] for attr in ['maps', 'decision_intervals', 'features', 'alphas', 'gammas', 'lambdas', 'epsilons',
+                                      'train_opponents', 'test_opponents', 'search_timebudget']
+        ]
+        
+        for mapname, interval, feature, alpha, gamma, lamda, epsilon, train_opp, test_opp, budget in itertools.product(*params_list):
+                command = './ensemble_test.sh --ensemble_paths %s -d %s/%s/%s/f%s_p%s_rwinlossdraw/m%d/d%d/a%s_e%s_g%s_l%s ' \
+                          '--test_matches %d --save_replay true --test_opponent %s --search_timebudget %s %s' % \
+                          (params['ensemble_paths'], params['basedir'], train_opp, mapname, feature, params['portfolio'], params['train_matches'], interval,
+                           alpha, epsilon, gamma, lamda, params['test_matches'], test_opp, budget, params['other'])
+        
+                for rep in range(params['initial_rep'], params['final_rep']+1):
+                    outstream.write('%s -i %d -f %d\n' % (command, rep, rep))
 
 
 def generate_commands(params, silent=False):
@@ -251,19 +198,6 @@ def generate_commands(params, silent=False):
     outstream = open(params['output'], mode) if params['output'] is not None else sys.stdout
 
     ensemble_commands(params, outstream)
-    '''
-    # writes train jobs
-    if not params['no_train']:
-        train_commands(params, outstream)
-    
-    # writes learning curve jobs
-    if not params['no_lcurve']:
-        lcurve_commands(params, outstream)
-        
-    # writes test jobs
-    if not params['no_test']:
-        test_commands(params, outstream)
-    '''
     
     # closes the outstream (if not sys.stdout)
     if params['output'] is not None:
