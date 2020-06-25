@@ -56,7 +56,7 @@ def arg_parser(description='Generates commands to run ensemble experiments'):
     )
     
     parser.add_argument(
-        '-p', '--portfolio', default='WR,LR,RR,HR,WD,LD,RD,HD,BB',
+        '-p', '--portfolio', default='WR,LR,RR,HR,WD,LD,RD,HD,BB,BK',
         help='Portfolio (csv list of WR,LR,RR,HR,WD,LD,RD,HD,BB and/or BK)'
     )
 
