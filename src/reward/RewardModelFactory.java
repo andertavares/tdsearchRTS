@@ -2,17 +2,23 @@ package reward;
 
 public class RewardModelFactory {
 	public static RewardModel getRewardModel(String modelName, int maxGameCycles) {
-		if(modelName.equals("victory-only") || modelName.equalsIgnoreCase("VictoryOnly")) {
-        	return new VictoryOnly();
-        }
-        else if (modelName.equals("winloss-tiebreak") || modelName.equalsIgnoreCase("WinLossTiesBroken")) {
-        	 return new WinLossTiesBroken(maxGameCycles);
-        }
-        else if (modelName.equals("winlossdraw")  || modelName.equalsIgnoreCase("WinLossDraw")) {
-        	return new WinLossDraw(maxGameCycles);
-        }
-        else {
+		switch (modelName.toLowerCase()) { //no 'break' because all cases return a value
+		
+		case "victory-only":
+		case "victoryonly":
+			return new VictoryOnly();
+			
+		case "winloss-tiebreak":
+		case "winlosstiesbroken":
+			return new WinLossTiesBroken(maxGameCycles);
+		
+		case "winlossdraw":
+			return new WinLossDraw(maxGameCycles);
+		
+		case "winlossduration":
+			return new WinLossDuration(maxGameCycles);
+        default:
         	throw new IllegalArgumentException("Reward model '" + modelName + "' not found.");
-        }
+		}
 	}
 }
